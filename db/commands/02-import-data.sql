@@ -1,4 +1,4 @@
-SET names utf8mb4;
+SET NAMES utf8mb4;
 
 INSERT INTO `daily_data`(`date`, id, region, category, license_no, project_name, house_count, area, avg_price)
 VALUES

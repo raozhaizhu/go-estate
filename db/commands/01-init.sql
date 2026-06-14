@@ -1,3 +1,5 @@
+SET NAMES utf8mb4;
+
 CREATE TABLE IF NOT EXISTS daily_data(
         id int4 PRIMARY KEY,
         date date NOT NULL,
