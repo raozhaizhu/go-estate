@@ -1,0 +1,1 @@
+mysqlsh --result-format=json/array --sql -u root -p123456 -D mysql-db -e "SELECT * FROM daily_data;" > result.json
