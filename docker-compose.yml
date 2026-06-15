@@ -1,18 +1,18 @@
 services:
   mysql:
     image: mysql:8.0
-    container_name: mysql-db
+    container_name: mysql_db
     restart: always
     # 设置字符集utf8mb4
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_0900_ai_ci
     environment:
       MYSQL_ROOT_PASSWORD: 123456
-      MYSQL_DATABASE: mysql-db
+      MYSQL_DATABASE: mysql_db
     ports:
       - "3306:3306"
     # volumes:
     # 备份数据
-    # - ./mysql-data:/var/lib/mysql
+    # - ./mysql_data:/var/lib/mysql
     # 初始化数据
     # - ./db/commands:/docker-entrypoint-initdb.d
 

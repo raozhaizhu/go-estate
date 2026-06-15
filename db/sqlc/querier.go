@@ -6,12 +6,13 @@ package db
 
 import (
 	"context"
+	"time"
 )
 
 type Querier interface {
 	GetAllData(ctx context.Context) ([]DailyDatum, error)
-	GetDataByDay(ctx context.Context) ([]DailyDatum, error)
-	GetDataByPeriod(ctx context.Context) ([]DailyDatum, error)
+	GetDataByDay(ctx context.Context, targetDate time.Time) ([]DailyDatum, error)
+	GetDataByPeriod(ctx context.Context, arg GetDataByPeriodParams) ([]DailyDatum, error)
 }
 
 var _ Querier = (*Queries)(nil)
