@@ -1,11 +1,11 @@
 # 变量
-DB_CONTAINER=mysql-db
-DB_NAME=mysql-db
+DB_CONTAINER=mysql_db
+DB_NAME=mysql_db
 DB_USER=root
 DB_PASSWORD=123456
 DB_COMMANDS_DIR=./db/commands/
 CHARSET=--default-character-set=utf8mb4
-DB_URL=mysql://root:123456@tcp(127.0.0.1:3306)/mysql-db
+DB_URL=mysql://root:123456@tcp(127.0.0.1:3306)/mysql_db
 MIG_DIR=./db/migration
 
 # migrate

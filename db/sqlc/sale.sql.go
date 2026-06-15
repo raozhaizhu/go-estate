@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"time"
 )
 
 const getAllData = `-- name: GetAllData :many
@@ -55,11 +56,11 @@ SELECT
 FROM
         daily_data
 WHERE
-        date = $1
+        date = ?
 `
 
-func (q *Queries) GetDataByDay(ctx context.Context) ([]DailyDatum, error) {
-	rows, err := q.db.QueryContext(ctx, getDataByDay)
+func (q *Queries) GetDataByDay(ctx context.Context, targetDate time.Time) ([]DailyDatum, error) {
+	rows, err := q.db.QueryContext(ctx, getDataByDay, targetDate)
 	if err != nil {
 		return nil, err
 	}
@@ -97,12 +98,17 @@ SELECT
 FROM
         daily_data
 WHERE
-        date >= $1
-        AND date <= $2
+        date >= ?
+        AND date <= ?
 `
 
-func (q *Queries) GetDataByPeriod(ctx context.Context) ([]DailyDatum, error) {
-	rows, err := q.db.QueryContext(ctx, getDataByPeriod)
+type GetDataByPeriodParams struct {
+	StartDate time.Time `json:"start_date"`
+	EndDate   time.Time `json:"end_date"`
+}
+
+func (q *Queries) GetDataByPeriod(ctx context.Context, arg GetDataByPeriodParams) ([]DailyDatum, error) {
+	rows, err := q.db.QueryContext(ctx, getDataByPeriod, arg.StartDate, arg.EndDate)
 	if err != nil {
 		return nil, err
 	}
