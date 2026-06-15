@@ -14,7 +14,7 @@ var testStore Store
 
 func TestMain(m *testing.M) {
 
-	conn, err := sql.Open("mysql", util.DB_URL)
+	conn, err := sql.Open("mysql", util.DBUrl)
 	if err != nil {
 		log.Fatal("无法连接到数据库", err)
 	}

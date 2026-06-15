@@ -12,8 +12,8 @@ import (
 func assertSaleValid(t *testing.T, sale DailyDatum) {
 	require.NotZero(t, sale.ID)
 	// region必须在 0-13 之内,房管网目前仅14 区
-	require.GreaterOrEqual(t, int(sale.Region), 0, "Region必须>=0")
-	require.LessOrEqual(t, int(sale.Region), 13, "Region 必须<=13")
+	require.GreaterOrEqual(t, int(sale.Region), util.MinRegion, "Region必须>=0")
+	require.LessOrEqual(t, int(sale.Region), util.MaxRegion, "Region 必须<=13")
 	require.NotZero(t, sale.HouseCount)
 	require.NotEmpty(t, sale.Category)
 	require.NotEmpty(t, sale.LicenseNo)
@@ -33,7 +33,7 @@ func TestGetAllData(t *testing.T) {
 	}
 }
 
-func dateEqual(t *testing.T, actualDay, expectedDay time.Time) {
+func assertDateEqual(t *testing.T, actualDay, expectedDay time.Time) {
 	y1, m1, d1 := actualDay.Date()
 	y2, m2, d2 := expectedDay.Date()
 	require.Equal(t, y1, y2)
@@ -50,17 +50,17 @@ func TestGetDataByDay(t *testing.T) {
 	// 查询结果非空, 随机日期和实际日期一致
 	for _, s := range sales {
 		assertSaleValid(t, s)
-		dateEqual(t, s.Date, day)
+		assertDateEqual(t, s.Date, day)
 	}
 }
 
-func yearMonthEqual(t *testing.T, actualDay, expectedDay time.Time) {
+func assertYearMonthEqual(t *testing.T, actualDay, expectedDay time.Time) {
 	y1, m1, _ := actualDay.Date()
 	y2, m2, _ := expectedDay.Date()
 	require.Equal(t, y1, y2)
 	require.Equal(t, m1, m2)
 }
-func dayInRange(t *testing.T, actualDay, startDay, endDay int) {
+func assertDayInRange(t *testing.T, actualDay, startDay, endDay int) {
 	require.GreaterOrEqual(t, actualDay, startDay, "日期必须大于等于 start")
 	require.LessOrEqual(t, actualDay, endDay, "日期必须小于等于  end")
 }
@@ -73,7 +73,7 @@ func TestGetDataByPeriod(t *testing.T) {
 	// 查询结果非空, 实际日期在区间内
 	for _, s := range sales {
 		assertSaleValid(t, s)
-		yearMonthEqual(t, s.Date, start)
-		dayInRange(t, s.Date.Day(), start.Day(), end.Day())
+		assertYearMonthEqual(t, s.Date, start)
+		assertDayInRange(t, s.Date.Day(), start.Day(), end.Day())
 	}
 }
