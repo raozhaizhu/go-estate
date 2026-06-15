@@ -10,11 +10,11 @@ services:
       MYSQL_DATABASE: mysql-db
     ports:
       - "3306:3306"
-    volumes:
-      # 备份数据
-      - ./mysql-data:/var/lib/mysql
-      # 初始化数据
-      - ./db/commands:/docker-entrypoint-initdb.d
+    # volumes:
+    # 备份数据
+    # - ./mysql-data:/var/lib/mysql
+    # 初始化数据
+    # - ./db/commands:/docker-entrypoint-initdb.d
 
 networks:
   default:
