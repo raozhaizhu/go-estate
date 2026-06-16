@@ -13,8 +13,8 @@ import (
 var testStore Store
 
 func TestMain(m *testing.M) {
-
-	conn, err := sql.Open("mysql", util.DBUrl)
+	cfg := util.InitConfig("../..")
+	conn, err := sql.Open("mysql", cfg.DBSource)
 	if err != nil {
 		log.Fatal("无法连接到数据库", err)
 	}

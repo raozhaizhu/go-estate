@@ -1,12 +1,6 @@
-# 变量
-DB_CONTAINER=mysql_db
-DB_NAME=mysql_db
-DB_USER=root
-DB_PASSWORD=123456
-DB_COMMANDS_DIR=./db/commands/
-CHARSET=--default-character-set=utf8mb4
-DB_URL=mysql://root:123456@tcp(127.0.0.1:3306)/mysql_db
-MIG_DIR=./db/migration
+# 引入全局变量
+include app.env
+export $(shell sed 's/=.*//' app.env)
 
 # migrate
 migrate_create:
@@ -24,6 +18,7 @@ docker_down:
 	docker compose down 
 docker_up:
 	docker compose up -d
+# docker-mysql
 q:
 	cat $(DB_COMMANDS_DIR)q.sql | docker exec -i $(DB_CONTAINER) mysql -u$(DB_USER) -p$(DB_PASSWORD) $(DB_NAME) -t $(CHARSET)
 # init_db:
@@ -35,4 +30,4 @@ q:
 sqlc_gen:
 	sqlc generate
 
-.PHONY: init_db q import_data
+.PHONY: migrate_create migrate_up migrate_up_1 migrate_down migrate_down_1 docker_down docker_up q init_db import_data sqlc_gen
