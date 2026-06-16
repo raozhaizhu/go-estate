@@ -6,11 +6,6 @@ import (
 	"time"
 )
 
-var (
-	MinDate = time.Date(2026, 5, 1, 0, 0, 0, 0, time.UTC)
-	MaxDate = time.Date(2026, 5, 31, 0, 0, 0, 0, time.UTC)
-)
-
 func RandomDate(startDate, endDate time.Time) (time.Time, error) {
 	// endDate 必须大于 startDate
 	if startDate.After(endDate) {
