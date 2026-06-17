@@ -1,8 +1,6 @@
 package db
 
 import (
-	"database/sql"
-	"log"
 	"os"
 	"testing"
 
@@ -14,16 +12,7 @@ var testStore Store
 
 func TestMain(m *testing.M) {
 	cfg := util.InitConfig("../..")
-	conn, err := sql.Open("mysql", cfg.DBSource)
-	if err != nil {
-		log.Fatal("无法连接到数据库", err)
-	}
-
-	if err = conn.Ping(); err != nil {
-		log.Fatal("无法 ping 通数据库", err)
-	}
-
-	testStore = NewStore(conn)
+	testStore = InitStore(cfg.DBSource)
 
 	os.Exit(m.Run())
 }

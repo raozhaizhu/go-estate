@@ -21,8 +21,9 @@ var (
 )
 
 type Config struct {
-	Environment string `mapstructure:"ENVIRONMENT"`
-	DBSource    string `mapstructure:"DB_SOURCE"`
+	Environment  string `mapstructure:"ENVIRONMENT"`
+	DBSource     string `mapstructure:"DB_SOURCE"`
+	MigrationURL string `mapstructure:"MIGRATION_URL"`
 }
 
 func LoadConfig(path string) (config Config, err error) {

@@ -4,15 +4,15 @@ export $(shell sed 's/=.*//' app.env)
 
 # migrate
 migrate_create:
-	migrate create -ext sql -dir $(MIG_DIR) -seq $(name)
+	migrate create -ext sql -dir $(DB_MIG_DIR) -seq $(name)
 migrate_up:
-	migrate -path $(MIG_DIR) -database "$(DB_URL)" -verbose up
+	migrate -path $(DB_MIG_DIR) -database "$(DB_URL)" -verbose up
 migrate_up_1:
-	migrate -path $(MIG_DIR) -database "$(DB_URL)" -verbose up 1
+	migrate -path $(DB_MIG_DIR) -database "$(DB_URL)" -verbose up 1
 migrate_down:
-	migrate -path $(MIG_DIR) -database "$(DB_URL)" -verbose down
+	migrate -path $(DB_MIG_DIR) -database "$(DB_URL)" -verbose down
 migrate_down_1:
-	migrate -path $(MIG_DIR) -database "$(DB_URL)" -verbose down 1
+	migrate -path $(DB_MIG_DIR) -database "$(DB_URL)" -verbose down 1
 # docker
 docker_down:
 	docker compose down 
@@ -29,5 +29,8 @@ q:
 # sqlc
 sqlc_gen:
 	sqlc generate
+# mock
+mock:
+	mockgen -destination=$(DB_MOCK_DIR)/store.go -package=mock_db $(PROJECT_PATH)/db/sqlc Store
 
 .PHONY: migrate_create migrate_up migrate_up_1 migrate_down migrate_down_1 docker_down docker_up q init_db import_data sqlc_gen
