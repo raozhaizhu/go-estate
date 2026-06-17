@@ -1,10 +1,10 @@
 package main
 
 import (
-	"database/sql"
 	"log"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-migrate/migrate/v4"
 	"github.com/raozhaizhu/go-estate/controller"
 	db "github.com/raozhaizhu/go-estate/db/sqlc"
 	"github.com/raozhaizhu/go-estate/router"
@@ -16,6 +16,7 @@ import (
 
 func main() {
 	r := gin.Default()
+	tryMigrateExit()
 	startServer(r)
 
 	if err := r.Run(); err != nil {
@@ -23,20 +24,33 @@ func main() {
 	}
 }
 
+// 开始服务
 func startServer(r *gin.Engine) {
+	// 引入数据库
 	cfg := util.InitConfig(".")
-	conn, err := sql.Open("mysql", cfg.DBSource)
-	if err != nil {
-		log.Fatal("无法连接到数据库", err)
-	}
-
-	if err = conn.Ping(); err != nil {
-		log.Fatal("无法 ping 通数据库", err)
-	}
-
-	store := db.NewStore(conn)
+	store := db.InitStore(cfg.DBSource)
+	// 初始化服务
 	srv := service.NewDailyDataService(store)
 	ctrl := controller.NewDailyDataController(srv)
-
 	router.Setup(r, ctrl)
+}
+
+// 检测参数, 若意图为升级数据库版本, 升级后退出, 不启动 api
+func tryMigrateExit() {
+	cfg := util.InitConfig(".")
+	runDBMigration(cfg.MigrationURL, cfg.DBSource)
+}
+
+// 执行数据库版本升级
+func runDBMigration(migrationURL string, dbSource string) {
+	migration, err := migrate.New(migrationURL, dbSource)
+	if err != nil {
+		log.Fatalf("无法创建migration示例")
+	}
+
+	if err = migration.Up(); err != nil && err != migrate.ErrNoChange {
+		log.Fatalf("数据库版本合并失败")
+	}
+
+	log.Println("数据库版本合并成功")
 }

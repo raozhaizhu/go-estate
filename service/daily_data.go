@@ -13,6 +13,12 @@ type DailyDataService struct {
 	store db.Store
 }
 
+type DailyDataServiceInterface interface {
+	GetDataByDay(ctx context.Context, targetDate time.Time) ([]db.DailyDatum, error)
+	GetDataByPeriod(ctx context.Context, startDate, endDate time.Time) ([]db.DailyDatum, error)
+	GetAllData(ctx context.Context) ([]db.DailyDatum, error)
+}
+
 func NewDailyDataService(store db.Store) *DailyDataService {
 	return &DailyDataService{store: store}
 }
