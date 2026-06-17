@@ -20,3 +20,13 @@ type DailyDatum struct {
 	Area        string         `json:"area"`
 	AvgPrice    sql.NullString `json:"avg_price"`
 }
+
+type User struct {
+	ID                int32     `json:"id"`
+	Username          string    `json:"username"`
+	HashedPassword    string    `json:"hashed_password"`
+	Email             string    `json:"email"`
+	Role              int16     `json:"role"`
+	PasswordChangedAt time.Time `json:"password_changed_at"`
+	CreatedAt         time.Time `json:"created_at"`
+}
