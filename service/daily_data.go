@@ -10,16 +10,16 @@ import (
 )
 
 type DailyDataService struct {
-	store db.Store
+	store DailyDataQuerier
 }
 
-type DailyDataServiceInterface interface {
+type DailyDataQuerier interface {
 	GetDataByDay(ctx context.Context, targetDate time.Time) ([]db.DailyDatum, error)
-	GetDataByPeriod(ctx context.Context, startDate, endDate time.Time) ([]db.DailyDatum, error)
+	GetDataByPeriod(ctx context.Context, arg db.GetDataByPeriodParams) ([]db.DailyDatum, error)
 	GetAllData(ctx context.Context) ([]db.DailyDatum, error)
 }
 
-func NewDailyDataService(store db.Store) *DailyDataService {
+func NewDailyDataService(store DailyDataQuerier) *DailyDataService {
 	return &DailyDataService{store: store}
 }
 
@@ -50,7 +50,6 @@ func (srv *DailyDataService) GetDataByPeriod(ctx context.Context, startDate, end
 		StartDate: startDate,
 		EndDate:   endDate,
 	}
-
 	return srv.store.GetDataByPeriod(ctx, arg)
 }
 

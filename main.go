@@ -29,7 +29,7 @@ func startServer(r *gin.Engine) {
 	// 引入数据库
 	cfg := util.InitConfig(".")
 	store := db.InitStore(cfg.DBSource)
-	// 初始化服务
+	// 初始化daily_data服务
 	srv := service.NewDailyDataService(store)
 	ctrl := controller.NewDailyDataController(srv)
 	router.Setup(r, ctrl)

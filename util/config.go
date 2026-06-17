@@ -9,13 +9,14 @@ import (
 )
 
 const (
-	MinRegion            = 0
-	MaxRegion            = 13
-	DateFormat           = "2006-01-02"
-	MinDateFormatted     = "2026-05-01"
-	MaxDateFormatted     = "2026-05-31"
-	ExpiredDateFormatted = "2026-06-01"
-	InvalidDateFormatted = "?2026-06-01"
+	MinRegion                 = 0
+	MaxRegion                 = 13
+	DateFormat                = "2006-01-02"
+	MinDateFormatted          = "2026-05-01"
+	MaxDateFormatted          = "2026-05-31"
+	ExpiredDateFormatted      = "2026-06-01"
+	SmallInvalidDateFormatted = "?2026-06-01"
+	BigInvalidDateFormatted   = "?2099-06-01"
 
 	DailyDataBaseApiUrl = "/api/v1/daily_data"
 )

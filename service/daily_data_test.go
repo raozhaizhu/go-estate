@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	mock_db "github.com/raozhaizhu/go-estate/db/mock"
 	db "github.com/raozhaizhu/go-estate/db/sqlc"
+	mock_service "github.com/raozhaizhu/go-estate/service/mock"
 	"github.com/raozhaizhu/go-estate/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,7 +16,7 @@ func TestGetDataByDay(t *testing.T) {
 	type testCase struct {
 		name          string
 		inputDate     time.Time
-		buildStubs    func(store *mock_db.MockStore)
+		buildStubs    func(store *mock_service.MockDailyDataQuerier)
 		checkResponse func(t *testing.T, res []db.DailyDatum, err error)
 	}
 	validDate := util.MaxDate
@@ -32,7 +32,7 @@ func TestGetDataByDay(t *testing.T) {
 		{
 			name:       "ErrTimeOutOfRange",
 			inputDate:  invalidDate,
-			buildStubs: func(store *mock_db.MockStore) {}, // 直接拦截, 不触及数据库
+			buildStubs: func(store *mock_service.MockDailyDataQuerier) {}, // 直接拦截, 不触及数据库
 			checkResponse: func(t *testing.T, res []db.DailyDatum, err error) {
 				assert.Error(t, err)
 				assert.ErrorIs(t, err, ErrTimeOutOfRange)
@@ -42,7 +42,7 @@ func TestGetDataByDay(t *testing.T) {
 		{
 			name:      "Success",
 			inputDate: validDate,
-			buildStubs: func(store *mock_db.MockStore) {
+			buildStubs: func(store *mock_service.MockDailyDataQuerier) {
 				store.EXPECT().GetDataByDay(gomock.Any(), validDate).Return(dummyData, nil).Times(1)
 			},
 			checkResponse: func(t *testing.T, res []db.DailyDatum, err error) {
@@ -54,11 +54,11 @@ func TestGetDataByDay(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run("tc.name", func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			storeMock := mock_db.NewMockStore(ctrl)
+			storeMock := mock_service.NewMockDailyDataQuerier(ctrl)
 			srv := NewDailyDataService(storeMock)
 
 			tc.buildStubs(storeMock)
@@ -75,7 +75,7 @@ func TestGetDataByPeriod(t *testing.T) {
 	type testCase struct {
 		name          string
 		inputDate     db.GetDataByPeriodParams
-		buildStubs    func(store *mock_db.MockStore)
+		buildStubs    func(store *mock_service.MockDailyDataQuerier)
 		checkResponse func(t *testing.T, res []db.DailyDatum, err error)
 	}
 	validStartDate := util.MinDate
@@ -93,7 +93,7 @@ func TestGetDataByPeriod(t *testing.T) {
 		{
 			name:       "ErrBadTimerOrder",
 			inputDate:  db.GetDataByPeriodParams{StartDate: invalidEndDate, EndDate: validStartDate},
-			buildStubs: func(store *mock_db.MockStore) {}, // 直接拦截, 不触及数据库
+			buildStubs: func(store *mock_service.MockDailyDataQuerier) {}, // 直接拦截, 不触及数据库
 			checkResponse: func(t *testing.T, res []db.DailyDatum, err error) {
 				assert.Error(t, err)
 				assert.ErrorIs(t, err, ErrBadTimerOrder)
@@ -103,7 +103,7 @@ func TestGetDataByPeriod(t *testing.T) {
 		{
 			name:       "ErrTimeOutOfRange",
 			inputDate:  db.GetDataByPeriodParams{StartDate: validStartDate, EndDate: invalidEndDate},
-			buildStubs: func(store *mock_db.MockStore) {}, // 直接拦截, 不触及数据库
+			buildStubs: func(store *mock_service.MockDailyDataQuerier) {}, // 直接拦截, 不触及数据库
 			checkResponse: func(t *testing.T, res []db.DailyDatum, err error) {
 				assert.Error(t, err)
 				assert.ErrorIs(t, err, ErrTimeOutOfRange)
@@ -113,7 +113,7 @@ func TestGetDataByPeriod(t *testing.T) {
 		{
 			name:       "ErrTimeOutOfRange",
 			inputDate:  db.GetDataByPeriodParams{StartDate: invalidStartDate, EndDate: validEndDate},
-			buildStubs: func(store *mock_db.MockStore) {}, // 直接拦截, 不触及数据库
+			buildStubs: func(store *mock_service.MockDailyDataQuerier) {}, // 直接拦截, 不触及数据库
 			checkResponse: func(t *testing.T, res []db.DailyDatum, err error) {
 				assert.Error(t, err)
 				assert.ErrorIs(t, err, ErrTimeOutOfRange)
@@ -123,7 +123,7 @@ func TestGetDataByPeriod(t *testing.T) {
 		{
 			name:       "ErrTimeOutOfRange",
 			inputDate:  db.GetDataByPeriodParams{StartDate: invalidStartDate, EndDate: invalidEndDate},
-			buildStubs: func(store *mock_db.MockStore) {}, // 直接拦截, 不触及数据库
+			buildStubs: func(store *mock_service.MockDailyDataQuerier) {}, // 直接拦截, 不触及数据库
 			checkResponse: func(t *testing.T, res []db.DailyDatum, err error) {
 				assert.Error(t, err)
 				assert.ErrorIs(t, err, ErrTimeOutOfRange)
@@ -133,8 +133,10 @@ func TestGetDataByPeriod(t *testing.T) {
 		{
 			name:      "Success",
 			inputDate: db.GetDataByPeriodParams{StartDate: validStartDate, EndDate: validEndDate},
-			buildStubs: func(store *mock_db.MockStore) {
-				store.EXPECT().GetDataByPeriod(gomock.Any(), db.GetDataByPeriodParams{StartDate: validStartDate, EndDate: validEndDate}).Return(dummyData, nil).Times(1)
+			buildStubs: func(store *mock_service.MockDailyDataQuerier) {
+				store.EXPECT().GetDataByPeriod(gomock.Any(),
+					db.GetDataByPeriodParams{StartDate: validStartDate, EndDate: validEndDate}).
+					Return(dummyData, nil).Times(1)
 			},
 			checkResponse: func(t *testing.T, res []db.DailyDatum, err error) {
 				assert.NoError(t, err)
@@ -145,11 +147,11 @@ func TestGetDataByPeriod(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run("tc.name", func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			storeMock := mock_db.NewMockStore(ctrl)
+			storeMock := mock_service.NewMockDailyDataQuerier(ctrl)
 			srv := NewDailyDataService(storeMock)
 
 			tc.buildStubs(storeMock)
@@ -166,7 +168,7 @@ func TestGGetAllData(t *testing.T) {
 	type testCase struct {
 		name          string
 		inputDate     time.Time
-		buildStubs    func(store *mock_db.MockStore)
+		buildStubs    func(store *mock_service.MockDailyDataQuerier)
 		checkResponse func(t *testing.T, res []db.DailyDatum, err error)
 	}
 
@@ -177,7 +179,7 @@ func TestGGetAllData(t *testing.T) {
 	testCases := []testCase{
 		{
 			name: "Success",
-			buildStubs: func(store *mock_db.MockStore) {
+			buildStubs: func(store *mock_service.MockDailyDataQuerier) {
 				store.EXPECT().GetAllData(gomock.Any()).Return(dummyData, nil).Times(1)
 			},
 			checkResponse: func(t *testing.T, res []db.DailyDatum, err error) {
@@ -189,11 +191,11 @@ func TestGGetAllData(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run("tc.name", func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			storeMock := mock_db.NewMockStore(ctrl)
+			storeMock := mock_service.NewMockDailyDataQuerier(ctrl)
 			srv := NewDailyDataService(storeMock)
 
 			tc.buildStubs(storeMock)
