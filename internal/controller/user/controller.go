@@ -43,22 +43,20 @@ func (r *GetUserRequest) toSvcParams() service.GetUserInput {
 		Username: r.Username,
 	}
 }
-func (c *UserController) GetUser(ctx *gin.Context) {
+func (c *UserController) GetUser(ctx *gin.Context) (interface{}, error) {
 	var req GetUserRequest
 	// 参数错误
 	if err := ctx.ShouldBindUri(&req); err != nil {
-		response.FailWithBindError(ctx, err)
-		return
+		return nil, response.MarkBindError(err)
 	}
+	// -> svc 获取用户
 	params := req.toSvcParams()
 	data, err := c.service.GetUser(ctx, params)
-	// 自定义错误, 或服务器内部错误
 	if err != nil {
-		response.FailWithError(ctx, err)
-		return
+		return nil, err
 	}
 
-	response.Success(ctx, data)
+	return data, nil
 }
 
 /** ====================================================================================
@@ -79,27 +77,24 @@ func (r *CreateUserRequest) toSvcParams() service.CreateUserInput {
 		Email:    r.Email,
 	}
 }
-func (c *UserController) createUser(ctx *gin.Context, role role.Role) {
+func (c *UserController) createUser(ctx *gin.Context, role role.Role) (interface{}, error) {
 	var req CreateUserRequest
-	// 请求错误
+	// 参数错误
 	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
-		response.FailWithBindError(ctx, err)
-		return
+		return nil, response.MarkBindError(err)
 	}
-	// 构造参数
+	// -> svc 创建用户
 	params := req.toSvcParams()
-	// 创建用户
 	data, err := c.service.CreateUser(ctx, params, role)
 	if err != nil {
-		response.FailWithError(ctx, err)
-		return
+		return nil, err
 	}
 
-	response.Success(ctx, data)
+	return data, nil
 }
 
-func (c *UserController) CreateNormalUser(ctx *gin.Context) {
-	c.createUser(ctx, role.RoleUser)
+func (c *UserController) CreateNormalUser(ctx *gin.Context) (interface{}, error) {
+	return c.createUser(ctx, role.RoleUser)
 }
 
 // func (c *UserController) CreateVip(ctx *gin.Context) {
@@ -109,7 +104,7 @@ func (c *UserController) CreateNormalUser(ctx *gin.Context) {
 /** ====================================================================================
  * 🏁 Patch: UpdateUser
  * =====================================================================================
- * Json: /api/v1/user/:username
+ * Uri & Json: /api/v1/user/:username
  */
 type UpdateUserRequest struct {
 	Username string  `uri:"username" binding:"required,min=1"`
@@ -124,25 +119,21 @@ func (r *UpdateUserRequest) toSvcParams() service.UpdateUserInput {
 		Email:    r.Email,
 	}
 }
-func (c *UserController) UpdateUser(ctx *gin.Context) {
+func (c *UserController) UpdateUser(ctx *gin.Context) (interface{}, error) {
 	var req UpdateUserRequest
 	// 参数错误
 	if err := ctx.ShouldBindUri(&req); err != nil { // 解析 Uri
-		response.FailWithBindError(ctx, err)
-		return
+		return nil, response.MarkBindError(err)
 	}
 	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil { // 解析 Json
-		response.FailWithBindError(ctx, err)
-		return
+		return nil, err
 	}
-	// 尝试更新信息
+	// -> svc 更新用户
 	params := req.toSvcParams()
 	data, err := c.service.UpdateUser(ctx, params)
-	// 自定义错误, 或服务器内部错误
 	if err != nil {
-		response.FailWithError(ctx, err)
-		return
+		return nil, err
 	}
 
-	response.Success(ctx, data)
+	return data, nil
 }

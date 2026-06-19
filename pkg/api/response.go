@@ -22,6 +22,13 @@ type Result struct {
 	Data interface{} `json:"data,omitempty"`
 }
 
+type bindError struct{ error }
+
+// MarkBindError 供 Controller 使用, 标记为参数绑定错误
+func MarkBindError(err error) error {
+	return bindError{err}
+}
+
 // FailWithBindError 处理 req 参数绑定错误
 func FailWithBindError(c *gin.Context, err error) {
 	if validator.Trans == nil {
@@ -49,27 +56,25 @@ func FailWithBindError(c *gin.Context, err error) {
 	})
 }
 
-// caller: FailWithError
-func convertToBizError(err error) *appError.BizError {
-	// 本身就是 BizError，直接返回
-	var bizErr *appError.BizError
-	if errors.As(err, &bizErr) {
-		return bizErr
-	}
-	// 其他未知错误，返回 nil，交给 Caller 处理
-	return nil
-}
-
-// FailWithError 处理自定义错误, 或者服务器内部错误
-func FailWithError(c *gin.Context, err error) {
+// Fail 处理自定义错误, 或者服务器内部错误
+func Fail(c *gin.Context, err error) {
 	log.Printf("[ERROR] 类型: %T | 内容: %v", err, err)
-	// 处理已知错误
-	bizErr := convertToBizError(err)
-	if bizErr != nil {
-		FailWithBizError(c, bizErr)
+
+	// 处理参数错误
+	var bindErr bindError
+	if errors.As(err, &bindErr) {
+		FailWithBindError(c, bindErr.error)
 		return
 	}
-	// 处理未知错误
+
+	// 处理已知错误
+	var bizErr *appError.BizError
+	if errors.As(err, &bizErr) {
+		c.JSON(http.StatusOK, Result{Code: bizErr.Code, Msg: bizErr.Msg})
+		return
+	}
+
+	// 兜底: 处理未知错误
 	log.Printf("未知 [ERROR] 类型: %T | 内容: %v", err, err)
 	c.JSON(http.StatusInternalServerError, Result{
 		Code: appError.CodeServerErr,
@@ -79,8 +84,4 @@ func FailWithError(c *gin.Context, err error) {
 
 func Success(c *gin.Context, data interface{}) {
 	c.JSON(http.StatusOK, Result{Code: 200, Msg: "success", Data: data})
-}
-
-func FailWithBizError(c *gin.Context, err *appError.BizError) {
-	c.JSON(http.StatusOK, Result{Code: err.Code, Msg: err.Msg})
 }

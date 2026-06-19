@@ -20,12 +20,12 @@ func (svc *UserService) CreateUser(ctx context.Context, input CreateUserInput, r
 	if err != nil {
 		return UserDTO{}, err
 	}
-	// 创建用户
+	// -> db 创建用户
 	_, err = svc.store.CreateUser(ctx, params)
 	if err != nil {
 		return UserDTO{}, svc.mapDatabaseError(err)
 	}
-	// 返回用户
+	// -> db 返回用户
 	return svc.toDTO(ctx, params.Username)
 }
 
@@ -35,7 +35,7 @@ func (svc *UserService) CreateUser(ctx context.Context, input CreateUserInput, r
  *
  */
 func (svc *UserService) GetUser(ctx context.Context, input GetUserInput) (UserDTO, error) {
-	// 返回用户
+	// -> db 返回用户
 	return svc.toDTO(ctx, input.Username)
 }
 
@@ -50,13 +50,13 @@ func (svc *UserService) UpdateUser(ctx context.Context, input UpdateUserInput) (
 	if err != nil {
 		return UserDTO{}, err
 	}
-	// 更新用户
+	// -> db 更新用户
 	_, err = svc.store.UpdateUser(ctx, params)
 	if err != nil {
 		return UserDTO{}, svc.mapDatabaseError(err)
 	}
 
-	// 返回用户
+	// -> db 返回用户
 	return svc.toDTO(ctx, params.Username)
 }
 
@@ -76,7 +76,7 @@ func (svc *UserService) mapDatabaseError(err error) error {
 	}
 }
 func (svc *UserService) toDTO(ctx context.Context, username string) (UserDTO, error) {
-	// 查询用户
+	// -> db 查询用户
 	user, err := svc.store.GetUser(ctx, username)
 	if err != nil { // 没查到, 直接返错
 		if db.IsZeroRowsError(err) {
@@ -84,7 +84,7 @@ func (svc *UserService) toDTO(ctx context.Context, username string) (UserDTO, er
 		}
 		return UserDTO{}, err
 	}
-	// 返回用户
+	// -> db 返回用户
 	return UserDTO{
 		ID:       user.ID,
 		Username: user.Username,

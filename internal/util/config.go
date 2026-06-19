@@ -1,18 +1,17 @@
 package util
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/bcrypt"
 )
 
-
 type Config struct {
 	Environment  string `mapstructure:"ENVIRONMENT"`
 	DBSource     string `mapstructure:"DB_SOURCE"`
 	MigrationURL string `mapstructure:"MIGRATION_URL"`
+	SERVER_PORT  string `mapstructure:"SERVER_PORT"`
 }
 
 func LoadConfig(path string) (config Config, err error) {
@@ -24,7 +23,7 @@ func LoadConfig(path string) (config Config, err error) {
 
 	err = viper.ReadInConfig()
 	if err != nil {
-		fmt.Printf("初始化配置错误")
+		log.Fatal("初始化配置错误")
 		return
 	}
 

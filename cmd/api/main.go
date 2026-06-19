@@ -3,11 +3,9 @@ package main
 import (
 	"log"
 
-	"github.com/gin-gonic/gin"
 	"github.com/golang-migrate/migrate/v4"
-	dailyData "github.com/raozhaizhu/go-estate/internal/controller/daily_data"
-	"github.com/raozhaizhu/go-estate/internal/controller/user"
 	db "github.com/raozhaizhu/go-estate/internal/db/sqlc"
+	"github.com/raozhaizhu/go-estate/internal/router"
 	"github.com/raozhaizhu/go-estate/internal/util"
 	"github.com/raozhaizhu/go-estate/pkg/validator"
 
@@ -19,16 +17,13 @@ func main() {
 	cfg := util.InitConfig(".../..")
 	// 初始化数据库
 	store := db.InitStore(cfg.DBSource)
-	// 初始化路由引擎
-	r := gin.Default()
 	// 初始化翻译器
 	validator.InitTrans()
-	// 定义全局版本路由
-	v1 := r.Group("/api/v1")
-	// 挂载模块
-	dailyData.RegisterDailyData(v1, store)
-	user.RegisterUser(v1, store)
 
+	// 初始化路由引擎
+	r := router.SetupRouter(store)
+	// 打印日志
+	log.Printf("服务器运行在端口 :%s...", cfg.SERVER_PORT)
 	if err := r.Run(); err != nil {
 		log.Fatalf("failed to run server: %v", err)
 	}
