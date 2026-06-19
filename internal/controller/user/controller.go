@@ -49,8 +49,9 @@ func (c *UserController) GetUser(ctx *gin.Context) (interface{}, error) {
 	if err := ctx.ShouldBindUri(&req); err != nil {
 		return nil, response.MarkBindError(err)
 	}
-	// -> svc 获取用户
+	// 参数转换
 	params := req.toSvcParams()
+	// -> svc 获取用户
 	data, err := c.service.GetUser(ctx, params)
 	if err != nil {
 		return nil, err

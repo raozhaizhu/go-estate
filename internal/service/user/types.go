@@ -47,7 +47,7 @@ type CreateUserInput struct {
 	Email    string
 }
 
-func (input *CreateUserInput) toParams(role role.Role) (db.CreateUserParams, error) {
+func (input *CreateUserInput) toDBParams(role role.Role) (db.CreateUserParams, error) {
 	// 角色类型必须合法
 	if !role.IsValid() {
 		return db.CreateUserParams{}, ErrBadRole
@@ -89,7 +89,7 @@ type UpdateUserInput struct {
 	Email    *string
 }
 
-func (input *UpdateUserInput) toParams() (db.UpdateUserParams, error) {
+func (input *UpdateUserInput) toDBParams() (db.UpdateUserParams, error) {
 	params := db.UpdateUserParams{
 		Username: input.Username,
 	}

@@ -16,7 +16,7 @@ import (
 
 func (svc *UserService) CreateUser(ctx context.Context, input CreateUserInput, role role.Role) (UserDTO, error) {
 	// 初始化参数
-	params, err := input.toParams(role)
+	params, err := input.toDBParams(role)
 	if err != nil {
 		return UserDTO{}, err
 	}
@@ -46,7 +46,7 @@ func (svc *UserService) GetUser(ctx context.Context, input GetUserInput) (UserDT
  */
 func (svc *UserService) UpdateUser(ctx context.Context, input UpdateUserInput) (UserDTO, error) {
 	// 转换参数
-	params, err := input.toParams()
+	params, err := input.toDBParams()
 	if err != nil {
 		return UserDTO{}, err
 	}
