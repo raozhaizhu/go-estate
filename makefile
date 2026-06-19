@@ -27,8 +27,17 @@ sqlc_gen:
 	sqlc generate
 # mock
 mock:
-	mockgen -destination=$(DB_DIR)/mock/store.go -package=mock_db $(PROJECT_PATH)/db/sqlc Store && \
-	mockgen -destination=$(SERVICE_DIR)/mock/service.go -package=mock_service $(PROJECT_PATH)/service DailyDataQuerier && \
-	mockgen -destination=$(CONTROLLER_DIR)/mock/controller.go -package=mock_controller $(PROJECT_PATH)/controller DailyDataQuerier
+	mockgen -destination=$(DB_DIR)/mock/store.go -package=mock_db $(PROJECT_INTERNAL_PATH)/db/sqlc Store && \
+	mockgen -destination=$(DAILY_DATA_SERVICE_DIR)/mock/service.go -package=mock_service $(DAILY_DATA_SERVICE_PATH) DailyDataQuerier && \
+	mockgen -destination=$(DAILY_DATA_CONTROLLER_DIR)/mock/controller.go -package=mock_controller $(DAILY_DATA_CONTROLLER_PATH) DailyDataQuerier
 
-.PHONY: migrate_create migrate_up migrate_up_1 migrate_down migrate_down_1 docker_down docker_up q sqlc_gen
+# test
+test:
+	go test -cover -race -count=1 $(DAILY_DATA_SERVICE_DIR)
+	go test -cover -race -count=1 $(DAILY_DATA_CONTROLLER_DIR)
+	go test -cover -race -count=1 $(DB_SQLC_DIR)
+
+
+.PHONY: migrate_create migrate_up migrate_up_1 migrate_down migrate_down_1
+.PHONY: docker_down docker_up q
+.PHONY: sqlc_gen mock test
