@@ -5,9 +5,9 @@ SET
 --         *
 -- FROM
 --         daily_data
-SELECT
-        *
-FROM
-        users
-WHERE
-        username = 'Wrong'
+-- SELECT
+--         *
+-- FROM
+--         users
+-- WHERE
+--         username = 'Wrong'

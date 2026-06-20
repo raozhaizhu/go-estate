@@ -6,7 +6,7 @@ import (
 
 	db "github.com/raozhaizhu/go-estate/internal/db/sqlc"
 	dailyData "github.com/raozhaizhu/go-estate/internal/domain/daily_data"
-	appError "github.com/raozhaizhu/go-estate/pkg/apperror"
+	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 )
 
 /** ====================================================================================
@@ -16,16 +16,16 @@ import (
  */
 
 type DailyDataService struct {
-	db DailyDataQuerier
+	db DailyDataStore
 }
 
-type DailyDataQuerier interface {
+type DailyDataStore interface {
 	GetDataByDay(ctx context.Context, targetDate time.Time) ([]db.DailyDatum, error)
 	GetDataByPeriod(ctx context.Context, arg db.GetDataByPeriodParams) ([]db.DailyDatum, error)
 	GetAllData(ctx context.Context) ([]db.DailyDatum, error)
 }
 
-func NewDailyDataService(store DailyDataQuerier) *DailyDataService {
+func NewDailyDataService(store DailyDataStore) *DailyDataService {
 	return &DailyDataService{db: store}
 }
 

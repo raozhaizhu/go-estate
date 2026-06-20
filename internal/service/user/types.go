@@ -8,45 +8,51 @@ import (
 	db "github.com/raozhaizhu/go-estate/internal/db/sqlc"
 	role "github.com/raozhaizhu/go-estate/internal/domain/user"
 	"github.com/raozhaizhu/go-estate/internal/util"
-	appError "github.com/raozhaizhu/go-estate/pkg/apperror"
+	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 )
 
 /** ====================================================================================
  * 🏁 UserService
  * =====================================================================================
- *
  */
+
+// UserService 用户服务
 type UserService struct {
-	store UserQuerier
+	store UserStore
 }
 
-type UserQuerier interface {
+// UserStore 用户数据库
+type UserStore interface {
 	CreateUser(ctx context.Context, arg db.CreateUserParams) (sql.Result, error)
 	GetUser(ctx context.Context, username string) (db.User, error)
 	UpdateUser(ctx context.Context, arg db.UpdateUserParams) (sql.Result, error)
 }
 
-func NewUserService(store UserQuerier) *UserService {
+// NewUserService 返回用户服务指针
+func NewUserService(store UserStore) *UserService {
 	return &UserService{store: store}
 }
 
 type UserDTO struct {
-	ID       int32  `json:"id"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
+	ID       int32     `json:"id"`
+	Username string    `json:"username"`
+	Email    string    `json:"email"`
+	Role     role.Role `json:"role"`
 }
 
 /** ====================================================================================
  * 🏁 CreateUser
  * =====================================================================================
- *
  */
+
+// CreateUserInput
 type CreateUserInput struct {
 	Username string
 	Password string
 	Email    string
 }
 
+// toDBParams
 func (input *CreateUserInput) toDBParams(role role.Role) (db.CreateUserParams, error) {
 	// 角色类型必须合法
 	if !role.IsValid() {
@@ -71,8 +77,9 @@ func (input *CreateUserInput) toDBParams(role role.Role) (db.CreateUserParams, e
 /** ====================================================================================
  * 🏁 GetUser
  * =====================================================================================
- *
  */
+
+// GetUserInput
 type GetUserInput struct {
 	Username string
 }
@@ -80,8 +87,9 @@ type GetUserInput struct {
 /** ====================================================================================
  * 🏁 UpdateUser
  * =====================================================================================
- *
  */
+
+// UpdateUserInput
 type UpdateUserInput struct {
 	Username string
 
@@ -89,6 +97,7 @@ type UpdateUserInput struct {
 	Email    *string
 }
 
+// toDBParams
 func (input *UpdateUserInput) toDBParams() (db.UpdateUserParams, error) {
 	params := db.UpdateUserParams{
 		Username: input.Username,

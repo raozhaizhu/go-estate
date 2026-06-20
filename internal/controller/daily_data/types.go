@@ -7,38 +7,38 @@ import (
 	db "github.com/raozhaizhu/go-estate/internal/db/sqlc"
 	dailyData "github.com/raozhaizhu/go-estate/internal/domain/daily_data"
 	service "github.com/raozhaizhu/go-estate/internal/service/daily_data"
-	appError "github.com/raozhaizhu/go-estate/pkg/apperror"
+	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 )
 
 /** ====================================================================================
  * 🏁 DailyDataController
  * =====================================================================================
- *
  */
-type DailyDataQuerier interface {
+
+type DailyDataService interface {
 	GetDataByDay(ctx context.Context, p service.GetDataByDayInput) ([]db.DailyDatum, error)
 	GetDataByPeriod(ctx context.Context, p service.GetDataByPeriodInput) ([]db.DailyDatum, error)
 	GetAllData(ctx context.Context) ([]db.DailyDatum, error)
 }
 
 type DailyDataController struct {
-	service DailyDataQuerier
+	service DailyDataService
 }
 
-func NewDailyDataController(svc DailyDataQuerier) *DailyDataController {
+func NewDailyDataController(svc DailyDataService) *DailyDataController {
 	return &DailyDataController{service: svc}
 }
 
 /** ====================================================================================
  * 🏁 GetDataByDay
  * =====================================================================================
- *
  */
+
 type GetDataByDayRequest struct {
-	DateStr string `form:"date" binding:"required"`
+	DateStr string `form:"date" binding:"required,datetime=2006-01-2"`
 }
 
-func (r *GetDataByDayRequest) toSvcParams() (service.GetDataByDayInput, error) {
+func (r *GetDataByDayRequest) toSvcInput() (service.GetDataByDayInput, error) {
 	// 转换为标准日期字符串
 	targetTime, err := time.Parse(dailyData.DateFormat, r.DateStr)
 	// 已知错误: 查询日期格式错误
@@ -52,15 +52,14 @@ func (r *GetDataByDayRequest) toSvcParams() (service.GetDataByDayInput, error) {
 /** ====================================================================================
  * 🏁 GetDataByPeriod
  * =====================================================================================
- *
  */
 
 type GetDataByPeriodRequest struct {
-	StartDateStr string `form:"start" binding:"required"`
-	EndDateStr   string `form:"end" binding:"required"`
+	StartDateStr string `form:"start" binding:"required,datetime=2006-01-2"`
+	EndDateStr   string `form:"end" binding:"required,datetime=2006-01-2"`
 }
 
-func (r *GetDataByPeriodRequest) toSvcParams() (service.GetDataByPeriodInput, error) {
+func (r *GetDataByPeriodRequest) toSvcInput() (service.GetDataByPeriodInput, error) {
 	// 转换为标准日期字符串
 	// 已知错误: 开始日期格式错误
 	start, err := time.Parse(dailyData.DateFormat, r.StartDateStr)
@@ -78,5 +77,4 @@ func (r *GetDataByPeriodRequest) toSvcParams() (service.GetDataByPeriodInput, er
 /** ====================================================================================
  * 🏁 GetAllData
  * =====================================================================================
- *
  */

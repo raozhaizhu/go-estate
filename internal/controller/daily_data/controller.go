@@ -8,8 +8,9 @@ import (
 /** ====================================================================================
  * 🏁 GetDataByDay
  * =====================================================================================
- *
  */
+
+// GetDataByDay 按日获取楼盘成交数据
 func (c *DailyDataController) GetDataByDay(ctx *gin.Context) (interface{}, error) {
 	var req GetDataByDayRequest
 	// 参数错误
@@ -17,12 +18,12 @@ func (c *DailyDataController) GetDataByDay(ctx *gin.Context) (interface{}, error
 		return nil, response.MarkBindError(err)
 	}
 	// 参数转换
-	params, err := req.toSvcParams()
+	input, err := req.toSvcInput()
 	if err != nil {
 		return nil, err
 	}
 	// -> svc 获得日成交数据
-	data, err := c.service.GetDataByDay(ctx, params)
+	data, err := c.service.GetDataByDay(ctx, input)
 	if err != nil {
 		return nil, err
 	}
@@ -33,8 +34,9 @@ func (c *DailyDataController) GetDataByDay(ctx *gin.Context) (interface{}, error
 /** ====================================================================================
  * 🏁 GetDataByPeriod
  * =====================================================================================
- *
  */
+
+// GetDataByPeriod 按周期获取楼盘成交数据
 func (c *DailyDataController) GetDataByPeriod(ctx *gin.Context) (interface{}, error) {
 	var req GetDataByPeriodRequest
 	// 参数错误
@@ -42,7 +44,7 @@ func (c *DailyDataController) GetDataByPeriod(ctx *gin.Context) (interface{}, er
 		return nil, response.MarkBindError(err)
 	}
 	// 参数转换
-	params, err := req.toSvcParams()
+	params, err := req.toSvcInput()
 	if err != nil {
 		return nil, err
 
@@ -60,8 +62,9 @@ func (c *DailyDataController) GetDataByPeriod(ctx *gin.Context) (interface{}, er
 /** ====================================================================================
  * 🏁 GetAllData
  * =====================================================================================
- *
  */
+
+// GetAllData 获取所有楼盘成交数据
 func (c *DailyDataController) GetAllData(ctx *gin.Context) (interface{}, error) {
 	// -> svc 获得所有数据
 	data, err := c.service.GetAllData(ctx)

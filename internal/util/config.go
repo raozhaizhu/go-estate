@@ -2,16 +2,20 @@ package util
 
 import (
 	"log"
+	"time"
 
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type Config struct {
-	Environment  string `mapstructure:"ENVIRONMENT"`
-	DBSource     string `mapstructure:"DB_SOURCE"`
-	MigrationURL string `mapstructure:"MIGRATION_URL"`
-	SERVER_PORT  string `mapstructure:"SERVER_PORT"`
+	Environment          string        `mapstructure:"ENVIRONMENT"`
+	DBSource             string        `mapstructure:"DB_SOURCE"`
+	MigrationURL         string        `mapstructure:"MIGRATION_URL"`
+	ServerPort           string        `mapstructure:"SERVER_PORT"`
+	TokenSymmetricKey    string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
+	AccessTokenDuration  time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
+	RefreshTokenDuration time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
 }
 
 func LoadConfig(path string) (config Config, err error) {

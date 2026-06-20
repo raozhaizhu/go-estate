@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	val "github.com/go-playground/validator/v10"
-	appError "github.com/raozhaizhu/go-estate/pkg/apperror"
+	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 	"github.com/raozhaizhu/go-estate/pkg/validator"
 )
 

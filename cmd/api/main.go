@@ -5,9 +5,8 @@ import (
 
 	"github.com/golang-migrate/migrate/v4"
 	db "github.com/raozhaizhu/go-estate/internal/db/sqlc"
-	"github.com/raozhaizhu/go-estate/internal/router"
+	"github.com/raozhaizhu/go-estate/internal/server"
 	"github.com/raozhaizhu/go-estate/internal/util"
-	"github.com/raozhaizhu/go-estate/pkg/validator"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -15,22 +14,24 @@ import (
 func main() {
 	// 加载配置
 	cfg := util.InitConfig(".../..")
+
 	// 初始化数据库
 	store := db.InitStore(cfg.DBSource)
-	// 初始化翻译器
-	validator.InitTrans()
 
-	// 初始化路由引擎
-	r := router.SetupRouter(store)
-	// 打印日志
-	log.Printf("服务器运行在端口 :%s...", cfg.SERVER_PORT)
-	if err := r.Run(); err != nil {
-		log.Fatalf("failed to run server: %v", err)
+	// 初始化服务器
+	srv, err := server.NewServer(cfg, store)
+	if err != nil {
+		log.Fatal("服务器初始化失败: %w", err)
+	}
+
+	// 运行服务器在指定端口
+	err = srv.Start(cfg.ServerPort)
+	if err != nil {
+		log.Fatal("服务器运行失败: %w", err)
 	}
 }
 
-// 执行数据库版本升级
-// tryMigrateExit(cfg.MigrationURL, cfg.DBSource)
+// tryMigrateExit 执行数据库版本升级
 func tryMigrateExit(migrationURL string, dbSource string) {
 	migration, err := migrate.New(migrationURL, dbSource)
 	if err != nil {

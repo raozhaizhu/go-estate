@@ -4,12 +4,16 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
+	"github.com/raozhaizhu/go-estate/internal/controller/auth"
 	dailyData "github.com/raozhaizhu/go-estate/internal/controller/daily_data"
 	"github.com/raozhaizhu/go-estate/internal/controller/user"
 	db "github.com/raozhaizhu/go-estate/internal/db/sqlc"
+	"github.com/raozhaizhu/go-estate/internal/middleware"
+	"github.com/raozhaizhu/go-estate/internal/util"
+	"github.com/raozhaizhu/go-estate/pkg/token"
 )
 
-func SetupRouter(store db.Store) *gin.Engine {
+func SetupRouter(store db.Store, config util.Config, tokenMaker token.Maker) *gin.Engine {
 	// 初始化路由引擎
 	r := gin.New()
 
@@ -22,11 +26,20 @@ func SetupRouter(store db.Store) *gin.Engine {
 	})
 
 	// 定义全局版本路由
-	v1 := r.Group("/api/v1")
+	v1Api := "/api/v1"
+
+	// 初始化公开路由
+	publicGroup := r.Group(v1Api)
+
+	// 初始化受保护路由
+	authMiddleware := middleware.AuthMiddleware(tokenMaker) // 初始化认证中间件
+	protectedGroup := r.Group(v1Api)
+	protectedGroup.Use(authMiddleware)
 
 	// 挂载模块
-	dailyData.RegisterDailyData(v1, store)
-	user.RegisterUser(v1, store)
+	dailyData.RegisterDailyData(protectedGroup, store)        // dailyData 模块必须登录才能访问
+	user.RegisterUser(protectedGroup, store)                  // user 模块必须登录才能访问
+	auth.RegisterAuth(publicGroup, store, config, tokenMaker) // auth 模块可公开访问(需要登录)
 
 	if err := r.Run(); err != nil {
 		log.Fatalf("failed to run server: %v", err)
