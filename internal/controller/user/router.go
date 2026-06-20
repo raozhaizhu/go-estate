@@ -7,17 +7,22 @@ import (
 	response "github.com/raozhaizhu/go-estate/pkg/api"
 )
 
-func RegisterUser(protectedGroup *gin.RouterGroup, store db.Store) {
+func RegisterUser(publicGroup *gin.RouterGroup, protectedGroup *gin.RouterGroup, store db.Store) {
 	svc := user.NewUserService(store)
 	ctrl := NewUserController(svc)
 
-	userGroup := protectedGroup.Group("/user")
+	// 创建普通用户可公开访问
+	userPublicGroup := publicGroup.Group("/user")
 	{
-		// User/Vip: 只能查本人数据; Admin: 可以查所有人数据
-		userGroup.GET("/:username", response.Wrapper(ctrl.GetUser))
-		// User: 任何人都可以创建; Vip: 只有 Admin 可以创建; Admin: 任何人都不得创建
-		userGroup.POST("", response.Wrapper(ctrl.CreateNormalUser))
-		// User/Vip: 只能更新本人数据; Admin: 可以更新所有人数据
-		userGroup.PATCH("/:username", response.Wrapper(ctrl.UpdateUser))
+		userPublicGroup.POST("", response.Wrapper(ctrl.CreateNormalUser))
 	}
+
+	// 创建 vip 用户, 查询/更新信息, 需要登录访问
+	userProtectedGroup := protectedGroup.Group("/user")
+	{
+		userProtectedGroup.POST("/vip", response.Wrapper(ctrl.CreateVip))
+		userProtectedGroup.GET("/:username", response.Wrapper(ctrl.GetUser))
+		userProtectedGroup.PATCH("/:username", response.Wrapper(ctrl.UpdateUser))
+	}
+
 }

@@ -43,9 +43,9 @@ func (c *UserController) CreateNormalUser(ctx *gin.Context) (interface{}, error)
 	return c.createUser(ctx, role.RoleUser)
 }
 
-// func (c *UserController) CreateVip(ctx *gin.Context) {
-// 	c.createUser(ctx, role.RoleVip)
-// }
+func (c *UserController) CreateVip(ctx *gin.Context) (interface{}, error) {
+	return c.createUser(ctx, role.RoleVip)
+}
 
 func (c *UserController) createUser(ctx *gin.Context, role role.Role) (interface{}, error) {
 	var req CreateUserRequest

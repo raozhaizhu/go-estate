@@ -46,8 +46,8 @@ const (
 	CodeEmailAlreadyExits                            // 邮箱已存在
 
 	// 500 内部错误
-	CodeServerErr = CodeGroupServer + iota // 服务器内部错误
-	CodeWrongSizeKey
+	CodeServerErr    = CodeGroupServer + iota // 服务器内部错误
+	CodeWrongSizeKey                          // 密钥尺寸错误
 )
 
 type BizError struct {
@@ -89,6 +89,7 @@ var (
 	ErrEmailAlreadyExits = New(CodeEmailAlreadyExits, "该邮箱已经存在")
 
 	// 500 服务器内部错误
+	ErrServerErr = New(CodeServerErr, "服务器内部错误")
 )
 
 func NewInvalidKeySizeError(actual, minSize int) error {
