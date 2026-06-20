@@ -1,2 +1,0 @@
-TRUNCATE TABLE IF EXISTS daily_data;
-
