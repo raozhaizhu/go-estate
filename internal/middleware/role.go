@@ -10,6 +10,7 @@ import (
 	"github.com/raozhaizhu/go-estate/pkg/token"
 )
 
+// RoleMiddleware 校验权限,
 func RoleMiddleware(allowedRoles []role.Role) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// 获取荷载

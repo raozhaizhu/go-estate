@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -19,7 +18,7 @@ func AuthMiddleware(tokenMaker token.Maker) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// 获取验证头
 		authHeader := ctx.GetHeader("Authorization")
-		log.Println(authHeader)
+		log.Println("authHeader: ", authHeader)
 		if len(authHeader) == 0 { // 认证头不存在
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, appError.ErrAuthNoHeader)
 			return
@@ -37,9 +36,7 @@ func AuthMiddleware(tokenMaker token.Maker) gin.HandlerFunc {
 
 		// 校验令牌
 		payload, err := tokenMaker.VerifyToken(accessToken, token.TokenTypeAccessToken)
-		// fmt.Println(payload.Username)
-		// fmt.Println(payload.Role)
-		fmt.Println(payload)
+		log.Println("payload: ", payload)
 		if err != nil { // 令牌无效或过期
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, err)
 			return

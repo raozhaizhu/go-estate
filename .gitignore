@@ -2,5 +2,6 @@ ignore/
 mysql_data/
 node_modules/
 data-volume/
-app.env
 tmp/
+
+app.env

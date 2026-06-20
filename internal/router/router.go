@@ -38,8 +38,8 @@ func SetupRouter(store db.Store, config util.Config, tokenMaker token.Maker) *gi
 
 	// 挂载模块
 	dailyData.RegisterDailyData(protectedGroup, store)        // dailyData 模块必须登录才能访问
-	user.RegisterUser(protectedGroup, store)                  // user 模块必须登录才能访问
-	auth.RegisterAuth(publicGroup, store, config, tokenMaker) // auth 模块可公开访问(需要登录)
+	user.RegisterUser(publicGroup, protectedGroup, store)     // user 模块可公开访问, 部分需登录
+	auth.RegisterAuth(publicGroup, store, config, tokenMaker) // auth 模块可公开访问
 
 	if err := r.Run(); err != nil {
 		log.Fatalf("failed to run server: %v", err)
