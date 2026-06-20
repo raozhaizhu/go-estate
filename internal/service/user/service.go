@@ -34,7 +34,6 @@ func (svc *UserService) CreateUser(ctx context.Context, input CreateUserInput, r
 	if err != nil {
 		return UserDTO{}, svc.mapDBError(err)
 	}
-
 	// -> db 返回用户
 	return svc.getUserDTO(ctx, params.Username)
 }
