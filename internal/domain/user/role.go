@@ -1,4 +1,4 @@
-package role
+package userDomain
 
 type Role int16
 

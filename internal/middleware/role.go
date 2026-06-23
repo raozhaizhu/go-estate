@@ -10,11 +10,12 @@ import (
 	"github.com/raozhaizhu/go-estate/pkg/token"
 )
 
-// RoleMiddleware 校验权限,
+// RoleMiddleware 角色权限认证中间件
+// 校验用户所在的权限组, 是否有权访问这个 api
 func RoleMiddleware(allowedRoles []role.Role) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// 获取荷载
-		payload, ok := ctx.Get(PayloadKey)
+		payload, ok := ctx.Get(token.PayloadKey)
 		if !ok {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, appError.ErrAuthRequired)
 			return

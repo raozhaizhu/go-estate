@@ -1,276 +1,412 @@
 package dailyData
 
-// import (
-// 	"encoding/json"
-// 	"fmt"
-// 	"net/http"
-// 	"net/http/httptest"
-// 	"testing"
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"testing"
 
-// 	"github.com/gin-gonic/gin"
-// 	"github.com/golang/mock/gomock"
+	"github.com/gin-gonic/gin"
+	"github.com/golang/mock/gomock"
 
-// 	mock_controller "github.com/raozhaizhu/go-estate/internal/controller/daily_data/mock"
-// 	db "github.com/raozhaizhu/go-estate/internal/db/sqlc"
-// 	dailyData "github.com/raozhaizhu/go-estate/internal/domain/daily_data"
-// 	service "github.com/raozhaizhu/go-estate/internal/service/daily_data"
-// 	"github.com/stretchr/testify/assert"
-// )
+	mock_controller "github.com/raozhaizhu/go-estate/internal/controller/daily_data/mock"
+	db "github.com/raozhaizhu/go-estate/internal/db/sqlc"
+	dailyData "github.com/raozhaizhu/go-estate/internal/domain/daily_data"
+	role "github.com/raozhaizhu/go-estate/internal/domain/user"
+	"github.com/raozhaizhu/go-estate/internal/middleware"
+	service "github.com/raozhaizhu/go-estate/internal/service/daily_data"
+	response "github.com/raozhaizhu/go-estate/pkg/api"
+	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
+	"github.com/raozhaizhu/go-estate/pkg/token"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
 
-// func TestGetDataByDay(t *testing.T) {
-// 	type testCase struct {
-// 		name          string
-// 		inputQuery    string
-// 		buildStubs    func(svc *mock_controller.MockDailyDataQuerier)
-// 		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
-// 	}
-// 	emptyDate := ""
-// 	validDate := dailyData.MinDate
+func TestGetDataByDay(t *testing.T) {
+	type testCase struct {
+		name             string
+		date             string
+		buildStubs       func(svc *mock_controller.MockService)
+		expectedHTTPCode int
+		expectedBizCode  int
+		expectedMsg      string
+		payload          *token.Payload
+	}
+	emptyDate := ""
+	malformedDate := dailyData.MalformedSmallDate
 
-// 	validDateQuery := fmt.Sprintf("date=%s", dailyData.MinDateFormatted)
-// 	invalidFormatQuery := fmt.Sprintf("date=%s", dailyData.SmallInvalidDateFormatted)
+	validDate := dailyData.MinDate
+	validDateStr := dailyData.MinDateStr
 
-// 	expiredDate := dailyData.ExpiredDate
-// 	expiredDateFormattedQuery := fmt.Sprintf("date=%s", dailyData.ExpiredDateFormatted)
+	expiredDate := dailyData.ExpiredDate
+	expiredDateStr := dailyData.ExpiredDateStr
 
-// 	dummyData := []db.DailyDatum{
-// 		{
-// 			ID: 1,
-// 		},
-// 	}
+	dummyData := []db.DailyDatum{
+		{
+			ID: 1,
+		},
+	}
 
-// 	testCases := []testCase{
-// 		{
-// 			name:       "ErrEmptyDate",
-// 			inputQuery: emptyDate,
-// 			buildStubs: func(svc *mock_controller.MockDailyDataQuerier) {}, // 直接拦截, 不触及数据库
-// 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-// 				assert.Equal(t, http.StatusBadRequest, recorder.Code)      // 校验状态码400
-// 				assert.JSONEq(t, ErrEmptyDateJson, recorder.Body.String()) // 校验 json 符合预期
-// 			},
-// 		},
-// 		{
-// 			name:       "ErrInvalidDateFormStr",
-// 			inputQuery: invalidFormatQuery,
-// 			buildStubs: func(svc *mock_controller.MockDailyDataQuerier) {}, // 直接拦截, 不触及数据库
-// 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-// 				assert.Equal(t, http.StatusBadRequest, recorder.Code)            // 校验状态码400
-// 				assert.JSONEq(t, ErrInvalidDateFormJson, recorder.Body.String()) // 校验 json 符合预期
-// 			},
-// 		},
-// 		{
-// 			name:       "ErrTimeOutOfRange",
-// 			inputQuery: expiredDateFormattedQuery,
-// 			buildStubs: func(svc *mock_controller.MockDailyDataQuerier) {
-// 				svc.EXPECT().GetDataByDay(gomock.Any(),
-// 					service.GetDataByDayParams{expiredDate}).
-// 					Return(nil, service.ErrTimeOutOfRange).Times(1)
-// 			},
-// 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-// 				assert.Equal(t, http.StatusBadRequest, recorder.Code)                   // 校验状态码400
-// 				assert.JSONEq(t, service.ErrTimeOutOfRangeJson, recorder.Body.String()) // 校验 json 符合预期
-// 			},
-// 		},
-// 		{
-// 			name:       "Success",
-// 			inputQuery: validDateQuery,
-// 			buildStubs: func(svc *mock_controller.MockDailyDataQuerier) {
-// 				svc.EXPECT().GetDataByDay(gomock.Any(),
-// 					service.GetDataByDayParams{validDate}).
-// 					Return(dummyData, nil).Times(1)
-// 			},
-// 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-// 				assert.Equal(t, http.StatusOK, recorder.Code)
-// 				dateBytes, err := json.Marshal(dummyData)
-// 				assert.NoError(t, err)                                      // 校验状态码 200
-// 				assert.JSONEq(t, string(dateBytes), recorder.Body.String()) // 校验 json 符合预期
-// 			},
-// 		},
-// 	}
+	testCases := []testCase{
+		{
+			name: "无 Token 访问 GetDataByDay",
+			buildStubs: func(svc *mock_controller.MockService) {
+				svc.EXPECT().GetDataByDay(gomock.Any(), gomock.Any()).Times(0)
+			},
+			expectedHTTPCode: 401,
+			expectedBizCode:  appError.ErrAuthRequired.Code,
+			expectedMsg:      appError.ErrAuthRequired.Msg,
+		},
+		{
+			name: "不填 query",
+			date: emptyDate,
+			buildStubs: func(svc *mock_controller.MockService) {
+				svc.EXPECT().GetDataByDay(gomock.Any(), gomock.Any()).Times(0)
+			}, expectedHTTPCode: 400,
+			expectedBizCode: 40000,
+			expectedMsg:     "Date为必填字段",
+			payload:         userPayload,
+		},
+		{
+			name: "query 日期格式错误",
+			date: malformedDate,
+			buildStubs: func(svc *mock_controller.MockService) {
+				svc.EXPECT().GetDataByDay(gomock.Any(), gomock.Any()).Times(0)
+			}, expectedHTTPCode: 400,
+			expectedBizCode: 40000,
+			expectedMsg:     "Date的格式必须是2006-01-02",
+			payload:         userPayload,
+		},
+		{
+			name: "query 日期超出范围",
+			date: expiredDateStr,
+			buildStubs: func(svc *mock_controller.MockService) {
+				svc.EXPECT().GetDataByDay(gomock.Any(),
+					service.GetDataByDayInput{expiredDate}).
+					Return(nil, appError.ErrTimeOutOfRange).Times(1)
+			},
+			expectedHTTPCode: 200,
+			expectedBizCode:  appError.ErrTimeOutOfRange.Code,
+			expectedMsg:      appError.ErrTimeOutOfRange.Msg,
+			payload:          userPayload,
+		},
+		{
+			name: "Success",
+			date: validDateStr,
+			buildStubs: func(svc *mock_controller.MockService) {
+				svc.EXPECT().GetDataByDay(gomock.Any(),
+					service.GetDataByDayInput{validDate}).
+					Return(dummyData, nil).Times(1)
+			},
+			expectedHTTPCode: 200,
+			expectedBizCode:  200,
+			expectedMsg:      "success",
+			payload:          userPayload,
+		},
+	}
 
-// 	for _, tc := range testCases {
-// 		t.Run(tc.name, func(t *testing.T) {
-// 			ctrl := gomock.NewController(t)
-// 			defer ctrl.Finish()
-// 			// 构建 svc, ctrl
-// 			svcMock := mock_controller.NewMockDailyDataQuerier(ctrl)
-// 			controller := NewDailyDataController(svcMock)
-// 			//  svc打桩
-// 			tc.buildStubs(svcMock)
-// 			//  初始化 recorder, ctx, router
-// 			w := httptest.NewRecorder()
-// 			ctx, router := gin.CreateTestContext(w)
-// 			// 挂载 api
-// 			router.GET(dailyData.DailyDataDayUrl, controller.GetDataByDay)
-// 			// 构建 req
-// 			reqUrl := fmt.Sprintf("%s?%s", dailyData.DailyDataDayUrl, tc.inputQuery)
-// 			// t.Logf("====== 🚀 当前请求的 URL 是: %s ======", reqUrl)
-// 			req, err := http.NewRequest(http.MethodGet, reqUrl, nil)
-// 			assert.NoError(t, err)
-// 			// writer 服务 req
-// 			ctx.Request = req
-// 			router.ServeHTTP(w, req)
-// 			// 检查结果
-// 			tc.checkResponse(t, w)
-// 		})
-// 	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			// 构建 svc, ctrl
+			svcMock := mock_controller.NewMockService(ctrl)
+			controller := NewDailyDataController(svcMock)
 
-// }
+			//  svc打桩
+			tc.buildStubs(svcMock)
 
-// func TestGetDataByPeriod(t *testing.T) {
-// 	type testCase struct {
-// 		name          string
-// 		inputQuery    string
-// 		buildStubs    func(svc *mock_controller.MockDailyDataQuerier)
-// 		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
-// 	}
-// 	emptyDate := ""
-// 	startDate := dailyData.MinDate
-// 	endDate := dailyData.MaxDate
+			//  初始化 recorder, ctx, router
+			w := httptest.NewRecorder()
+			ctx, router := setupTestRouter(controller, tc.payload)
 
-// 	validDateQuery := fmt.Sprintf("start=%s&end=%s", dailyData.MinDateFormatted, dailyData.MaxDateFormatted)
-// 	invalidFormatQuery := fmt.Sprintf("start=%s&end=%s", dailyData.SmallInvalidDateFormatted, dailyData.BigInvalidDateFormatted)
+			// 构建 req
+			reqUrl := fmt.Sprintf("%s?date=%s", dailyData.DailyDataDayUrl, tc.date)
+			req, err := http.NewRequest(http.MethodGet, reqUrl, nil)
+			assert.NoError(t, err)
 
-// 	expiredDate := dailyData.ExpiredDate
-// 	expiredDateFormattedQuery := fmt.Sprintf("start=%s&end=%s", dailyData.MinDateFormatted, dailyData.ExpiredDateFormatted)
+			// 服务 req
+			ctx.Request = req
+			router.ServeHTTP(w, req)
 
-// 	dummyData := []db.DailyDatum{
-// 		{
-// 			ID: 1,
-// 		},
-// 	}
+			// 校验状态码
+			assert.Equal(t, tc.expectedHTTPCode, w.Code)
 
-// 	testCases := []testCase{
-// 		{
-// 			name:       "ErrEmptyDate",
-// 			inputQuery: emptyDate,
-// 			buildStubs: func(svc *mock_controller.MockDailyDataQuerier) {}, // 直接拦截, 不触及数据库
-// 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-// 				assert.Equal(t, http.StatusBadRequest, recorder.Code)      // 校验状态码400
-// 				assert.JSONEq(t, ErrEmptyDateJson, recorder.Body.String()) // 校验 json 符合预期
-// 			},
-// 		},
-// 		{
-// 			name:       "ErrInvalidDateFormStr",
-// 			inputQuery: invalidFormatQuery,
-// 			buildStubs: func(svc *mock_controller.MockDailyDataQuerier) {}, // 直接拦截, 不触及数据库
-// 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-// 				assert.Equal(t, http.StatusBadRequest, recorder.Code)            // 校验状态码400
-// 				assert.JSONEq(t, ErrInvalidDateFormJson, recorder.Body.String()) // 校验 json 符合预期
-// 			},
-// 		},
-// 		{
-// 			name:       "ErrTimeOutOfRangeJson",
-// 			inputQuery: expiredDateFormattedQuery,
-// 			buildStubs: func(svc *mock_controller.MockDailyDataQuerier) {
-// 				svc.EXPECT().GetDataByPeriod(gomock.Any(),
-// 					service.GetDataByPeriodParams{StartDate: startDate, EndDate: expiredDate}).
-// 					Return(nil, service.ErrTimeOutOfRange).Times(1)
-// 			},
-// 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-// 				assert.Equal(t, http.StatusBadRequest, recorder.Code)                   // 校验状态码400
-// 				assert.JSONEq(t, service.ErrTimeOutOfRangeJson, recorder.Body.String()) // 校验 json 符合预期
-// 			},
-// 		},
-// 		{
-// 			name:       "Success",
-// 			inputQuery: validDateQuery,
-// 			buildStubs: func(svc *mock_controller.MockDailyDataQuerier) {
-// 				svc.EXPECT().GetDataByPeriod(gomock.Any(),
-// 					service.GetDataByPeriodParams{StartDate: startDate, EndDate: endDate}).
-// 					Return(dummyData, nil).Times(1)
-// 			},
-// 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-// 				assert.Equal(t, http.StatusOK, recorder.Code)
-// 				dateBytes, err := json.Marshal(dummyData)
-// 				assert.NoError(t, err)                                      // 校验状态码 200
-// 				assert.JSONEq(t, string(dateBytes), recorder.Body.String()) // 校验 json 符合预期
-// 			},
-// 		},
-// 	}
+			// 将响应 json 反序列化为 actualResult
+			var actualResult response.Result[[]db.DailyDatum]
+			err = json.Unmarshal(w.Body.Bytes(), &actualResult)
+			require.NoError(t, err)
 
-// 	for _, tc := range testCases {
-// 		t.Run(tc.name, func(t *testing.T) {
-// 			ctrl := gomock.NewController(t)
-// 			defer ctrl.Finish()
-// 			// 构建 svc, ctrl
-// 			svcMock := mock_controller.NewMockDailyDataQuerier(ctrl)
-// 			controller := NewDailyDataController(svcMock)
-// 			//  svc打桩
-// 			tc.buildStubs(svcMock)
-// 			//  初始化 recorder, ctx, router
-// 			w := httptest.NewRecorder()
-// 			ctx, router := gin.CreateTestContext(w)
-// 			// 挂载 api
-// 			router.GET(dailyData.DailyDataPeriodUrl, controller.GetDataByPeriod)
-// 			// 构建 req
-// 			reqUrl := fmt.Sprintf("%s?%s", dailyData.DailyDataPeriodUrl, tc.inputQuery)
-// 			// t.Logf("====== 🚀 当前请求的 URL 是: %s ======", reqUrl)
-// 			req, err := http.NewRequest(http.MethodGet, reqUrl, nil)
-// 			assert.NoError(t, err)
-// 			// writer 服务 req
-// 			ctx.Request = req
-// 			router.ServeHTTP(w, req)
-// 			// 检查结果
-// 			tc.checkResponse(t, w)
-// 		})
-// 	}
+			// 比较 actualResult
+			assert.Equal(t, tc.expectedBizCode, actualResult.Code)
+			assert.Contains(t, actualResult.Msg, tc.expectedMsg)
 
-// }
+		})
+	}
 
-// func TestGetAllData(t *testing.T) {
-// 	type testCase struct {
-// 		name          string
-// 		buildStubs    func(svc *mock_controller.MockDailyDataQuerier)
-// 		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
-// 	}
+}
 
-// 	dummyData := []db.DailyDatum{
-// 		{
-// 			ID: 1,
-// 		},
-// 	}
+func TestGetDataByPeriod(t *testing.T) {
+	type testCase struct {
+		name             string
+		inputQuery       string
+		buildStubs       func(svc *mock_controller.MockService)
+		expectedHTTPCode int
+		expectedBizCode  int
+		expectedMsg      string
+		payload          *token.Payload
+	}
+	emptyDate := ""
+	startDate := dailyData.MinDate
+	endDate := dailyData.MaxDate
 
-// 	testCases := []testCase{
-// 		{
-// 			name: "Success",
-// 			buildStubs: func(svc *mock_controller.MockDailyDataQuerier) {
-// 				svc.EXPECT().GetAllData(gomock.Any()).Return(dummyData, nil).Times(1)
-// 			},
-// 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-// 				assert.Equal(t, http.StatusOK, recorder.Code)
-// 				dateBytes, err := json.Marshal(dummyData)
-// 				assert.NoError(t, err)                                      // 校验状态码 200
-// 				assert.JSONEq(t, string(dateBytes), recorder.Body.String()) // 校验 json 符合预期
-// 			},
-// 		},
-// 	}
+	validDateQuery := fmt.Sprintf("start=%s&end=%s", dailyData.MinDateStr, dailyData.MaxDateStr)
+	invalidFormatQuery := fmt.Sprintf("start=%s&end=%s", dailyData.MalformedSmallDate, dailyData.MalformedBigDate)
 
-// 	for _, tc := range testCases {
-// 		t.Run(tc.name, func(t *testing.T) {
-// 			ctrl := gomock.NewController(t)
-// 			defer ctrl.Finish()
-// 			// 构建 svc, ctrl
-// 			svcMock := mock_controller.NewMockDailyDataQuerier(ctrl)
-// 			controller := NewDailyDataController(svcMock)
-// 			//  svc打桩
-// 			tc.buildStubs(svcMock)
-// 			//  初始化 recorder, ctx, router
-// 			w := httptest.NewRecorder()
-// 			ctx, router := gin.CreateTestContext(w)
-// 			// 挂载 api
-// 			router.GET(dailyData.DailyDataAllUrl, controller.GetAllData)
-// 			// 构建 req
-// 			reqUrl := fmt.Sprintf("%s", dailyData.DailyDataAllUrl)
-// 			// t.Logf("====== 🚀 当前请求的 URL 是: %s ======", reqUrl)
-// 			req, err := http.NewRequest(http.MethodGet, reqUrl, nil)
-// 			assert.NoError(t, err)
-// 			// writer 服务 req
-// 			ctx.Request = req
-// 			router.ServeHTTP(w, req)
-// 			// 检查结果
-// 			tc.checkResponse(t, w)
-// 		})
-// 	}
+	expiredDate := dailyData.ExpiredDate
+	expiredDateFormattedQuery := fmt.Sprintf("start=%s&end=%s", dailyData.MinDateStr, dailyData.ExpiredDateStr)
 
-// }
+	dummyData := []db.DailyDatum{
+		{
+			ID: 1,
+		},
+	}
+
+	testCases := []testCase{
+		{
+			name: "无 Token 访问 GetDataByPeriod",
+			buildStubs: func(svc *mock_controller.MockService) {
+				svc.EXPECT().GetDataByPeriod(gomock.Any(), gomock.Any()).Times(0)
+			},
+			expectedHTTPCode: 401,
+			expectedBizCode:  appError.ErrAuthRequired.Code,
+			expectedMsg:      appError.ErrAuthRequired.Msg,
+		},
+		{
+			name: "User 访问 GetDataByPeriod",
+			buildStubs: func(svc *mock_controller.MockService) {
+				svc.EXPECT().GetDataByPeriod(gomock.Any(), gomock.Any()).Times(0)
+			},
+			expectedHTTPCode: 401,
+			expectedBizCode:  appError.ErrAuthPermissionDenied.Code,
+			expectedMsg:      appError.ErrAuthPermissionDenied.Msg,
+			payload:          userPayload,
+		},
+		{
+			name:       "不填 query",
+			inputQuery: emptyDate,
+			buildStubs: func(svc *mock_controller.MockService) {
+				svc.EXPECT().GetDataByPeriod(gomock.Any(), gomock.Any()).Times(0)
+			},
+			expectedHTTPCode: 400,
+			expectedBizCode:  40000,
+			expectedMsg:      "Start为必填字段, End为必填字段",
+			payload:          vipPayload,
+		},
+		{
+			name:       "query 日期格式错误",
+			inputQuery: invalidFormatQuery,
+			buildStubs: func(svc *mock_controller.MockService) {
+				svc.EXPECT().GetDataByPeriod(gomock.Any(), gomock.Any()).Times(0)
+			},
+			expectedHTTPCode: 400,
+			expectedBizCode:  40000,
+			expectedMsg:      "Start的格式必须是2006-01-02, End的格式必须是2006-01-02",
+			payload:          vipPayload,
+		},
+		{
+			name:       "query 日期超出限制范围",
+			inputQuery: expiredDateFormattedQuery,
+			buildStubs: func(svc *mock_controller.MockService) {
+				svc.EXPECT().GetDataByPeriod(gomock.Any(),
+					service.GetDataByPeriodInput{StartDate: startDate, EndDate: expiredDate}).
+					Return(nil, appError.ErrTimeOutOfRange).Times(1)
+			},
+			expectedHTTPCode: 200,
+			expectedBizCode:  appError.ErrTimeOutOfRange.Code,
+			expectedMsg:      appError.ErrTimeOutOfRange.Msg,
+			payload:          vipPayload,
+		},
+		{
+			name:       "Success",
+			inputQuery: validDateQuery,
+			buildStubs: func(svc *mock_controller.MockService) {
+				svc.EXPECT().GetDataByPeriod(gomock.Any(),
+					service.GetDataByPeriodInput{StartDate: startDate, EndDate: endDate}).
+					Return(dummyData, nil).Times(1)
+			},
+			expectedHTTPCode: 200,
+			expectedBizCode:  200,
+			expectedMsg:      "success",
+			payload:          vipPayload,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			// 构建 svc, ctrl
+			mockService := mock_controller.NewMockService(ctrl)
+			controller := NewDailyDataController(mockService)
+
+			//  svc打桩
+			tc.buildStubs(mockService)
+
+			//  初始化 recorder, ctx, router
+			w := httptest.NewRecorder()
+			ctx, router := setupTestRouter(controller, tc.payload)
+
+			// 构建 req
+			reqUrl := fmt.Sprintf("%s?%s", dailyData.DailyDataPeriodUrl, tc.inputQuery)
+			req, err := http.NewRequest(http.MethodGet, reqUrl, nil)
+			assert.NoError(t, err)
+
+			// 服务 req
+			ctx.Request = req
+			router.ServeHTTP(w, req)
+
+			// 校验状态码
+			assert.Equal(t, tc.expectedHTTPCode, w.Code)
+
+			// 将响应 json 反序列化为 actualResult
+			var actualResult response.Result[[]db.DailyDatum]
+			err = json.Unmarshal(w.Body.Bytes(), &actualResult)
+			require.NoError(t, err)
+
+			// 比较 actualResult
+			assert.Equal(t, tc.expectedBizCode, actualResult.Code)
+			assert.Contains(t, actualResult.Msg, tc.expectedMsg)
+		})
+	}
+
+}
+
+func TestGetAllData(t *testing.T) {
+	type testCase struct {
+		name             string
+		buildStubs       func(svc *mock_controller.MockService)
+		expectedHTTPCode int
+		expectedBizCode  int
+		expectedMsg      string
+		payload          *token.Payload
+	}
+
+	dummyData := []db.DailyDatum{
+		{
+			ID: 1,
+		},
+	}
+
+	testCases := []testCase{
+		{
+			name: "无 Token 访问 GetAllData",
+			buildStubs: func(svc *mock_controller.MockService) {
+				svc.EXPECT().GetAllData(gomock.Any()).Times(0)
+			},
+			expectedHTTPCode: 401,
+			expectedBizCode:  appError.ErrAuthRequired.Code,
+			expectedMsg:      appError.ErrAuthRequired.Msg,
+		},
+		{
+			name: "User 访问 GetAllData",
+			buildStubs: func(svc *mock_controller.MockService) {
+				svc.EXPECT().GetAllData(gomock.Any()).Times(0)
+			},
+			expectedHTTPCode: 401,
+			expectedBizCode:  appError.ErrAuthPermissionDenied.Code,
+			expectedMsg:      appError.ErrAuthPermissionDenied.Msg,
+			payload:          userPayload,
+		},
+		{
+			name: "Vip 访问 GetAllData",
+			buildStubs: func(svc *mock_controller.MockService) {
+				svc.EXPECT().GetAllData(gomock.Any()).Times(0)
+			},
+			expectedHTTPCode: 401,
+			expectedBizCode:  appError.ErrAuthPermissionDenied.Code,
+			expectedMsg:      appError.ErrAuthPermissionDenied.Msg,
+			payload:          vipPayload,
+		},
+		{
+			name: "Admin 访问 GetAllData",
+			buildStubs: func(svc *mock_controller.MockService) {
+				svc.EXPECT().GetAllData(gomock.Any()).Return(dummyData, nil).Times(1)
+			},
+			expectedHTTPCode: 200,
+			expectedBizCode:  200,
+			expectedMsg:      "success",
+			payload:          adminPayload,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			// 构建 svc, ctrl
+			mockService := mock_controller.NewMockService(ctrl)
+			controller := NewDailyDataController(mockService)
+
+			//  svc打桩
+			tc.buildStubs(mockService)
+
+			//  初始化 recorder, ctx, router
+			w := httptest.NewRecorder()
+			ctx, router := setupTestRouter(controller, tc.payload)
+
+			// 构建 req
+			reqUrl := fmt.Sprintf("%s", dailyData.DailyDataAllUrl)
+			req, err := http.NewRequest(http.MethodGet, reqUrl, nil)
+			assert.NoError(t, err)
+
+			// 服务 req
+			ctx.Request = req
+			router.ServeHTTP(w, req)
+
+			// 校验状态码
+			assert.Equal(t, tc.expectedHTTPCode, w.Code)
+
+			// 将响应 json 反序列化为 actualResult
+			var actualResult response.Result[[]db.DailyDatum]
+			err = json.Unmarshal(w.Body.Bytes(), &actualResult)
+			require.NoError(t, err)
+
+			// 比较 actualResult
+			assert.Equal(t, tc.expectedBizCode, actualResult.Code)
+			assert.Contains(t, actualResult.Msg, tc.expectedMsg)
+		})
+	}
+
+}
+
+func setupTestRouter(controller *Controller, mockPayload *token.Payload) (*gin.Context, *gin.Engine) {
+	ctx, router := gin.CreateTestContext(httptest.NewRecorder())
+	// 模拟路由结构
+	apiGroup := router.Group("/api/v1")
+
+	{
+		dailyGroup := apiGroup.Group("/daily_data")
+		{
+			dailyGroup.Use(func(c *gin.Context) {
+				if mockPayload != nil { // 传入了mockPayload, 进行配置
+					c.Set(token.PayloadKey, mockPayload)
+					c.Next()
+				} else { // 没传入, 直接报错
+					c.AbortWithStatusJSON(http.StatusUnauthorized, appError.ErrAuthRequired)
+				}
+			})
+
+			// 至少是 User 才可以获取单日数据
+			dailyGroup.GET("/day", middleware.RoleMiddleware(role.RoleAtLeastUser), response.Wrapper(controller.GetDataByDay))
+			// 至少是 VIP 才可以获取范围数据
+			dailyGroup.GET("/period", middleware.RoleMiddleware(role.RoleAtLeastVip), response.Wrapper(controller.GetDataByPeriod))
+			// 至少是 Admin 才可以获取所有数据
+			dailyGroup.GET("/all", middleware.RoleMiddleware(role.RoleAtLeastAdmin), response.Wrapper(controller.GetAllData))
+		}
+	}
+	return ctx, router
+}

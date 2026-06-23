@@ -13,18 +13,19 @@ import (
  * =====================================================================================
  *
  */
-type UserController struct {
-	service UserService
+
+type Controller struct {
+	service Service
 }
 
-type UserService interface {
+type Service interface {
 	CreateUser(ctx context.Context, p user.CreateUserInput, role role.Role) (user.UserDTO, error)
 	GetUser(ctx context.Context, p user.GetUserInput) (user.UserDTO, error)
 	UpdateUser(ctx context.Context, p user.UpdateUserInput) (user.UserDTO, error)
 }
 
-func NewUserController(svc UserService) *UserController {
-	return &UserController{service: svc}
+func New(svc Service) *Controller {
+	return &Controller{service: svc}
 }
 
 /** ====================================================================================
@@ -33,7 +34,7 @@ func NewUserController(svc UserService) *UserController {
  */
 
 type GetUserRequest struct {
-	Username string `uri:"username" binding:"required,min=1"`
+	Username string `uri:"username" binding:"required,min=3,max=32"`
 }
 
 func (r *GetUserRequest) toSvcInput() service.GetUserInput {
@@ -48,7 +49,7 @@ func (r *GetUserRequest) toSvcInput() service.GetUserInput {
  */
 
 type CreateUserRequest struct {
-	Username string `json:"username" binding:"required,min=1"`
+	Username string `json:"username" binding:"required,min=3,max=32"`
 	Password string `json:"password" binding:"required,min=8,max=16"`
 	Email    string `json:"email" binding:"required,email"`
 }
@@ -67,7 +68,7 @@ func (r *CreateUserRequest) toSvcInput() service.CreateUserInput {
  */
 
 type UpdateUserRequest struct {
-	Username string  `uri:"username" binding:"required,min=1"`
+	Username string  `uri:"username" binding:"required,min=3,max=32"`
 	Password *string `json:"password" binding:"omitempty,min=8,max=16"`
 	Email    *string `json:"email" binding:"omitempty,email"`
 }

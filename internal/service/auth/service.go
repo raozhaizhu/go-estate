@@ -9,7 +9,7 @@ import (
 )
 
 // Login 用户登录
-func (svc *AuthService) Login(ctx *gin.Context, input LoginInput) (LoginDTO, string, error) {
+func (svc *service) Login(ctx *gin.Context, input LoginInput) (LoginDTO, string, error) {
 	// 查询用户
 	user, err := svc.store.GetUser(ctx, input.Username)
 	if err != nil { // 用户不存在

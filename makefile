@@ -28,9 +28,10 @@ sqlc_gen:
 # mock
 mock:
 	mockgen -destination=$(DB_DIR)/mock/store.go -package=mock_db $(PROJECT_INTERNAL_PATH)/db/sqlc Store && \
-	mockgen -destination=$(DAILY_DATA_SERVICE_DIR)/mock/service.go -package=mock_service $(DAILY_DATA_SERVICE_PATH) DailyDataQuerier && \
-	mockgen -destination=$(DAILY_DATA_CONTROLLER_DIR)/mock/controller.go -package=mock_controller $(DAILY_DATA_CONTROLLER_PATH) DailyDataQuerier
-
+	mockgen -destination=$(DAILY_DATA_SERVICE_DIR)/mock/service.go -package=mock_service $(DAILY_DATA_SERVICE_PATH) Store && \
+	mockgen -destination=$(DAILY_DATA_CONTROLLER_DIR)/mock/controller.go -package=mock_controller $(DAILY_DATA_CONTROLLER_PATH) Service && \
+	mockgen -destination=$(USER_SERVICE_DIR)/mock/service.go -package=mock_service $(USER_SERVICE_PATH) Store && \
+	mockgen -destination=$(USER_CONTROLLER_DIR)/mock/controller.go -package=mock_controller $(USER_CONTROLLER_PATH) Service
 # test
 test:
 	go test -cover -race -count=1 $(DAILY_DATA_SERVICE_DIR)

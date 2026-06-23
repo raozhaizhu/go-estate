@@ -1,6 +1,8 @@
 package token
 
 import (
+	"context"
+	"log"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -17,6 +19,11 @@ const (
 	TokenTypeAccessToken = 1
 	// TokenTypeRefreshToken 刷新令牌(长期使用)
 	TokenTypeRefreshToken = 2
+
+	// PayloadKey SetKey, 用于从 Context 中提取 payload
+	PayloadKey = "authorization_payload"
+	// RefreshTokenKey SetKey, 用于从 Context 中提取 refresh_token
+	RefreshTokenKey = "refresh_token"
 )
 
 // Payload 令牌荷载
@@ -97,4 +104,24 @@ func (p *Payload) GetSubject() (string, error) {
 // GetAudience 返回令牌受众类型
 func (p *Payload) GetAudience() (jwt.ClaimStrings, error) {
 	return jwt.ClaimStrings{}, nil
+}
+
+// GetPayload 从上下文中获取荷载
+func GetPayload(ctx context.Context) (*Payload, error) {
+	log.Println("ctx: ", ctx)
+	// 提取 payload
+	val := ctx.Value(PayloadKey)
+
+	// 提取失败, 返回错误
+	if val == nil {
+		return nil, appError.ErrAuthRequired
+	}
+	payload := val.(*Payload)
+
+	// 返回 payload
+	return payload, nil
+}
+
+func WithPayload(ctx context.Context, payload *Payload) context.Context {
+	return context.WithValue(ctx, PayloadKey, payload)
 }

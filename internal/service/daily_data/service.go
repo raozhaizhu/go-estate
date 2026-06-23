@@ -12,14 +12,14 @@ import (
  */
 
 // GetDataByDay 按日获取楼盘成交数据
-func (svc *DailyDataService) GetDataByDay(ctx context.Context, input GetDataByDayInput) ([]db.DailyDatum, error) {
+func (svc *service) GetDataByDay(ctx context.Context, input GetDataByDayInput) ([]db.DailyDatum, error) {
 	// 参数转换
 	targetDate, err := input.toDBParams()
 	if err != nil {
 		return []db.DailyDatum{}, err
 	}
 	// -> db 获取数据
-	return svc.db.GetDataByDay(ctx, targetDate)
+	return svc.store.GetDataByDay(ctx, targetDate)
 }
 
 /** ====================================================================================
@@ -28,14 +28,14 @@ func (svc *DailyDataService) GetDataByDay(ctx context.Context, input GetDataByDa
  */
 
 // GetDataByPeriod 按周期获取楼盘成交数据
-func (svc *DailyDataService) GetDataByPeriod(ctx context.Context, input GetDataByPeriodInput) ([]db.DailyDatum, error) {
+func (svc *service) GetDataByPeriod(ctx context.Context, input GetDataByPeriodInput) ([]db.DailyDatum, error) {
 	// 参数转换
 	params, err := input.toDBParams()
 	if err != nil {
 		return []db.DailyDatum{}, err
 	}
 	// -> db 获取数据
-	return svc.db.GetDataByPeriod(ctx, params)
+	return svc.store.GetDataByPeriod(ctx, params)
 }
 
 /** ====================================================================================
@@ -44,7 +44,7 @@ func (svc *DailyDataService) GetDataByPeriod(ctx context.Context, input GetDataB
  */
 
 // GetAllData 获取所有楼盘成交数据
-func (svc *DailyDataService) GetAllData(ctx context.Context) ([]db.DailyDatum, error) {
+func (svc *service) GetAllData(ctx context.Context) ([]db.DailyDatum, error) {
 	// -> db 获取数据
-	return svc.db.GetAllData(ctx)
+	return svc.store.GetAllData(ctx)
 }

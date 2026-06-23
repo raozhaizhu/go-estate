@@ -13,7 +13,7 @@ import (
 
 // GetUser 获取用户信息
 // Get: /api/v1/user/:username
-func (c *UserController) GetUser(ctx *gin.Context) (interface{}, error) {
+func (c *Controller) GetUser(ctx *gin.Context) (interface{}, error) {
 	var req GetUserRequest
 	// 参数错误
 	if err := ctx.ShouldBindUri(&req); err != nil {
@@ -39,15 +39,15 @@ func (c *UserController) GetUser(ctx *gin.Context) (interface{}, error) {
 
 // CreateNormalUser 创建普通用户
 // Post: /api/v1/user
-func (c *UserController) CreateNormalUser(ctx *gin.Context) (interface{}, error) {
+func (c *Controller) CreateNormalUser(ctx *gin.Context) (interface{}, error) {
 	return c.createUser(ctx, role.RoleUser)
 }
 
-func (c *UserController) CreateVip(ctx *gin.Context) (interface{}, error) {
+func (c *Controller) CreateVip(ctx *gin.Context) (interface{}, error) {
 	return c.createUser(ctx, role.RoleVip)
 }
 
-func (c *UserController) createUser(ctx *gin.Context, role role.Role) (interface{}, error) {
+func (c *Controller) createUser(ctx *gin.Context, role role.Role) (interface{}, error) {
 	var req CreateUserRequest
 	// 参数错误
 	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
@@ -73,14 +73,14 @@ func (c *UserController) createUser(ctx *gin.Context, role role.Role) (interface
 
 // UpdateUser 更新用户信息
 // Patch: /api/v1/user/:username
-func (c *UserController) UpdateUser(ctx *gin.Context) (interface{}, error) {
+func (c *Controller) UpdateUser(ctx *gin.Context) (interface{}, error) {
 	var req UpdateUserRequest
 	// 参数错误
 	if err := ctx.ShouldBindUri(&req); err != nil { // 解析 Uri
 		return nil, response.MarkBindError(err)
 	}
 	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil { // 解析 Json
-		return nil, err
+		return nil, response.MarkBindError(err)
 	}
 
 	// 参数转换

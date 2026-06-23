@@ -11,7 +11,7 @@ import (
  */
 
 // GetDataByDay 按日获取楼盘成交数据
-func (c *DailyDataController) GetDataByDay(ctx *gin.Context) (interface{}, error) {
+func (c *Controller) GetDataByDay(ctx *gin.Context) (interface{}, error) {
 	var req GetDataByDayRequest
 	// 参数错误
 	if err := ctx.ShouldBindQuery(&req); err != nil {
@@ -37,7 +37,7 @@ func (c *DailyDataController) GetDataByDay(ctx *gin.Context) (interface{}, error
  */
 
 // GetDataByPeriod 按周期获取楼盘成交数据
-func (c *DailyDataController) GetDataByPeriod(ctx *gin.Context) (interface{}, error) {
+func (c *Controller) GetDataByPeriod(ctx *gin.Context) (interface{}, error) {
 	var req GetDataByPeriodRequest
 	// 参数错误
 	if err := ctx.ShouldBindQuery(&req); err != nil {
@@ -65,7 +65,7 @@ func (c *DailyDataController) GetDataByPeriod(ctx *gin.Context) (interface{}, er
  */
 
 // GetAllData 获取所有楼盘成交数据
-func (c *DailyDataController) GetAllData(ctx *gin.Context) (interface{}, error) {
+func (c *Controller) GetAllData(ctx *gin.Context) (interface{}, error) {
 	// -> svc 获得所有数据
 	data, err := c.service.GetAllData(ctx)
 	if err != nil {
