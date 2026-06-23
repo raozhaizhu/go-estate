@@ -15,18 +15,18 @@ import (
  *
  */
 
-type DailyDataService struct {
-	db DailyDataStore
+type service struct {
+	store Store
 }
 
-type DailyDataStore interface {
+type Store interface {
 	GetDataByDay(ctx context.Context, targetDate time.Time) ([]db.DailyDatum, error)
 	GetDataByPeriod(ctx context.Context, arg db.GetDataByPeriodParams) ([]db.DailyDatum, error)
 	GetAllData(ctx context.Context) ([]db.DailyDatum, error)
 }
 
-func NewDailyDataService(store DailyDataStore) *DailyDataService {
-	return &DailyDataService{db: store}
+func New(store Store) *service {
+	return &service{store: store}
 }
 
 /** ====================================================================================

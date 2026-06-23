@@ -1,11 +1,15 @@
 package server
 
 import (
+	"log"
+
 	"github.com/gin-gonic/gin"
 	db "github.com/raozhaizhu/go-estate/internal/db/sqlc"
-	"github.com/raozhaizhu/go-estate/internal/router"
+	"github.com/raozhaizhu/go-estate/internal/delivery"
+	"github.com/raozhaizhu/go-estate/internal/service/auth"
+	dailyData "github.com/raozhaizhu/go-estate/internal/service/daily_data"
+	"github.com/raozhaizhu/go-estate/internal/service/user"
 	"github.com/raozhaizhu/go-estate/internal/util"
-	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 	"github.com/raozhaizhu/go-estate/pkg/token"
 	"github.com/raozhaizhu/go-estate/pkg/validator"
 )
@@ -21,14 +25,24 @@ func NewServer(config util.Config, store db.Store) (*Server, error) {
 	// 初始化 JWTMaker
 	tokenMaker, err := token.NewJwtMaker(config.TokenSymmetricKey)
 	if err != nil {
-		return nil, appError.NewInvalidKeySizeError(len(config.TokenSymmetricKey), token.MinSecretSize)
+		log.Fatal("tokenMaker初始化失败: %w", err)
 	}
+
+	// 初始化服务
+	authSvc := auth.New(store, config, tokenMaker)
+	userSvc := user.New(store)
+	dailyDataSvc := dailyData.New(store)
+	services := delivery.Services{
+		UserSvc:      userSvc,
+		AuthSvc:      authSvc,
+		DailyDataSvc: dailyDataSvc,
+	}
+
+	// 初始化路由
+	router := delivery.SetupRouter(services, config, tokenMaker)
 
 	// 初始化验证翻译器
 	validator.InitTrans()
-
-	// 初始化路由
-	router := router.SetupRouter(store, config, tokenMaker)
 
 	// 初始化服务器
 	server := &Server{

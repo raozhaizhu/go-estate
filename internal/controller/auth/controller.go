@@ -3,6 +3,7 @@ package auth
 import (
 	"github.com/gin-gonic/gin"
 	response "github.com/raozhaizhu/go-estate/pkg/api"
+	"github.com/raozhaizhu/go-estate/pkg/token"
 )
 
 /** ====================================================================================
@@ -12,7 +13,7 @@ import (
 
 // Login 账户登录
 // Post: /api/v1/auth/login
-func (c *AuthController) Login(ctx *gin.Context) (interface{}, error) {
+func (c *controller) Login(ctx *gin.Context) (interface{}, error) {
 	var req LoginRequest
 	// 参数错误
 	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil { // 解析 Json
@@ -34,13 +35,12 @@ func (c *AuthController) Login(ctx *gin.Context) (interface{}, error) {
 	return data, nil
 }
 
-const refreshTokenKey = "refresh_token"
 const loginCookiePath = "/api/vi/auth/login"
 
 // setRefreshTokenCookie 设置 refreshToken 到 cookie
-func (c *AuthController) setRefreshTokenCookie(ctx *gin.Context, refreshToken string) {
+func (c *controller) setRefreshTokenCookie(ctx *gin.Context, refreshToken string) {
 	ctx.SetCookie(
-		refreshTokenKey,                  // key
+		token.RefreshTokenKey,            // key
 		refreshToken,                     // value
 		int(c.refreshDuration.Seconds()), // maxAge
 		loginCookiePath,                  // path 只有在访问这个路径的时候才会发送该 cookie

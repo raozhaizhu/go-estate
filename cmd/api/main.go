@@ -13,19 +13,19 @@ import (
 
 func main() {
 	// 加载配置
-	cfg := util.InitConfig(".../..")
+	config := util.InitConfig(".../..")
 
 	// 初始化数据库
-	store := db.InitStore(cfg.DBSource)
+	store := db.InitStore(config.DBSource)
 
 	// 初始化服务器
-	srv, err := server.NewServer(cfg, store)
+	srv, err := server.NewServer(config, store)
 	if err != nil {
 		log.Fatal("服务器初始化失败: %w", err)
 	}
 
 	// 运行服务器在指定端口
-	err = srv.Start(cfg.ServerPort)
+	err = srv.Start(config.ServerPort)
 	if err != nil {
 		log.Fatal("服务器运行失败: %w", err)
 	}

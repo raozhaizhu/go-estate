@@ -10,10 +10,8 @@ import (
 	"github.com/raozhaizhu/go-estate/pkg/token"
 )
 
-// PayloadKey SetKey, 用于从 Context 中提取 payload
-const PayloadKey = "authorization_payload"
-
 // AuthMiddleware 身份认证中间件
+// 校验用户是否携带了 token 进行访问
 func AuthMiddleware(tokenMaker token.Maker) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// 获取验证头
@@ -43,7 +41,7 @@ func AuthMiddleware(tokenMaker token.Maker) gin.HandlerFunc {
 		}
 
 		// 将荷载存入上下文
-		ctx.Set(PayloadKey, payload)
+		ctx.Set(token.PayloadKey, payload)
 		ctx.Next()
 	}
 }

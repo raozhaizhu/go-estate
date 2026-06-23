@@ -16,23 +16,24 @@ import (
  * =====================================================================================
  */
 
-// UserService 用户服务
-type UserService struct {
-	store UserStore
+// service 用户服务
+type service struct {
+	store Store
 }
 
-// UserStore 用户数据库
-type UserStore interface {
+// Store 用户数据库
+type Store interface {
 	CreateUser(ctx context.Context, arg db.CreateUserParams) (sql.Result, error)
 	GetUser(ctx context.Context, username string) (db.User, error)
 	UpdateUser(ctx context.Context, arg db.UpdateUserParams) (sql.Result, error)
 }
 
-// NewUserService 返回用户服务指针
-func NewUserService(store UserStore) *UserService {
-	return &UserService{store: store}
+// New 返回用户服务指针
+func New(store Store) *service {
+	return &service{store: store}
 }
 
+// UserDTO 返回给 Controller 的数据结构
 type UserDTO struct {
 	ID       int32     `json:"id"`
 	Username string    `json:"username"`

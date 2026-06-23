@@ -15,21 +15,21 @@ import (
  * =====================================================================================
  */
 
-// AuthService 用户服务
-type AuthService struct {
-	store      AuthStore
+// service 用户服务
+type service struct {
+	store      Store
 	config     util.Config
 	tokenMaker token.Maker
 }
 
-// AuthStore 用户数据库
-type AuthStore interface {
+// Store 用户数据库
+type Store interface {
 	GetUser(ctx context.Context, username string) (db.User, error)
 }
 
-// NewAuthService 返回用户服务指针
-func NewAuthService(store AuthStore, config util.Config, tokenMaker token.Maker) *AuthService {
-	return &AuthService{store: store, config: config, tokenMaker: tokenMaker}
+// New 返回用户服务指针
+func New(store Store, config util.Config, tokenMaker token.Maker) *service {
+	return &service{store: store, config: config, tokenMaker: tokenMaker}
 }
 
 /** ====================================================================================

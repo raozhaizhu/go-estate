@@ -9,6 +9,7 @@ import (
  * =====================================================================================
  *
  */
+
 // 错误组
 const (
 	CodeGroupClientError = 40000
@@ -28,7 +29,9 @@ const (
 	CodeBadEndDate                                   // 结束日期格式错误
 	CodeTimeOutOfRange                               // 查询日期超出范围
 	CodeBadTimerOrder                                // 开始日期晚于结束日期
+)
 
+const (
 	// 401 认证错误
 	CodeAuthInvalidToken      = CodeGroupAuthError + iota // 令牌不可用
 	CodeAuthExpiredToken                                  // 令牌已过期
@@ -37,14 +40,21 @@ const (
 	CodeAuthBadHeader                                     // 认证头格式错误
 	CodeAuthRequired                                      // 未登录或者登录已经失效
 	CodeAuthPermissionDenied                              // 角色权限不足
+)
 
+const (
 	// 404 资源不存在
-	CodeUserNotFound = CodeGroupNotFound + iota // 用户不存在
+	CodePathNotFound = CodeGroupNotFound + iota // 路径不存在
+	CodeUserNotFound                            // 用户不存在
+)
 
+const (
 	// 409 值冲突
 	CodeUserAlreadyExits  = CodeGroupConflict + iota // 用户已存在
 	CodeEmailAlreadyExits                            // 邮箱已存在
+)
 
+const (
 	// 500 内部错误
 	CodeServerErr    = CodeGroupServer + iota // 服务器内部错误
 	CodeWrongSizeKey                          // 密钥尺寸错误
@@ -82,6 +92,7 @@ var (
 	ErrAuthPermissionDenied  = New(CodeAuthPermissionDenied, "角色权限不足")
 
 	// 404 资源不存在
+	ErrPathNotFound = New(CodePathNotFound, "请求路径不存在")
 	ErrUserNotFound = New(CodeUserNotFound, "该用户不存在")
 
 	// 409 值冲突

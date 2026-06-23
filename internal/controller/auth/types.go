@@ -8,21 +8,21 @@ import (
 )
 
 /** ====================================================================================
- * 🏁 AuthController
+ * 🏁 controller
  * =====================================================================================
  *
  */
-type AuthController struct {
-	service         AuthService
+type controller struct {
+	service         Service
 	refreshDuration time.Duration
 }
 
-type AuthService interface {
+type Service interface {
 	Login(ctx *gin.Context, input auth.LoginInput) (auth.LoginDTO, string, error)
 }
 
-func NewAuthController(service AuthService, refreshDuration time.Duration) *AuthController {
-	return &AuthController{service: service, refreshDuration: refreshDuration}
+func New(service Service, refreshDuration time.Duration) *controller {
+	return &controller{service: service, refreshDuration: refreshDuration}
 }
 
 /** ====================================================================================
