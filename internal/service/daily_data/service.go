@@ -3,7 +3,7 @@ package dailyData
 import (
 	"context"
 
-	db "github.com/raozhaizhu/go-estate/internal/db/sqlc"
+	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
 )
 
 /** ====================================================================================
@@ -16,7 +16,7 @@ func (svc *service) GetDataByDay(ctx context.Context, input GetDataByDayInput) (
 	// 参数转换
 	targetDate, err := input.toDBParams()
 	if err != nil {
-		return []db.DailyDatum{}, err
+		return nil, err
 	}
 	// -> db 获取数据
 	return svc.store.GetDataByDay(ctx, targetDate)
@@ -32,7 +32,7 @@ func (svc *service) GetDataByPeriod(ctx context.Context, input GetDataByPeriodIn
 	// 参数转换
 	params, err := input.toDBParams()
 	if err != nil {
-		return []db.DailyDatum{}, err
+		return nil, err
 	}
 	// -> db 获取数据
 	return svc.store.GetDataByPeriod(ctx, params)

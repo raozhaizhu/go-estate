@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	db "github.com/raozhaizhu/go-estate/internal/db/sqlc"
+	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
 	role "github.com/raozhaizhu/go-estate/internal/domain/user"
 	mock_service "github.com/raozhaizhu/go-estate/internal/service/user/mock"
 	"github.com/raozhaizhu/go-estate/internal/util"
@@ -39,7 +39,7 @@ func TestUpdateUser_Authorization(t *testing.T) {
 		{
 			name:  "User 更新别人",
 			input: input,
-			buildStubs: func(store *mock_service.MockStore) {
+			buildStubs: func(store *mock_service.MockUserStore) {
 				store.EXPECT().
 					UpdateUser(gomock.Any(), gomock.Any()).
 					Times(0)
@@ -50,16 +50,16 @@ func TestUpdateUser_Authorization(t *testing.T) {
 			buildCtx: func() context.Context {
 				return token.WithPayload(context.Background(), randomUserPayload)
 			},
-			checkResponse: func(t *testing.T, res UserDTO, err error) {
+			checkResponse: func(t *testing.T, res *DTO, err error) {
 				require.Error(t, err)
 				require.ErrorIs(t, err, appError.ErrAuthPermissionDenied)
-				require.Equal(t, res, UserDTO{})
+				require.Nil(t, res)
 			},
 		},
 		{
 			name:  "Vip 更新别人",
 			input: input,
-			buildStubs: func(store *mock_service.MockStore) {
+			buildStubs: func(store *mock_service.MockUserStore) {
 				store.EXPECT().
 					UpdateUser(gomock.Any(), gomock.Any()).
 					Times(0)
@@ -70,10 +70,10 @@ func TestUpdateUser_Authorization(t *testing.T) {
 			buildCtx: func() context.Context {
 				return token.WithPayload(context.Background(), vipPayload)
 			},
-			checkResponse: func(t *testing.T, res UserDTO, err error) {
+			checkResponse: func(t *testing.T, res *DTO, err error) {
 				require.Error(t, err)
 				require.ErrorIs(t, err, appError.ErrAuthPermissionDenied)
-				require.Equal(t, res, UserDTO{})
+				require.Nil(t, res)
 			},
 		},
 	}
@@ -101,7 +101,7 @@ func TestUpdateUser_Success(t *testing.T) {
 		{
 			name:  "User 更新自己",
 			input: input,
-			buildStubs: func(store *mock_service.MockStore) {
+			buildStubs: func(store *mock_service.MockUserStore) {
 				store.EXPECT().
 					UpdateUser(gomock.Any(), EqUpdateUserParams(params, *input.Password)).
 					Return(driver.RowsAffected(1), nil).
@@ -114,7 +114,7 @@ func TestUpdateUser_Success(t *testing.T) {
 			buildCtx: func() context.Context {
 				return token.WithPayload(context.Background(), userPayload)
 			},
-			checkResponse: func(t *testing.T, res UserDTO, err error) {
+			checkResponse: func(t *testing.T, res *DTO, err error) {
 				assert.NoError(t, err)
 				assert.Equal(t, res, userDTO)
 			},
@@ -122,7 +122,7 @@ func TestUpdateUser_Success(t *testing.T) {
 		{
 			name:  "Admin 更新 User",
 			input: input,
-			buildStubs: func(store *mock_service.MockStore) {
+			buildStubs: func(store *mock_service.MockUserStore) {
 				store.EXPECT().
 					UpdateUser(gomock.Any(), EqUpdateUserParams(params, *input.Password)).
 					Return(driver.RowsAffected(1), nil).
@@ -135,7 +135,7 @@ func TestUpdateUser_Success(t *testing.T) {
 			buildCtx: func() context.Context {
 				return token.WithPayload(context.Background(), adminPayload)
 			},
-			checkResponse: func(t *testing.T, res UserDTO, err error) {
+			checkResponse: func(t *testing.T, res *DTO, err error) {
 				assert.NoError(t, err)
 				assert.Equal(t, res, userDTO)
 			},
@@ -154,11 +154,11 @@ type updateUserTC struct {
 	name          string
 	input         UpdateUserInput
 	buildCtx      func() context.Context
-	buildStubs    func(store *mock_service.MockStore)
-	checkResponse func(t *testing.T, res UserDTO, err error)
+	buildStubs    func(store *mock_service.MockUserStore)
+	checkResponse func(t *testing.T, res *DTO, err error)
 }
 
-func setupUpdateUserData() (UpdateUserInput, db.User, UserDTO) {
+func setupUpdateUserData() (UpdateUserInput, db.User, *DTO) {
 	// 准备 input
 	username := util.RandomUsername()
 	newPassword := util.RandomPassword()
@@ -176,7 +176,7 @@ func setupUpdateUserData() (UpdateUserInput, db.User, UserDTO) {
 		Username: username,
 		Role:     int16(role.RoleUser),
 	}
-	userDTO := UserDTO{
+	userDTO := &DTO{
 		ID:       1,
 		Username: username,
 		Role:     role.RoleUser,
@@ -191,7 +191,7 @@ func runUpdateUserTC(t *testing.T, testCases []updateUserTC) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			// 初始化 store, svc
-			storeMock := mock_service.NewMockStore(ctrl)
+			storeMock := mock_service.NewMockUserStore(ctrl)
 			svc := New(storeMock)
 
 			// 数据库埋桩

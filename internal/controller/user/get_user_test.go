@@ -24,6 +24,7 @@ import (
  * 🏁 Type
  * =====================================================================================
  */
+
 type getUserTC struct {
 	name    string
 	request userController.GetUserRequest
@@ -32,7 +33,7 @@ type getUserTC struct {
 	// svc埋桩
 	buildStubs func(svc *mock_controller.MockService)
 	// 校验数据
-	checkResponse func(t *testing.T, tc getUserTC, result response.Result[service.UserDTO])
+	checkResponse func(t *testing.T, tc getUserTC, result response.Result[*service.DTO])
 	// 请求地址
 	reqUrl string
 	// 响应代码
@@ -73,7 +74,7 @@ func runGetUserTC(t *testing.T, testCases []getUserTC) {
 			require.Equal(t, tc.expectedHTTPCode, w.Code)
 
 			// 将响应 json 反序列化为 actualResult
-			var actualResult response.Result[service.UserDTO]
+			var actualResult response.Result[*service.DTO]
 			err = json.Unmarshal(w.Body.Bytes(), &actualResult)
 			require.NoError(t, err)
 
@@ -92,9 +93,10 @@ func runGetUserTC(t *testing.T, testCases []getUserTC) {
 // Admin 可以获取所有用户信息, User/Vip 可以获取自身信息
 func TestGetUser_Success(t *testing.T) {
 	username, _, userDTO := setupGetUserData()
-	vipDto := userDTO
-	vipDto.Username = "vip"
-	vipDto.Role = role.RoleVip
+	vipDtoValue := *userDTO
+	vipDtoValue.Username = "vip"
+	vipDtoValue.Role = role.RoleVip
+	vipDto := &vipDtoValue
 
 	// authWithUserFunc 携带 userToken 进行认证
 	authWithUserFunc := func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
@@ -194,7 +196,7 @@ func TestGetUser_Authorization(t *testing.T) {
 			buildStubs: func(svc *mock_controller.MockService) {
 				svc.EXPECT().
 					GetUser(gomock.Any(), service.GetUserInput{Username: "vip_another"}).
-					Return(service.UserDTO{}, appError.ErrAuthPermissionDenied).
+					Return(nil, appError.ErrAuthPermissionDenied).
 					Times(1)
 			},
 			checkResponse:    checkEmptyResFuncGetUser,
@@ -208,7 +210,7 @@ func TestGetUser_Authorization(t *testing.T) {
 			buildStubs: func(svc *mock_controller.MockService) {
 				svc.EXPECT().
 					GetUser(gomock.Any(), service.GetUserInput{Username: username}).
-					Return(service.UserDTO{}, appError.ErrAuthPermissionDenied).
+					Return(nil, appError.ErrAuthPermissionDenied).
 					Times(1)
 			},
 			checkResponse:    checkEmptyResFuncGetUser,
@@ -222,7 +224,7 @@ func TestGetUser_Authorization(t *testing.T) {
 			buildStubs: func(svc *mock_controller.MockService) {
 				svc.EXPECT().
 					GetUser(gomock.Any(), service.GetUserInput{Username: "vip_another"}).
-					Return(service.UserDTO{}, appError.ErrAuthPermissionDenied).
+					Return(nil, appError.ErrAuthPermissionDenied).
 					Times(1)
 			},
 			checkResponse:    checkEmptyResFuncGetUser,
@@ -236,7 +238,7 @@ func TestGetUser_Authorization(t *testing.T) {
 			buildStubs: func(svc *mock_controller.MockService) {
 				svc.EXPECT().
 					GetUser(gomock.Any(), service.GetUserInput{Username: "user_another"}).
-					Return(service.UserDTO{}, appError.ErrAuthPermissionDenied).
+					Return(nil, appError.ErrAuthPermissionDenied).
 					Times(1)
 			},
 			checkResponse:    checkEmptyResFuncGetUser,

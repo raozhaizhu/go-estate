@@ -11,7 +11,7 @@ import (
 	"github.com/golang/mock/gomock"
 
 	mock_controller "github.com/raozhaizhu/go-estate/internal/controller/daily_data/mock"
-	db "github.com/raozhaizhu/go-estate/internal/db/sqlc"
+	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
 	dailyData "github.com/raozhaizhu/go-estate/internal/domain/daily_data"
 	role "github.com/raozhaizhu/go-estate/internal/domain/user"
 	"github.com/raozhaizhu/go-estate/internal/middleware"

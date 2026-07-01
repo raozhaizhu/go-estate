@@ -11,10 +11,15 @@ import (
 )
 
 type Querier interface {
+	BlockAllUserSessions(ctx context.Context, username string) error
+	BlockSessionsByIDs(ctx context.Context, ids []string) error
+	CreateSession(ctx context.Context, arg CreateSessionParams) error
 	CreateUser(ctx context.Context, arg CreateUserParams) (sql.Result, error)
+	GetActiveSessionIDsByUserDevice(ctx context.Context, arg GetActiveSessionIDsByUserDeviceParams) ([]string, error)
 	GetAllData(ctx context.Context) ([]DailyDatum, error)
 	GetDataByDay(ctx context.Context, targetDate time.Time) ([]DailyDatum, error)
 	GetDataByPeriod(ctx context.Context, arg GetDataByPeriodParams) ([]DailyDatum, error)
+	GetSession(ctx context.Context, id string) (Session, error)
 	GetUser(ctx context.Context, username string) (User, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (sql.Result, error)
 }

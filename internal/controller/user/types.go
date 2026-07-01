@@ -19,9 +19,9 @@ type Controller struct {
 }
 
 type Service interface {
-	CreateUser(ctx context.Context, p user.CreateUserInput, role role.Role) (user.UserDTO, error)
-	GetUser(ctx context.Context, p user.GetUserInput) (user.UserDTO, error)
-	UpdateUser(ctx context.Context, p user.UpdateUserInput) (user.UserDTO, error)
+	CreateUser(ctx context.Context, p user.CreateUserInput, role role.Role) (*user.DTO, error)
+	GetUser(ctx context.Context, p user.GetUserInput) (*user.DTO, error)
+	UpdateUser(ctx context.Context, p user.UpdateUserInput) (*user.DTO, error)
 }
 
 func New(svc Service) *Controller {

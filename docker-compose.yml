@@ -1,21 +1,41 @@
 services:
   mysql:
     image: mysql:8.0
-    container_name: mysql_db
+    container_name: mysql
     restart: always
     # 设置字符集utf8mb4
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_0900_ai_ci
     environment:
       MYSQL_ROOT_PASSWORD: 123456
-      MYSQL_DATABASE: mysql_db
+      MYSQL_DATABASE: go_estate
     ports:
       - "3306:3306"
     volumes:
-      # 备份数据
       - data-volume:/var/lib/mysql
+    networks:
+      - app-network
+
+  redis:
+    image: redis:8.8.0-alpine
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: >
+      redis-server 
+      --appendonly yes
+      --requirepass 123456
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
 
 networks:
-  default:
-    name: app-network
+  app-network:
+    driver: bridge
+
 volumes:
   data-volume:
+  redis-data:

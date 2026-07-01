@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	db "github.com/raozhaizhu/go-estate/internal/db/sqlc"
+	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
 	dailyData "github.com/raozhaizhu/go-estate/internal/service/daily_data"
 )
 

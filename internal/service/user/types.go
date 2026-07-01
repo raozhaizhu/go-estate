@@ -1,11 +1,10 @@
 package user
 
 import (
-	"context"
 	"database/sql"
 	"time"
 
-	db "github.com/raozhaizhu/go-estate/internal/db/sqlc"
+	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
 	role "github.com/raozhaizhu/go-estate/internal/domain/user"
 	"github.com/raozhaizhu/go-estate/internal/util"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
@@ -18,23 +17,16 @@ import (
 
 // service 用户服务
 type service struct {
-	store Store
-}
-
-// Store 用户数据库
-type Store interface {
-	CreateUser(ctx context.Context, arg db.CreateUserParams) (sql.Result, error)
-	GetUser(ctx context.Context, username string) (db.User, error)
-	UpdateUser(ctx context.Context, arg db.UpdateUserParams) (sql.Result, error)
+	store db.UserStore
 }
 
 // New 返回用户服务指针
-func New(store Store) *service {
+func New(store db.UserStore) *service {
 	return &service{store: store}
 }
 
-// UserDTO 返回给 Controller 的数据结构
-type UserDTO struct {
+// DTO 返回给 Controller 的 User 数据结构
+type DTO struct {
 	ID       int32     `json:"id"`
 	Username string    `json:"username"`
 	Email    string    `json:"email"`

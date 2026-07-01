@@ -13,7 +13,7 @@ const (
 )
 
 // RegisterUser
-func RegisterUser(publicGroup *gin.RouterGroup, protectedGroup *gin.RouterGroup, service user.Service) {
+func RegisterUser(metaGroup *gin.RouterGroup, authGroup *gin.RouterGroup, service user.Service) {
 	if service == nil {
 		return
 	}
@@ -21,7 +21,7 @@ func RegisterUser(publicGroup *gin.RouterGroup, protectedGroup *gin.RouterGroup,
 	controller := user.New(service)
 
 	// 调用路由注册函数
-	RegisterUserRoutes(publicGroup, protectedGroup, controller)
+	RegisterUserRoutes(metaGroup, authGroup, controller)
 }
 
 // RegisterUserRoutes

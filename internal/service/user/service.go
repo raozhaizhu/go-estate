@@ -5,7 +5,7 @@ import (
 	"errors"
 	"log"
 
-	db "github.com/raozhaizhu/go-estate/internal/db/sqlc"
+	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
 	role "github.com/raozhaizhu/go-estate/internal/domain/user"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 	"github.com/raozhaizhu/go-estate/pkg/token"
@@ -17,23 +17,23 @@ import (
  */
 
 // CreateUser 创建用户, 返回 UserDTO
-func (svc *service) CreateUser(ctx context.Context, input CreateUserInput, roleToCreate role.Role) (UserDTO, error) {
+func (svc *service) CreateUser(ctx context.Context, input CreateUserInput, roleToCreate role.Role) (*DTO, error) {
 	// 初始化参数
 	params, err := input.toDBParams(roleToCreate)
 	if err != nil {
-		return UserDTO{}, err
+		return nil, err
 	}
 
 	// 校验权限
 	err = svc.authorizeCreate(ctx, roleToCreate)
 	if err != nil { // 无权创建, 直接返空
-		return UserDTO{}, err
+		return nil, err
 	}
 
 	// -> db 创建用户
 	_, err = svc.store.CreateUser(ctx, params)
 	if err != nil {
-		return UserDTO{}, svc.mapDBError(err)
+		return nil, svc.mapDBError(err)
 	}
 	// -> db 返回用户
 	return svc.getUserDTO(ctx, params.Username)
@@ -45,11 +45,11 @@ func (svc *service) CreateUser(ctx context.Context, input CreateUserInput, roleT
  */
 
 // GetUser 获取UserDTO
-func (svc *service) GetUser(ctx context.Context, input GetUserInput) (UserDTO, error) {
+func (svc *service) GetUser(ctx context.Context, input GetUserInput) (*DTO, error) {
 	// 校验权限
 	err := svc.authorizeAccess(ctx, input.Username)
 	if err != nil {
-		return UserDTO{}, err
+		return nil, err
 	}
 
 	// -> db 返回用户
@@ -62,23 +62,23 @@ func (svc *service) GetUser(ctx context.Context, input GetUserInput) (UserDTO, e
  */
 
 // UpdateUser 更新用户信息, 返回 UserDTO
-func (svc *service) UpdateUser(ctx context.Context, input UpdateUserInput) (UserDTO, error) {
+func (svc *service) UpdateUser(ctx context.Context, input UpdateUserInput) (*DTO, error) {
 	// 转换参数
 	params, err := input.toDBParams()
 	if err != nil {
-		return UserDTO{}, err
+		return nil, err
 	}
 
 	// 校验权限
 	err = svc.authorizeAccess(ctx, input.Username)
 	if err != nil {
-		return UserDTO{}, err
+		return nil, err
 	}
 
 	// -> db 更新用户
 	_, err = svc.store.UpdateUser(ctx, params)
 	if err != nil {
-		return UserDTO{}, svc.mapDBError(err)
+		return nil, svc.mapDBError(err)
 	}
 
 	// -> db 返回用户
@@ -105,19 +105,19 @@ func (svc *service) mapDBError(err error) error {
 }
 
 // getUserDTO 从数据库获取用户信息, 过滤为 DTO 后返回
-func (svc *service) getUserDTO(ctx context.Context, username string) (UserDTO, error) {
+func (svc *service) getUserDTO(ctx context.Context, username string) (*DTO, error) {
 	// -> db 查询用户
 	user, err := svc.store.GetUser(ctx, username)
 	if err != nil { // 没查到
 		if errors.Is(db.WrapDBError(err), db.ErrRecordNotFound) {
-			return UserDTO{}, appError.ErrUserNotFound
+			return nil, appError.ErrUserNotFound
 		}
 		// 未知错误
-		return UserDTO{}, err
+		return nil, err
 	}
 
 	// -> db 返回用户
-	return UserDTO{
+	return &DTO{
 		ID:       user.ID,
 		Username: user.Username,
 		Email:    user.Email,

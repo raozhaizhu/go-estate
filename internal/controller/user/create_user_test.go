@@ -35,7 +35,7 @@ type createUserTC struct {
 	// svc埋桩
 	buildStubs func(svc *mock_controller.MockService)
 	// 校验数据
-	checkResponse func(t *testing.T, tc createUserTC, result response.Result[userService.UserDTO])
+	checkResponse func(t *testing.T, tc createUserTC, result response.Result[*userService.DTO])
 	// 请求地址
 	reqUrl string
 	// 响应代码
@@ -78,7 +78,7 @@ func runCreateUserTC(t *testing.T, testCases []createUserTC) {
 			require.Equal(t, tc.expectedHTTPCode, w.Code)
 
 			// 将响应 json 反序列化为 actualResult
-			var actualResult response.Result[service.UserDTO]
+			var actualResult response.Result[*service.DTO]
 			err = json.Unmarshal(w.Body.Bytes(), &actualResult)
 			require.NoError(t, err)
 
@@ -114,9 +114,10 @@ func TestCreateUser_Success(t *testing.T) {
 	createVipInput := createUserInput
 	createVipInput.Username = "vip"
 	// dto
-	vipDTO := userDTO
-	vipDTO.Username = "vip"
-	vipDTO.Role = role.RoleVip
+	vipDTOValue := *userDTO
+	vipDTOValue.Username = "vip"
+	vipDTOValue.Role = role.RoleVip
+	vipDTO := &vipDTOValue
 
 	testCases := []createUserTC{
 		{
@@ -177,19 +178,14 @@ func TestCreateUser_Success(t *testing.T) {
 // TestCreateUser_Authorization 测试因认证原因, 创建用户失败
 // 不带请求头, 或者带 Vip/User 头创建 Vip 失败
 func TestCreateUser_Authorization(t *testing.T) {
-	createUserReq, createUserInput, _, userDTO := setupCreateUserData()
+	createUserReq, createUserInput, _, _ := setupCreateUserData()
 
-	// vip 部分
 	// req
 	createVipReq := createUserReq
 	createVipReq.Username = "vip"
 	// input
 	createVipInput := createUserInput
 	createVipInput.Username = "vip"
-	// dto
-	vipDTO := userDTO
-	vipDTO.Username = "vip"
-	vipDTO.Role = role.RoleVip
 
 	// authWithUserFunc 携带 userToken 进行认证
 	authWithUserFunc := func(t *testing.T, request *http.Request, tokenMaker token.Maker) {

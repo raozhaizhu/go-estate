@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	db "github.com/raozhaizhu/go-estate/internal/db/sqlc"
+	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
 	dailyData "github.com/raozhaizhu/go-estate/internal/domain/daily_data"
 	service "github.com/raozhaizhu/go-estate/internal/service/daily_data"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"

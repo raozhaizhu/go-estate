@@ -36,7 +36,7 @@ func SetupRouter(services Services, config util.Config, tokenMaker token.Maker) 
 		c.JSON(200, gin.H{"message": "pong"})
 	})
 
-	// 处理路径错误, 当用户访问不存在的 api 资源时, 返回我们定义的错误格式
+	// 处理路径错误, 当用户访问不存在的 api 资源时, 返回自定义的错误格式(而不是直接 404, 不带 Code)
 	router.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, response.Result[any]{
 			Code: appError.ErrPathNotFound.Code,
@@ -44,18 +44,21 @@ func SetupRouter(services Services, config util.Config, tokenMaker token.Maker) 
 		})
 	})
 
-	// 初始化公开路由
-	publicGroup := router.Group(CurrAPI)
+	// 基础路由
+	api := router.Group(CurrAPI)
 
-	// 初始化受保护路由
-	authMiddleware := middleware.AuthMiddleware(tokenMaker) // 初始化认证中间件
-	protectedGroup := router.Group(CurrAPI)
-	protectedGroup.Use(authMiddleware)
+	// 元数据校验组 : 目前所有接口都需要元数据
+	metaGroup := api.Group("/")
+	metaGroup.Use(middleware.RequireMetadata())
+
+	// 受保护组
+	authGroup := metaGroup.Group("/")
+	authGroup.Use(middleware.AuthMiddleware(tokenMaker))
 
 	// 挂载模块
-	RegisterUser(publicGroup, protectedGroup, services.UserSvc) // user 模块可公开访问, 部分需登录
-	RegisterAuth(publicGroup, services.AuthSvc, config)         // auth 模块可公开访问
-	RegisterDailyData(protectedGroup, services.DailyDataSvc)    // dailyData 模块必须登录才能访问
+	RegisterUser(metaGroup, authGroup, services.UserSvc)         // user模块 部分需登录
+	RegisterAuth(metaGroup, authGroup, services.AuthSvc, config) // auth模块 部分需登录
+	RegisterDailyData(authGroup, services.DailyDataSvc)          // dailyData模块 必须登录
 
 	return router
 }
