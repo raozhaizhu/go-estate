@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	dailyData "github.com/raozhaizhu/go-estate/internal/domain/daily_data"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 )
@@ -87,4 +88,9 @@ func RandomEmail() string {
 
 func DeriveEmail(username string) string {
 	return fmt.Sprintf("%s@example.com", username)
+}
+
+func RandomUUID() string {
+	uuid := uuid.New()
+	return uuid.String()
 }

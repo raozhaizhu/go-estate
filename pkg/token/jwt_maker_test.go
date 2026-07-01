@@ -37,7 +37,7 @@ func TestJWTMakerBasic(t *testing.T) {
 	require.NotEmpty(t, token)
 
 	// 校验 payload 参数一致(或时间误差在允许范围内)
-	require.NotZero(t, payload.TokenID)
+	require.NotZero(t, payload.ID)
 	require.Equal(t, username, payload.Username)
 	require.Equal(t, role, payload.Role)
 	require.WithinDuration(t, issuedAt, payload.IssuedAt, time.Second)

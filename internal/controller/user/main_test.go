@@ -8,7 +8,7 @@ import (
 
 	controller "github.com/raozhaizhu/go-estate/internal/controller/user"
 	ctrl "github.com/raozhaizhu/go-estate/internal/controller/user"
-	db "github.com/raozhaizhu/go-estate/internal/db/sqlc"
+	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
 	role "github.com/raozhaizhu/go-estate/internal/domain/user"
 	userDomain "github.com/raozhaizhu/go-estate/internal/domain/user"
 	service "github.com/raozhaizhu/go-estate/internal/service/user"
@@ -64,15 +64,15 @@ func setupUserData() (db.User, string) {
 	return user, password
 }
 
-func setupUpdateUserData(username string, email string, password string, role userDomain.Role) (controller.UpdateUserRequest, service.UpdateUserInput, service.UserDTO) {
+func setupUpdateUserData(username string, email string, password string, role userDomain.Role) (controller.UpdateUserRequest, service.UpdateUserInput, *service.DTO) {
 	request := controller.UpdateUserRequest{Username: username, Password: &password, Email: &email}
 	input := service.UpdateUserInput{Username: username, Password: &password, Email: &email}
-	dto := service.UserDTO{ID: 1, Username: username, Email: email, Role: role}
+	dto := &service.DTO{ID: 1, Username: username, Email: email, Role: role}
 
 	return request, input, dto
 }
 
-func setupGetUserData() (string, db.User, service.UserDTO) {
+func setupGetUserData() (string, db.User, *service.DTO) {
 	// 准备 input
 	username := util.RandomUsername()
 
@@ -83,7 +83,7 @@ func setupGetUserData() (string, db.User, service.UserDTO) {
 		Role:     int16(userDomain.RoleUser),
 	}
 
-	userDTO := service.UserDTO{
+	userDTO := &service.DTO{
 		ID:       1,
 		Username: username,
 		Role:     userDomain.RoleUser,
@@ -91,7 +91,7 @@ func setupGetUserData() (string, db.User, service.UserDTO) {
 	return username, user, userDTO
 }
 
-func setupCreateUserData() (controller.CreateUserRequest, service.CreateUserInput, db.User, service.UserDTO) {
+func setupCreateUserData() (controller.CreateUserRequest, service.CreateUserInput, db.User, *service.DTO) {
 	// 准备 input
 	username := util.RandomUsername()
 	password := util.RandomPassword()
@@ -107,7 +107,7 @@ func setupCreateUserData() (controller.CreateUserRequest, service.CreateUserInpu
 		Role:     int16(userDomain.RoleUser),
 	}
 
-	userDTO := service.UserDTO{
+	userDTO := &service.DTO{
 		ID:       1,
 		Username: username,
 		Role:     userDomain.RoleUser,
@@ -141,19 +141,19 @@ func authWithAdminFunc(t *testing.T, request *http.Request, tokenMaker token.Mak
 }
 
 // checkEmptyResFuncGetUser response因失败返空
-func checkEmptyResFuncGetUser(t *testing.T, tc getUserTC, result response.Result[service.UserDTO]) {
+func checkEmptyResFuncGetUser(t *testing.T, tc getUserTC, result response.Result[*service.DTO]) {
 	require.Equal(t, tc.expectedBizCode, result.Code)
 	require.Empty(t, result.Data)
 }
 
 // checkEqualFuncGetUser response返回的 username 和期望的 username 一致
-func checkEqualFuncGetUser(t *testing.T, tc getUserTC, result response.Result[service.UserDTO]) {
+func checkEqualFuncGetUser(t *testing.T, tc getUserTC, result response.Result[*service.DTO]) {
 	require.Equal(t, tc.expectedBizCode, result.Code)
 	require.Equal(t, tc.request.Username, result.Data.Username)
 }
 
 // checkEmptyResFuncCreateUser response因失败返空
-func checkEmptyResFuncCreateUser(t *testing.T, tc createUserTC, result response.Result[service.UserDTO]) {
+func checkEmptyResFuncCreateUser(t *testing.T, tc createUserTC, result response.Result[*service.DTO]) {
 	require.Equal(t, tc.expectedBizCode, result.Code)
 	require.Empty(t, result.Data)
 	t.Log(result.Msg)
@@ -161,18 +161,17 @@ func checkEmptyResFuncCreateUser(t *testing.T, tc createUserTC, result response.
 }
 
 // checkEqualFuncCreateUser response返回的 username 和期望的 username 一致
-func checkEqualFuncCreateUser(t *testing.T, tc createUserTC, result response.Result[service.UserDTO]) {
+func checkEqualFuncCreateUser(t *testing.T, tc createUserTC, result response.Result[*service.DTO]) {
 	require.Equal(t, tc.expectedBizCode, result.Code)
 	require.Equal(t, tc.request.Username, result.Data.Username)
-
 }
 
 // checkEmptyResFuncUpdateUser response因失败返空
-func checkEmptyResFuncUpdateUser(t *testing.T, req ctrl.UpdateUserRequest, data service.UserDTO) {
+func checkEmptyResFuncUpdateUser(t *testing.T, req ctrl.UpdateUserRequest, data *service.DTO) {
 	require.Empty(t, data)
 }
 
 // checkEqualFuncUpdateUser response返回的 username 和期望的 username 一致
-func checkEqualFuncUpdateUser(t *testing.T, req ctrl.UpdateUserRequest, data service.UserDTO) {
+func checkEqualFuncUpdateUser(t *testing.T, req ctrl.UpdateUserRequest, data *service.DTO) {
 	require.Equal(t, req.Username, data.Username)
 }

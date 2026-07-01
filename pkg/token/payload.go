@@ -2,14 +2,20 @@ package token
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/raozhaizhu/go-estate/internal/dao/cache"
+	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
 	role "github.com/raozhaizhu/go-estate/internal/domain/user"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 )
+
+/** ====================================================================================
+ * 🏁 Types
+ * =====================================================================================
+ */
 
 // TokenType 令牌类型
 type TokenType byte
@@ -22,19 +28,51 @@ const (
 
 	// PayloadKey SetKey, 用于从 Context 中提取 payload
 	PayloadKey = "authorization_payload"
-	// RefreshTokenKey SetKey, 用于从 Context 中提取 refresh_token
+	// RefreshTokenKey 用于从 Cookie 中提取 refresh_token
 	RefreshTokenKey = "refresh_token"
 )
 
 // Payload 令牌荷载
 type Payload struct {
-	TokenID   uuid.UUID `json:"id"`
+	ID        uuid.UUID `json:"id"`
 	TokenType TokenType `json:"token_type"`
 	Username  string    `json:"username"`
 	Role      role.Role `json:"role"`
 	IssuedAt  time.Time `json:"issued_at"`
 	ExpiredAt time.Time `json:"expired_at"`
 }
+
+func (p *Payload) ToDBParams(userAgent, clientIp, deviceID string) db.CreateSessionParams {
+	params := db.CreateSessionParams{
+		ID:        p.ID.String(),
+		Username:  p.Username,
+		DeviceID:  deviceID,
+		UserAgent: userAgent,
+		ClientIp:  clientIp,
+		IsBlocked: false,
+		ExpiresAt: p.ExpiredAt,
+	}
+
+	return params
+}
+
+func (p *Payload) ToCacheParams() cache.AddNewSessionParams {
+	params := cache.AddNewSessionParams{
+		JTI: p.ID.String(),
+		Session: cache.Session{
+			Username:  p.Username,
+			IsBlocked: false,
+			ExpiresAt: p.ExpiredAt,
+		},
+	}
+
+	return params
+}
+
+/** ====================================================================================
+ * 🏁 Methods
+ * =====================================================================================
+ */
 
 // NewPayload 构造令牌荷载
 func NewPayload(username string, role role.Role, duration time.Duration, tokenType TokenType) (*Payload, error) {
@@ -45,7 +83,7 @@ func NewPayload(username string, role role.Role, duration time.Duration, tokenTy
 	}
 	// 构造荷载
 	payload := &Payload{
-		TokenID:   tokenID,
+		ID:        tokenID,
 		TokenType: tokenType,
 		Username:  username,
 		Role:      role,
@@ -108,7 +146,6 @@ func (p *Payload) GetAudience() (jwt.ClaimStrings, error) {
 
 // GetPayload 从上下文中获取荷载
 func GetPayload(ctx context.Context) (*Payload, error) {
-	log.Println("ctx: ", ctx)
 	// 提取 payload
 	val := ctx.Value(PayloadKey)
 

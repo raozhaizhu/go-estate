@@ -8,7 +8,7 @@ import (
 	response "github.com/raozhaizhu/go-estate/pkg/api"
 )
 
-func RegisterDailyData(protectedGroup *gin.RouterGroup, service dailyDataController.Service) {
+func RegisterDailyData(authGroup *gin.RouterGroup, service dailyDataController.Service) {
 	if service == nil {
 		return
 	}
@@ -16,7 +16,7 @@ func RegisterDailyData(protectedGroup *gin.RouterGroup, service dailyDataControl
 	controller := dailyDataController.NewDailyDataController(service)
 
 	// 初始化路由组
-	dailyGroup := protectedGroup.Group("/daily_data")
+	dailyGroup := authGroup.Group("/daily_data")
 
 	{
 		// 至少是 User 才可以获取单日数据

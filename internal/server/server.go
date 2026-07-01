@@ -4,7 +4,10 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
-	db "github.com/raozhaizhu/go-estate/internal/db/sqlc"
+	"github.com/go-redis/redis/v8"
+	"github.com/hibiken/asynq"
+	"github.com/raozhaizhu/go-estate/internal/dao/cache"
+	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
 	"github.com/raozhaizhu/go-estate/internal/delivery"
 	"github.com/raozhaizhu/go-estate/internal/service/auth"
 	dailyData "github.com/raozhaizhu/go-estate/internal/service/daily_data"
@@ -17,11 +20,14 @@ import (
 type Server struct {
 	config     util.Config
 	store      db.Store
+	cache      cache.Cache
+	redis      *redis.Client
 	tokenMaker token.Maker
 	router     *gin.Engine
+	taskClient *asynq.Client
 }
 
-func NewServer(config util.Config, store db.Store) (*Server, error) {
+func NewServer(config util.Config, store db.Store, redisCache cache.Cache, asynqClnt *asynq.Client) (*Server, error) {
 	// 初始化 JWTMaker
 	tokenMaker, err := token.NewJwtMaker(config.TokenSymmetricKey)
 	if err != nil {
@@ -29,7 +35,7 @@ func NewServer(config util.Config, store db.Store) (*Server, error) {
 	}
 
 	// 初始化服务
-	authSvc := auth.New(store, config, tokenMaker)
+	authSvc := auth.New(store, redisCache, config, tokenMaker, asynqClnt)
 	userSvc := user.New(store)
 	dailyDataSvc := dailyData.New(store)
 	services := delivery.Services{
@@ -48,8 +54,10 @@ func NewServer(config util.Config, store db.Store) (*Server, error) {
 	server := &Server{
 		config:     config,
 		store:      store,
+		cache:      redisCache,
 		tokenMaker: tokenMaker,
 		router:     router,
+		taskClient: asynqClnt,
 	}
 
 	return server, nil

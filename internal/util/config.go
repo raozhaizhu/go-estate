@@ -11,6 +11,8 @@ import (
 type Config struct {
 	Environment          string        `mapstructure:"ENVIRONMENT"`
 	DBSource             string        `mapstructure:"DB_SOURCE"`
+	RedisAddress         string        `mapstructure:"REDIS_ADDRESS"`
+	RedisPassword        string        `mapstructure:"REDIS_PASSWORD"`
 	MigrationURL         string        `mapstructure:"MIGRATION_URL"`
 	ServerPort           string        `mapstructure:"SERVER_PORT"`
 	TokenSymmetricKey    string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`

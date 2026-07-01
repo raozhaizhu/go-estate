@@ -9,8 +9,8 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	user "github.com/raozhaizhu/go-estate/internal/domain/user"
-	user0 "github.com/raozhaizhu/go-estate/internal/service/user"
+	userDomain "github.com/raozhaizhu/go-estate/internal/domain/user"
+	user "github.com/raozhaizhu/go-estate/internal/service/user"
 )
 
 // MockService is a mock of Service interface.
@@ -37,10 +37,10 @@ func (m *MockService) EXPECT() *MockServiceMockRecorder {
 }
 
 // CreateUser mocks base method.
-func (m *MockService) CreateUser(arg0 context.Context, arg1 user0.CreateUserInput, arg2 user.Role) (user0.UserDTO, error) {
+func (m *MockService) CreateUser(arg0 context.Context, arg1 user.CreateUserInput, arg2 userDomain.Role) (*user.DTO, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateUser", arg0, arg1, arg2)
-	ret0, _ := ret[0].(user0.UserDTO)
+	ret0, _ := ret[0].(*user.DTO)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -52,10 +52,10 @@ func (mr *MockServiceMockRecorder) CreateUser(arg0, arg1, arg2 interface{}) *gom
 }
 
 // GetUser mocks base method.
-func (m *MockService) GetUser(arg0 context.Context, arg1 user0.GetUserInput) (user0.UserDTO, error) {
+func (m *MockService) GetUser(arg0 context.Context, arg1 user.GetUserInput) (*user.DTO, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUser", arg0, arg1)
-	ret0, _ := ret[0].(user0.UserDTO)
+	ret0, _ := ret[0].(*user.DTO)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -67,10 +67,10 @@ func (mr *MockServiceMockRecorder) GetUser(arg0, arg1 interface{}) *gomock.Call 
 }
 
 // UpdateUser mocks base method.
-func (m *MockService) UpdateUser(arg0 context.Context, arg1 user0.UpdateUserInput) (user0.UserDTO, error) {
+func (m *MockService) UpdateUser(arg0 context.Context, arg1 user.UpdateUserInput) (*user.DTO, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateUser", arg0, arg1)
-	ret0, _ := ret[0].(user0.UserDTO)
+	ret0, _ := ret[0].(*user.DTO)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

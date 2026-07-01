@@ -43,7 +43,7 @@ func TestUpdateUser_Success(t *testing.T) {
 		request.Header.Set("Authorization", "Bearer "+userToken)
 	}
 
-	testCases := []GTC[ctrl.UpdateUserRequest, svc.UserDTO]{
+	testCases := []GTC[ctrl.UpdateUserRequest, *svc.DTO]{
 		{
 			Name:      "带 Admin 请求头更新 Vip",
 			Request:   updateVipReq,
@@ -127,7 +127,7 @@ func TestUpdateUser_Authorization(t *testing.T) {
 		request.Header.Set("Authorization", "Bearer "+userToken)
 	}
 
-	testCases := []GTC[ctrl.UpdateUserRequest, svc.UserDTO]{
+	testCases := []GTC[ctrl.UpdateUserRequest, *svc.DTO]{
 		{
 			Name:      "Vip 带请求头更新 其他 Vip",
 			Request:   updateAnotherVipReq,
@@ -135,7 +135,7 @@ func TestUpdateUser_Authorization(t *testing.T) {
 			BuildStubs: func(mockSvc *mock_controller.MockService) {
 				mockSvc.EXPECT().
 					UpdateUser(gomock.Any(), updateAnotherVipInput).
-					Return(svc.UserDTO{}, appError.ErrAuthPermissionDenied).
+					Return(nil, appError.ErrAuthPermissionDenied).
 					Times(1)
 			},
 			CheckResponse:    checkEmptyResFuncUpdateUser,
@@ -149,7 +149,7 @@ func TestUpdateUser_Authorization(t *testing.T) {
 			BuildStubs: func(mockSvc *mock_controller.MockService) {
 				mockSvc.EXPECT().
 					UpdateUser(gomock.Any(), updateUserInput).
-					Return(svc.UserDTO{}, appError.ErrAuthPermissionDenied).
+					Return(nil, appError.ErrAuthPermissionDenied).
 					Times(1)
 			},
 			CheckResponse:    checkEmptyResFuncUpdateUser,
@@ -163,7 +163,7 @@ func TestUpdateUser_Authorization(t *testing.T) {
 			BuildStubs: func(mockSvc *mock_controller.MockService) {
 				mockSvc.EXPECT().
 					UpdateUser(gomock.Any(), updateAnotherVipInput).
-					Return(svc.UserDTO{}, appError.ErrAuthPermissionDenied).
+					Return(nil, appError.ErrAuthPermissionDenied).
 					Times(1)
 			},
 			CheckResponse:    checkEmptyResFuncUpdateUser,
@@ -177,7 +177,7 @@ func TestUpdateUser_Authorization(t *testing.T) {
 			BuildStubs: func(mockSvc *mock_controller.MockService) {
 				mockSvc.EXPECT().
 					UpdateUser(gomock.Any(), updateAnotherUserInput).
-					Return(svc.UserDTO{}, appError.ErrAuthPermissionDenied).
+					Return(nil, appError.ErrAuthPermissionDenied).
 					Times(1)
 			},
 			CheckResponse:    checkEmptyResFuncUpdateUser,
@@ -191,7 +191,7 @@ func TestUpdateUser_Authorization(t *testing.T) {
 			BuildStubs: func(mockSvc *mock_controller.MockService) {
 				mockSvc.EXPECT().
 					UpdateUser(gomock.Any(), updateUserInput).
-					Return(svc.UserDTO{}, appError.ErrAuthPermissionDenied).
+					Return(nil, appError.ErrAuthPermissionDenied).
 					Times(0)
 			},
 			CheckResponse:    checkEmptyResFuncUpdateUser,
@@ -205,7 +205,7 @@ func TestUpdateUser_Authorization(t *testing.T) {
 			BuildStubs: func(mockSvc *mock_controller.MockService) {
 				mockSvc.EXPECT().
 					UpdateUser(gomock.Any(), updateUserInput).
-					Return(svc.UserDTO{}, appError.ErrAuthPermissionDenied).
+					Return(nil, appError.ErrAuthPermissionDenied).
 					Times(0)
 			},
 			CheckResponse:    checkEmptyResFuncUpdateUser,
@@ -246,7 +246,7 @@ func TestUpdateUser_Validation(t *testing.T) {
 		authWithFunc(t, request, tokenMaker, util.RandomUsername(), role.RoleUser)
 	}
 
-	testCases := []GTC[ctrl.UpdateUserRequest, svc.UserDTO]{
+	testCases := []GTC[ctrl.UpdateUserRequest, *svc.DTO]{
 		{
 			Name:      "用户名过短",
 			Request:   tooShortUsernameReq,

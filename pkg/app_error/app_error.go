@@ -29,17 +29,26 @@ const (
 	CodeBadEndDate                                   // 结束日期格式错误
 	CodeTimeOutOfRange                               // 查询日期超出范围
 	CodeBadTimerOrder                                // 开始日期晚于结束日期
+	CodeEmptyDeviceID                                // 设备 ID 不得为空
+	CodeEmptyUserAgent                               // 用户代理不得为空
 )
 
 const (
 	// 401 认证错误
-	CodeAuthInvalidToken      = CodeGroupAuthError + iota // 令牌不可用
-	CodeAuthExpiredToken                                  // 令牌已过期
-	CodeWrongUsernamePassword                             // 账户名或密码错误
-	CodeAuthNoHeader                                      // 认证头不存在
-	CodeAuthBadHeader                                     // 认证头格式错误
-	CodeAuthRequired                                      // 未登录或者登录已经失效
-	CodeAuthPermissionDenied                              // 角色权限不足
+	// 令牌相关
+	CodeAuthInvalidToken     = CodeGroupAuthError + iota // 令牌不可用
+	CodeAuthExpiredToken                                 // 令牌已过期
+	CodeCookieNoRefreshToken                             // cookie 内没有 freshToken
+	CodeNoSession                                        // 数据内没有 session
+	CodeMissRefreshToken                                 // 缓存内没有 session
+	CodeBlockedSession                                   // session 已注销
+
+	// 其他错误
+	CodeWrongUsernamePassword // 账户名或密码错误
+	CodeAuthNoHeader          // 认证头不存在
+	CodeAuthBadHeader         // 认证头格式错误
+	CodeAuthRequired          // 未登录或者登录已经失效
+	CodeAuthPermissionDenied  // 角色权限不足
 )
 
 const (
@@ -81,15 +90,23 @@ var (
 	ErrBadEndDate     = New(CodeBadEndDate, "结束日期格式错误")
 	ErrTimeOutOfRange = New(CodeTimeOutOfRange, "查询日期超出范围")
 	ErrBadTimerOrder  = New(CodeBadTimerOrder, "开始日期晚于结束日期")
+	ErrEmptyDeviceID  = New(CodeEmptyDeviceID, "设备 ID 不得为空")
+	ErrEmptyUserAgent = New(CodeEmptyUserAgent, "用户代理不得为空")
 
 	// 401 认证错误
-	ErrInvalidToken          = New(CodeAuthInvalidToken, "令牌不可用")
-	ErrExpiredToken          = New(CodeAuthExpiredToken, "令牌已过期")
 	ErrWrongUsernamePassword = New(CodeWrongUsernamePassword, "账户名或密码错误")
 	ErrAuthNoHeader          = New(CodeAuthNoHeader, "没有认证头")
 	ErrAuthBadHeader         = New(CodeAuthBadHeader, "认证头格式错误")
 	ErrAuthRequired          = New(CodeAuthRequired, "未登录或者登录已经失效")
 	ErrAuthPermissionDenied  = New(CodeAuthPermissionDenied, "角色权限不足")
+
+	ErrInvalidToken         = New(CodeAuthInvalidToken, "令牌不可用")
+	ErrExpiredToken         = New(CodeAuthExpiredToken, "令牌已过期")
+	ErrCookieNoRefreshToken = New(CodeCookieNoRefreshToken, "cookie 内没有 freshToken")
+
+	ErrMissSession    = New(CodeMissRefreshToken, "缓存内没有 session")
+	ErrNoSession      = New(CodeNoSession, "数据内没有 session")
+	ErrBlockedSession = New(CodeBlockedSession, "session 已注销")
 
 	// 404 资源不存在
 	ErrPathNotFound = New(CodePathNotFound, "请求路径不存在")

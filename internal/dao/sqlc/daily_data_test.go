@@ -1,4 +1,4 @@
-package db
+package db_test
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
 	dailyData "github.com/raozhaizhu/go-estate/internal/domain/daily_data"
 	"github.com/raozhaizhu/go-estate/internal/util"
 	"github.com/stretchr/testify/assert"
@@ -49,7 +50,7 @@ func TestGetDataByDay(t *testing.T) {
 func TestGetDataByPeriod(t *testing.T) {
 	start, end := util.GetRandom2DayInRange()
 	// 查询正常
-	sales, err := testStore.GetDataByPeriod(context.Background(), GetDataByPeriodParams{start, end})
+	sales, err := testStore.GetDataByPeriod(context.Background(), db.GetDataByPeriodParams{start, end})
 	require.NoError(t, err)
 	require.NotEmpty(t, sales)
 	// 查询结果非空, 实际日期在区间内
@@ -73,9 +74,9 @@ type TestCase struct {
 
 // TestGetAllData_ErrorScenarios 测试所有函数在 DB意外失败时, 行为是否符合预期(借助 sqlmock)
 func TestGetAllData_ErrorScenarios(t *testing.T) {
-	db, mock, _ := sqlmock.New()
-	defer db.Close()
-	queries := New(db)
+	mockDB, mock, _ := sqlmock.New()
+	defer mockDB.Close()
+	queries := db.New(mockDB)
 	columns := []string{"id", "date", "region", "category", "license_no", "project_name", "house_count", "area", "avg_price"}
 	funcsToTest := []struct {
 		name   string
@@ -94,36 +95,12 @@ func TestGetAllData_ErrorScenarios(t *testing.T) {
 			expectedError: "fail",
 		},
 		{
-			name: "QueryError",
-			mockAction: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery("SELECT").WillReturnError(errors.New("fail"))
-			},
-			expectedError: "fail",
-		},
-		{
 			name: "ScanError",
 			mockAction: func(mock sqlmock.Sqlmock) {
 				rows := sqlmock.NewRows(columns).AddRow(1, "bad-date", 0, "C", "L", "P", 10, 1.1, 1.1)
 				mock.ExpectQuery("SELECT").WillReturnRows(rows)
 			},
 			expectedError: "Scan error",
-		},
-		{
-			name: "ScanError",
-			mockAction: func(mock sqlmock.Sqlmock) {
-				rows := sqlmock.NewRows(columns).AddRow(1, "bad-date", 0, "C", "L", "P", 10, 1.1, 1.1)
-				mock.ExpectQuery("SELECT").WillReturnRows(rows)
-			},
-			expectedError: "Scan error",
-		},
-		{
-			name: "RowsErr",
-			mockAction: func(m sqlmock.Sqlmock) {
-				rows := sqlmock.NewRows(columns).AddRow(1, time.Now(), 0, "C", "L", "P", 10, 1.1, 1.1).
-					RowError(0, errors.New("stream err")) // 当第 0 行被读取时, 抛出读取错误
-				mock.ExpectQuery("SELECT").WillReturnRows(rows)
-			},
-			expectedError: "stream err",
 		},
 		{
 			name: "RowsErr",
@@ -165,7 +142,7 @@ func assertDateEqual(t *testing.T, actualDay, expectedDay time.Time) {
 }
 
 // assertSaleValid 校验 2 成交数据是否相等
-func assertSaleValid(t *testing.T, sale DailyDatum) {
+func assertSaleValid(t *testing.T, sale db.DailyDatum) {
 	require.NotZero(t, sale.ID)
 	// region必须在 0-13 之内,房管网目前仅14 区
 	require.GreaterOrEqual(t, int(sale.Region), dailyData.MinRegion, "Region必须>=0")

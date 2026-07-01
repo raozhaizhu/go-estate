@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -18,7 +19,9 @@ type controller struct {
 }
 
 type Service interface {
-	Login(ctx *gin.Context, input auth.LoginInput) (auth.LoginDTO, string, error)
+	Login(ctx context.Context, input auth.LoginInput) (*auth.DTO, string, error)
+	Refresh(ctx context.Context, refreshTokenStr string) (*auth.DTO, error)
+	Logout(ctx context.Context, input auth.LogoutInput) error
 }
 
 func New(service Service, refreshDuration time.Duration) *controller {
@@ -29,14 +32,20 @@ func New(service Service, refreshDuration time.Duration) *controller {
  * 🏁 Login
  * =====================================================================================
  */
+
+// LoginRequest 登录请求格式
 type LoginRequest struct {
-	Username string  `uri:"username" binding:"required,min=1"`
-	Password *string `json:"password" binding:"omitempty,min=8,max=16"`
+	Username string `uri:"username" binding:"required,min=1"`
+	Password string `json:"password" binding:"required,min=8,max=16"`
 }
 
-func (r *LoginRequest) toSvcInput() auth.LoginInput {
+// toSvcInput 转换: LoginRequest -> LoginInput
+func (r *LoginRequest) toSvcInput(ctx *gin.Context) auth.LoginInput {
 	return auth.LoginInput{
-		Username: r.Username,
-		Password: *r.Password,
+		Username:  r.Username,
+		Password:  r.Password,
+		DeviceID:  ctx.GetHeader("X-Device-ID"),
+		UserAgent: ctx.Request.UserAgent(),
+		ClientIp:  ctx.ClientIP(),
 	}
 }
