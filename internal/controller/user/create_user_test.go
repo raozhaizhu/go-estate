@@ -2,414 +2,288 @@ package user_test
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sort"
+	"strings"
 	"testing"
-	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
-	userController "github.com/raozhaizhu/go-estate/internal/controller/user"
 	mock_controller "github.com/raozhaizhu/go-estate/internal/controller/user/mock"
 	"github.com/raozhaizhu/go-estate/internal/delivery"
-	role "github.com/raozhaizhu/go-estate/internal/domain/user"
-	service "github.com/raozhaizhu/go-estate/internal/service/user"
-	userService "github.com/raozhaizhu/go-estate/internal/service/user"
+	userDomain "github.com/raozhaizhu/go-estate/internal/domain/user"
+	"github.com/raozhaizhu/go-estate/internal/service/user"
+	testUtil "github.com/raozhaizhu/go-estate/internal/test_util"
 	"github.com/raozhaizhu/go-estate/internal/util"
 	response "github.com/raozhaizhu/go-estate/pkg/api"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 	"github.com/raozhaizhu/go-estate/pkg/token"
+	mock_token "github.com/raozhaizhu/go-estate/pkg/token/mock"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-/** ====================================================================================
- * 🏁 Helper
- * =====================================================================================
- */
-type createUserTC struct {
-	name    string
-	request userController.CreateUserRequest
-	// 设置认证头信息
-	setupAuth func(t *testing.T, request *http.Request, tokenMaker token.Maker)
-	// svc埋桩
-	buildStubs func(svc *mock_controller.MockService)
-	// 校验数据
-	checkResponse func(t *testing.T, tc createUserTC, result response.Result[*userService.DTO])
-	// 请求地址
-	reqUrl string
-	// 响应代码
-	expectedHTTPCode int
-	expectedBizCode  int
-	expectedMsg      string
-}
-
-func runCreateUserTC(t *testing.T, testCases []createUserTC) {
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
-			// 初始化 mockService
-			mockService := mock_controller.NewMockService(ctrl)
-			router := delivery.SetupRouter(delivery.Services{
-				UserSvc: mockService,
-			}, testConfig, testTokenMaker)
-
-			// svc埋桩
-			tc.buildStubs(mockService)
-
-			//  初始化 recorder, ctx, router
-			w := httptest.NewRecorder()
-
-			// 构建 req
-			data, err := json.Marshal(tc.request)
-			require.NoError(t, err)
-			reqBody := bytes.NewBuffer(data)
-			req, err := http.NewRequest(http.MethodPost, tc.reqUrl, reqBody)
-			require.NoError(t, err)
-
-			// 设置认证头信息
-			tc.setupAuth(t, req, testTokenMaker)
-
-			// 服务 req
-			router.ServeHTTP(w, req)
-
-			// 校验状态码
-			require.Equal(t, tc.expectedHTTPCode, w.Code)
-
-			// 将响应 json 反序列化为 actualResult
-			var actualResult response.Result[*service.DTO]
-			err = json.Unmarshal(w.Body.Bytes(), &actualResult)
-			require.NoError(t, err)
-
-			// 比较 actualResult
-			tc.checkResponse(t, tc, actualResult)
-		})
+// TestCreateUser 测试创建新用户
+// 不带请求头可创建 User, 带 Admin 请求头可以创建 Vip
+func TestCreateUser(t *testing.T) {
+	// 准备数据
+	createUserUrl := delivery.CurrAPI + "/user"
+	createVipUrl := delivery.CurrAPI + "/user/vip"
+	username, password, email := util.RandomUsername(), util.RandomPassword(), util.RandomEmail()
+	shortUsername, shortPassword, longUsername, longPassword := util.RandomString(1), util.RandomString(1), util.RandomString(33), util.RandomString(17)
+	deviceID, userAgent, _, clientIPWithPort := testUtil.DeviceID, testUtil.UserAgent, testUtil.ClientIp, testUtil.ClientIpWithPort
+	correctBody := gin.H{
+		"username": username,
+		"password": password,
+		"email":    email,
 	}
-}
-
-/** ====================================================================================
- * 🏁 Variant
- * =====================================================================================
- */
-
-// url
-var createVipReqUrl = fmt.Sprintf("%s/%s", delivery.UserApi, "vip")
-
-/** ====================================================================================
- * 🏁 TestCreateUser_Success
- * =====================================================================================
- */
-
-// TestCreateUser_Success 测试成功创建新用户
-// 不带请求头可创建 User, 带 Admin 请求头可以创建 Vip/Uer
-func TestCreateUser_Success(t *testing.T) {
-	createUserReq, createUserInput, _, userDTO := setupCreateUserData()
-
-	// vip 部分
-	// req
-	createVipReq := createUserReq
-	createVipReq.Username = "vip"
-	// input
-	createVipInput := createUserInput
-	createVipInput.Username = "vip"
-	// dto
-	vipDTOValue := *userDTO
-	vipDTOValue.Username = "vip"
-	vipDTOValue.Role = role.RoleVip
-	vipDTO := &vipDTOValue
-
-	testCases := []createUserTC{
-		{
-			name:      "不带请求头创建 User",
-			request:   createUserReq,
-			setupAuth: authWithEmptyFunc,
-			buildStubs: func(svc *mock_controller.MockService) {
-				svc.EXPECT().
-					CreateUser(gomock.Any(), createUserInput, role.RoleUser).
-					Return(userDTO, nil).
-					Times(1)
-			},
-			reqUrl:           delivery.UserApi,
-			checkResponse:    checkEqualFuncCreateUser,
-			expectedHTTPCode: 200,
-			expectedBizCode:  200,
-		},
-		{
-			name:      "带 Admin 请求头创建 Vip",
-			request:   createVipReq,
-			setupAuth: authWithAdminFunc,
-			buildStubs: func(svc *mock_controller.MockService) {
-				svc.EXPECT().
-					CreateUser(gomock.Any(), createVipInput, role.RoleVip).
-					Return(vipDTO, nil).
-					Times(1)
-			},
-			reqUrl:           createVipReqUrl,
-			checkResponse:    checkEqualFuncCreateUser,
-			expectedHTTPCode: 200,
-			expectedBizCode:  200,
-		},
-		{
-			name:      "带 Admin 请求头创建 User",
-			request:   createUserReq,
-			setupAuth: authWithAdminFunc,
-			buildStubs: func(svc *mock_controller.MockService) {
-				svc.EXPECT().
-					CreateUser(gomock.Any(), createUserInput, role.RoleUser).
-					Return(userDTO, nil).
-					Times(1)
-			},
-			reqUrl:           delivery.UserApi,
-			checkResponse:    checkEqualFuncCreateUser,
-			expectedHTTPCode: 200,
-			expectedBizCode:  200,
-		},
+	_, authorization := testUtil.AccessStr, testUtil.AuthorizationAccessToken
+	emptyBody := gin.H{}
+	brokenBody := `{"username":"test","password":`
+	wrongBody := gin.H{
+		"usename": username,
+		"pasword": password,
+		"emai":    email,
+	}
+	shortBody := gin.H{
+		"username": shortUsername,
+		"password": shortPassword,
+		"email":    email,
+	}
+	longBody := gin.H{
+		"username": longUsername,
+		"password": longPassword,
+		"email":    email,
+	}
+	badEmailBody := gin.H{
+		"username": username,
+		"password": password,
+		"email":    "123.com",
+	}
+	correctInput := user.CreateUserInput{
+		Username: username,
+		Password: password,
+		Email:    email,
+	}
+	correctUserDto := &user.DTO{
+		Username: username,
+		Email:    email,
+		Role:     userDomain.RoleUser,
+	}
+	correctVipDto := &user.DTO{
+		Username: username,
+		Email:    email,
+		Role:     userDomain.RoleVip,
+	}
+	correctHeaderCookie := map[string]any{
+		"X-Device-ID":   deviceID,
+		"User-Agent":    userAgent,
+		"Authorization": authorization,
+	}
+	correctHeaderNoCookie := map[string]any{
+		"X-Device-ID": deviceID,
+		"User-Agent":  userAgent,
+	}
+	accessAdminPayload := &token.Payload{
+		Username:  username,
+		Role:      userDomain.RoleAdmin,
+		TokenType: token.TokenTypeAccessToken,
 	}
 
-	runCreateUserTC(t, testCases)
-}
+	// 默认执行逻辑
+	defaultAction := func(t *testing.T, reqUrl string, body interface{}, router *gin.Engine, writer *httptest.ResponseRecorder, customData map[string]any) {
+		var req *http.Request
+		var err error
 
-/** ====================================================================================
- * 🏁 TestCreateUser_Authorization
- * =====================================================================================
- */
+		if body != nil { // 带 body
+			jsonData, err := json.Marshal(body)
+			require.NoError(t, err)
+			req, err = http.NewRequest(http.MethodPost, reqUrl, bytes.NewBuffer(jsonData))
+			req.Header.Set("Content-type", "application/json")
+		} else { //不带 body
+			req, err = http.NewRequest(http.MethodPost, reqUrl, nil)
+		}
+		assert.NoError(t, err)
 
-// TestCreateUser_Authorization 测试因认证原因, 创建用户失败
-// 不带请求头, 或者带 Vip/User 头创建 Vip 失败
-func TestCreateUser_Authorization(t *testing.T) {
-	createUserReq, createUserInput, _, _ := setupCreateUserData()
+		req.RemoteAddr = clientIPWithPort // 设置 IP
+		for k, v := range customData {    // 设置 UserAgent 和 DeviceID
+			if strVal, ok := v.(string); ok {
+				req.Header.Set(k, strVal)
+			}
+		}
 
-	// req
-	createVipReq := createUserReq
-	createVipReq.Username = "vip"
-	// input
-	createVipInput := createUserInput
-	createVipInput.Username = "vip"
-
-	// authWithUserFunc 携带 userToken 进行认证
-	authWithUserFunc := func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-		// userToken
-		userToken, _, err := testTokenMaker.CreateToken(createUserReq.Username, role.RoleUser, time.Minute, token.TokenTypeAccessToken)
+		//  执行请求
+		router.ServeHTTP(writer, req)
+	}
+	successCheckResponse := func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string) {
+		var results response.Result[*user.DTO]
+		// 反序列化结果
+		err := json.Unmarshal(writer.Body.Bytes(), &results)
+		assert.NoError(t, err)
+		assert.Equal(t, 200, writer.Code)
+		assert.Equal(t, expectedBizCode, results.Code)
+		assert.Equal(t, username, results.Data.Username)
+		assert.Equal(t, results.Msg, expectedMsg)
+	}
+	failCheckResponse := func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string) {
+		var results response.Result[*user.DTO]
+		// 反序列化结果
+		err := json.Unmarshal(writer.Body.Bytes(), &results)
 		require.NoError(t, err)
-		request.Header.Set("Authorization", "Bearer "+userToken)
+		assert.Equal(t, expectedHTTPCode, writer.Code)
+		assert.Equal(t, expectedBizCode, results.Code)
+		// 校验 Msg 是否一致
+		expSlice := strings.Split(expectedMsg, ", ")
+		actSlice := strings.Split(results.Msg, ", ")
+		sort.Strings(expSlice)
+		sort.Strings(actSlice)
+		assert.Equal(t, expSlice, actSlice)
+	}
+	// 成功桩函数
+	stubVerifyTokenSuccess := func(tokenMakerMock *mock_token.MockMaker) {
+		tokenMakerMock.EXPECT().VerifyToken(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(tokenStr string, tokenType token.TokenType) (*token.Payload, error) {
+				require.Equal(t, tokenType, token.TokenType(token.TokenTypeAccessToken))
+				return accessAdminPayload, nil
+			}).Times(1)
 	}
 
-	testCases := []createUserTC{
+	testCases := []testCase{
 		{
-			name:      "不带请求头创建 Vip",
-			request:   createVipReq,
-			setupAuth: authWithEmptyFunc,
-			buildStubs: func(svc *mock_controller.MockService) {
-				svc.EXPECT().
-					CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).
-					Times(0)
+			name:       "无 Cookie 直接创建 User",
+			reqUrl:     createUserUrl,
+			body:       correctBody,
+			customData: correctHeaderNoCookie,
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+				svcMock.EXPECT().CreateUser(gomock.Any(), correctInput, userDomain.RoleUser).
+					Return(correctUserDto, nil).Times(1)
 			},
-			reqUrl:           createVipReqUrl,
-			checkResponse:    checkEmptyResFuncCreateUser,
-			expectedHTTPCode: 401,
-			expectedBizCode:  appError.CodeAuthNoHeader,
+			action:           defaultAction,
+			checkResponse:    successCheckResponse,
+			expectedHTTPCode: 200,
+			expectedBizCode:  200,
+			expectedMsg:      "success",
 		},
 		{
-			name:      "带 Vip 请求头创建 Vip",
-			request:   createVipReq,
-			setupAuth: authWithVipFunc,
-			buildStubs: func(svc *mock_controller.MockService) {
-				svc.EXPECT().
-					CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).
-					Times(0)
+			name:       "带 Admin 请求头创建 Vip",
+			reqUrl:     createVipUrl,
+			body:       correctBody,
+			customData: correctHeaderCookie,
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+				stubVerifyTokenSuccess(tokenMakerMock)
+				svcMock.EXPECT().CreateUser(gomock.Any(), correctInput, userDomain.RoleVip).
+					Return(correctVipDto, nil).Times(1)
 			},
-			reqUrl:           createVipReqUrl,
-			checkResponse:    checkEmptyResFuncCreateUser,
-			expectedHTTPCode: 401,
-			expectedBizCode:  appError.CodeAuthPermissionDenied,
+			action:           defaultAction,
+			checkResponse:    successCheckResponse,
+			expectedHTTPCode: 200,
+			expectedBizCode:  200,
+			expectedMsg:      "success",
 		},
 		{
-			name:      "带 User 请求头创建 Vip",
-			request:   createVipReq,
-			setupAuth: authWithUserFunc,
-			buildStubs: func(svc *mock_controller.MockService) {
-				svc.EXPECT().
-					CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).
-					Times(0)
+			name:       "参数不存在, 创建用户失败",
+			reqUrl:     createUserUrl,
+			body:       emptyBody,
+			customData: correctHeaderNoCookie,
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+				svcMock.EXPECT().CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 			},
-			reqUrl:           createVipReqUrl,
-			checkResponse:    checkEmptyResFuncCreateUser,
-			expectedHTTPCode: 401,
-			expectedBizCode:  appError.CodeAuthPermissionDenied,
-		},
-	}
-
-	runCreateUserTC(t, testCases)
-}
-
-/** ====================================================================================
- * 🏁 TestCreateUser_Validation
- * =====================================================================================
- */
-
-// TestCreateUser_Validation
-// 路径为: /api/v1/user
-// 结构体要求如下
-//
-//	type CreateUserRequest struct {
-//		Username string `json:"username" binding:"required,min=3,max=32"`
-//		Password string `json:"password" binding:"required,min=8,max=16"`
-//		Email    string `json:"email" binding:"required,email"`
-//	}
-func TestCreateUser_Validation(t *testing.T) {
-	createUserReq, _, _, _ := setupCreateUserData()
-
-	// 构建错误 req
-	// username
-	noUsernameReq := createUserReq
-	noUsernameReq.Username = ""
-
-	tooShortUsernameReq := createUserReq
-	tooShortUsernameReq.Username = "a"
-
-	tooLongUsernameReq := createUserReq
-	tooLongUsernameReq.Username = util.RandomString(33)
-
-	// password
-	noPasswordReq := createUserReq
-	noPasswordReq.Password = ""
-
-	tooShortPasswordReq := createUserReq
-	tooShortPasswordReq.Password = "a"
-
-	tooLongPasswordReq := createUserReq
-	tooLongPasswordReq.Password = util.RandomString(17)
-
-	// email
-	noEmailReq := createUserReq
-	noEmailReq.Email = ""
-
-	malformedEmailReq := createUserReq
-	malformedEmailReq.Email = "123.com"
-
-	testCases := []createUserTC{
-		{
-			name:      "参数 Username 不存在",
-			request:   noUsernameReq,
-			setupAuth: authWithEmptyFunc,
-			buildStubs: func(svc *mock_controller.MockService) {
-				svc.EXPECT().
-					CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).
-					Times(0)
-			},
-			reqUrl:           delivery.UserApi,
-			checkResponse:    checkEmptyResFuncCreateUser,
-			expectedHTTPCode: 400,
-			expectedBizCode:  appError.CodeGroupClientError,
-			expectedMsg:      "Username为必填字段",
+			action:           defaultAction,
+			checkResponse:    failCheckResponse,
+			expectedHTTPCode: 200,
+			expectedBizCode:  appError.CodeInvalidParam,
+			expectedMsg:      "Email为必填字段, Password为必填字段, Username为必填字段",
 		},
 		{
-			name:      "参数 Username 过短",
-			request:   tooShortUsernameReq,
-			setupAuth: authWithEmptyFunc,
-			buildStubs: func(svc *mock_controller.MockService) {
-				svc.EXPECT().
-					CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).
-					Times(0)
+			name:       "Body破损, 创建用户失败",
+			reqUrl:     createUserUrl,
+			body:       brokenBody,
+			customData: correctHeaderNoCookie,
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+				svcMock.EXPECT().CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 			},
-			reqUrl:           delivery.UserApi,
-			checkResponse:    checkEmptyResFuncCreateUser,
-			expectedHTTPCode: 400,
-			expectedBizCode:  appError.CodeGroupClientError,
-			expectedMsg:      "Username长度必须至少为3个字符",
+			action:           defaultAction,
+			checkResponse:    failCheckResponse,
+			expectedHTTPCode: 200,
+			expectedBizCode:  appError.CodeInvalidParam,
+			expectedMsg:      "参数格式或类型错误",
 		},
 		{
-			name:      "参数 Username 过长",
-			request:   tooLongUsernameReq,
-			setupAuth: authWithEmptyFunc,
-			buildStubs: func(svc *mock_controller.MockService) {
-				svc.EXPECT().
-					CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).
-					Times(0)
+			name:       "Body格式错误, 创建用户失败",
+			reqUrl:     createUserUrl,
+			body:       wrongBody,
+			customData: correctHeaderNoCookie,
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+				svcMock.EXPECT().CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 			},
-			reqUrl:           delivery.UserApi,
-			checkResponse:    checkEmptyResFuncCreateUser,
-			expectedHTTPCode: 400,
-			expectedBizCode:  appError.CodeGroupClientError,
-			expectedMsg:      "Username长度不能超过32个字符",
+			action:           defaultAction,
+			checkResponse:    failCheckResponse,
+			expectedHTTPCode: 200,
+			expectedBizCode:  appError.CodeInvalidParam,
+			expectedMsg:      "Email为必填字段, Password为必填字段, Username为必填字段",
 		},
 		{
-			name:      "参数 Password 不存在",
-			request:   noPasswordReq,
-			setupAuth: authWithEmptyFunc,
-			buildStubs: func(svc *mock_controller.MockService) {
-				svc.EXPECT().
-					CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).
-					Times(0)
+			name:       "密码和用户名过短, 创建用户失败",
+			reqUrl:     createUserUrl,
+			body:       shortBody,
+			customData: correctHeaderNoCookie,
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+				svcMock.EXPECT().CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 			},
-			reqUrl:           delivery.UserApi,
-			checkResponse:    checkEmptyResFuncCreateUser,
-			expectedHTTPCode: 400,
-			expectedBizCode:  appError.CodeGroupClientError,
-			expectedMsg:      "Password为必填字段",
+			action:           defaultAction,
+			checkResponse:    failCheckResponse,
+			expectedHTTPCode: 200,
+			expectedBizCode:  appError.CodeInvalidParam,
+			expectedMsg:      "Password长度必须至少为8个字符, Username长度必须至少为3个字符",
 		},
 		{
-			name:      "参数 Password 过短",
-			request:   tooShortPasswordReq,
-			setupAuth: authWithEmptyFunc,
-			buildStubs: func(svc *mock_controller.MockService) {
-				svc.EXPECT().
-					CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).
-					Times(0)
+			name:       "密码和用户名过长, 创建用户失败",
+			reqUrl:     createUserUrl,
+			body:       longBody,
+			customData: correctHeaderNoCookie,
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+				svcMock.EXPECT().CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 			},
-			reqUrl:           delivery.UserApi,
-			checkResponse:    checkEmptyResFuncCreateUser,
-			expectedHTTPCode: 400,
-			expectedBizCode:  appError.CodeGroupClientError,
-			expectedMsg:      "Password长度必须至少为8个字符",
+			action:           defaultAction,
+			checkResponse:    failCheckResponse,
+			expectedHTTPCode: 200,
+			expectedBizCode:  appError.CodeInvalidParam,
+			expectedMsg:      "Password长度不能超过16个字符, Username长度不能超过32个字符",
 		},
 		{
-			name:      "参数 Password 过长",
-			request:   tooLongPasswordReq,
-			setupAuth: authWithEmptyFunc,
-			buildStubs: func(svc *mock_controller.MockService) {
-				svc.EXPECT().
-					CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).
-					Times(0)
+			name:       "Email 格式错误, 创建用户失败",
+			reqUrl:     createUserUrl,
+			body:       badEmailBody,
+			customData: correctHeaderNoCookie,
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+				svcMock.EXPECT().CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 			},
-			reqUrl:           delivery.UserApi,
-			checkResponse:    checkEmptyResFuncCreateUser,
-			expectedHTTPCode: 400,
-			expectedBizCode:  appError.CodeGroupClientError,
-			expectedMsg:      "Password长度不能超过16个字符",
-		},
-		{
-			name:      "参数 Email 不存在",
-			request:   noEmailReq,
-			setupAuth: authWithEmptyFunc,
-			buildStubs: func(svc *mock_controller.MockService) {
-				svc.EXPECT().
-					CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).
-					Times(0)
-			},
-			reqUrl:           delivery.UserApi,
-			checkResponse:    checkEmptyResFuncCreateUser,
-			expectedHTTPCode: 400,
-			expectedBizCode:  appError.CodeGroupClientError,
-			expectedMsg:      "Email为必填字段",
-		},
-		{
-			name:      "参数 Email 格式错误",
-			request:   malformedEmailReq,
-			setupAuth: authWithEmptyFunc,
-			buildStubs: func(svc *mock_controller.MockService) {
-				svc.EXPECT().
-					CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).
-					Times(0)
-			},
-			reqUrl:           delivery.UserApi,
-			checkResponse:    checkEmptyResFuncCreateUser,
-			expectedHTTPCode: 400,
-			expectedBizCode:  appError.CodeGroupClientError,
+			action:           defaultAction,
+			checkResponse:    failCheckResponse,
+			expectedHTTPCode: 200,
+			expectedBizCode:  appError.CodeInvalidParam,
 			expectedMsg:      "Email必须是一个有效的邮箱",
 		},
+		{
+			name:       "参数正确, svc 抛出底层错误, ctrl 兜底处理且不暴露内部信息",
+			reqUrl:     createUserUrl,
+			body:       correctBody,
+			customData: correctHeaderNoCookie,
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+				svcMock.EXPECT().CreateUser(gomock.Any(), correctInput, userDomain.RoleUser).
+					Return(nil, fmt.Errorf("从数据库获取 Session 失败: %w", sql.ErrNoRows)).Times(1)
+			},
+			action:           defaultAction,
+			checkResponse:    failCheckResponse,
+			expectedHTTPCode: 500,
+			expectedBizCode:  appError.CodeServerErr,
+			expectedMsg:      "服务器开小差了",
+		},
 	}
 
-	runCreateUserTC(t, testCases)
+	runTC(t, testCases)
 }

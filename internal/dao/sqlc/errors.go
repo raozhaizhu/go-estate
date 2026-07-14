@@ -35,25 +35,9 @@ func WrapDBError(err error) error {
 	return err
 }
 
-// func IsUsernameDuplicateError(err error) bool {
-// 	var mysqlErr *mysql.MySQLError
-// 	if errors.As(err, &mysqlErr) {
-// 		return int(mysqlErr.Number) == 1062 && strings.Contains(mysqlErr.Message, "users.username")
-// 	}
-// 	return false
-// }
-
 // func IsZeroRowsError(err error) bool {
 // 	if errors.Is(err, sql.ErrNoRows) {
 // 		return true
-// 	}
-// 	return false
-// }
-
-// func IsEmailDuplicateErr(err error) bool {
-// 	var mysqlErr *mysql.MySQLError
-// 	if errors.As(err, &mysqlErr) {
-// 		return int(mysqlErr.Number) == 1062 && strings.Contains(mysqlErr.Message, "users.email")
 // 	}
 // 	return false
 // }

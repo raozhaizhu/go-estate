@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/raozhaizhu/go-estate/internal/middleware"
 	"github.com/raozhaizhu/go-estate/internal/service/auth"
 )
 
@@ -16,6 +17,7 @@ import (
 type controller struct {
 	service         Service
 	refreshDuration time.Duration
+	isProduction    bool
 }
 
 type Service interface {
@@ -24,8 +26,8 @@ type Service interface {
 	Logout(ctx context.Context, input auth.LogoutInput) error
 }
 
-func New(service Service, refreshDuration time.Duration) *controller {
-	return &controller{service: service, refreshDuration: refreshDuration}
+func New(service Service, refreshDuration time.Duration, isProduction bool) *controller {
+	return &controller{service: service, refreshDuration: refreshDuration, isProduction: isProduction}
 }
 
 /** ====================================================================================
@@ -35,7 +37,7 @@ func New(service Service, refreshDuration time.Duration) *controller {
 
 // LoginRequest 登录请求格式
 type LoginRequest struct {
-	Username string `uri:"username" binding:"required,min=1"`
+	Username string `uri:"username" binding:"required,min=3"`
 	Password string `json:"password" binding:"required,min=8,max=16"`
 }
 
@@ -44,8 +46,8 @@ func (r *LoginRequest) toSvcInput(ctx *gin.Context) auth.LoginInput {
 	return auth.LoginInput{
 		Username:  r.Username,
 		Password:  r.Password,
-		DeviceID:  ctx.GetHeader("X-Device-ID"),
-		UserAgent: ctx.Request.UserAgent(),
-		ClientIp:  ctx.ClientIP(),
+		DeviceID:  ctx.GetString(middleware.CtxKeyDeviceID),
+		UserAgent: ctx.GetString(middleware.CtxKeyUserAgent),
+		ClientIp:  ctx.GetString(middleware.CtxKeyClientIP),
 	}
 }

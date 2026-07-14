@@ -7,11 +7,12 @@ import (
 	"github.com/raozhaizhu/go-estate/internal/controller/auth"
 	dailyData "github.com/raozhaizhu/go-estate/internal/controller/daily_data"
 	userController "github.com/raozhaizhu/go-estate/internal/controller/user"
+	"github.com/raozhaizhu/go-estate/internal/domain/app"
 	"github.com/raozhaizhu/go-estate/internal/middleware"
-	"github.com/raozhaizhu/go-estate/internal/util"
 	response "github.com/raozhaizhu/go-estate/pkg/api"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
-	"github.com/raozhaizhu/go-estate/pkg/token"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // 定义全局版本路由
@@ -23,18 +24,20 @@ type Services struct {
 	DailyDataSvc dailyData.Service
 }
 
-func SetupRouter(services Services, config util.Config, tokenMaker token.Maker) *gin.Engine {
+func SetupRouter(services Services, deps app.Deps) *gin.Engine {
 	// 初始化路由引擎
 	router := gin.New()
 
 	// 挂载全局中间件
-	router.Use(gin.Recovery()) // 防崩溃
-	router.Use(gin.Logger())   // 日志记录
+	router.Use(gin.Recovery())                         // 防崩溃
+	router.Use(middleware.SlogMiddleware(deps.Logger)) // 记录日志
 
 	// 挂载探针路由
 	router.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "pong"})
 	})
+	// 挂载 Swagger UI 路由
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// 处理路径错误, 当用户访问不存在的 api 资源时, 返回自定义的错误格式(而不是直接 404, 不带 Code)
 	router.NoRoute(func(c *gin.Context) {
@@ -53,12 +56,12 @@ func SetupRouter(services Services, config util.Config, tokenMaker token.Maker) 
 
 	// 受保护组
 	authGroup := metaGroup.Group("/")
-	authGroup.Use(middleware.AuthMiddleware(tokenMaker))
+	authGroup.Use(middleware.RequireAuth(deps.TokenMaker))
 
 	// 挂载模块
-	RegisterUser(metaGroup, authGroup, services.UserSvc)         // user模块 部分需登录
-	RegisterAuth(metaGroup, authGroup, services.AuthSvc, config) // auth模块 部分需登录
-	RegisterDailyData(authGroup, services.DailyDataSvc)          // dailyData模块 必须登录
+	RegisterUser(metaGroup, authGroup, services.UserSvc)              // user模块 部分需登录
+	RegisterAuth(metaGroup, authGroup, services.AuthSvc, deps.Config) // auth模块 部分需登录
+	RegisterDailyData(authGroup, services.DailyDataSvc)               // dailyData模块 必须登录
 
 	return router
 }

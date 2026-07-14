@@ -2,10 +2,13 @@ package token
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
 	role "github.com/raozhaizhu/go-estate/internal/domain/user"
+	"github.com/raozhaizhu/go-estate/internal/util"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 )
 
@@ -73,4 +76,26 @@ func (maker *JWTMaker) VerifyToken(token string, tokenType TokenType) (*Payload,
 	}
 
 	return payload, nil
+}
+
+// ForgeTokenPair 锻造 访问令牌 + 刷新令牌
+func (maker *JWTMaker) ForgeTokenPair(user *db.User, config *util.Config) (accessToken, refreshToken string, accessPayload, refreshPayload *Payload, returnErr error) {
+	AccessTokenDuration, RefreshTokenDuration := config.AccessTokenDuration, config.RefreshTokenDuration
+	// 发放访问令牌
+	accessToken, accessPayload, err := maker.CreateToken(user.Username, role.Role(user.Role),
+		AccessTokenDuration, TokenTypeAccessToken)
+	if err != nil {
+		returnErr = appError.ErrServerErr.WithErr(fmt.Errorf("铸造访问令牌时失败: %w", err))
+		return
+	}
+
+	// 发放刷新令牌
+	refreshToken, refreshPayload, err = maker.CreateToken(user.Username, role.Role(user.Role),
+		RefreshTokenDuration, TokenTypeRefreshToken)
+	if err != nil {
+		returnErr = appError.ErrServerErr.WithErr(fmt.Errorf("铸造刷新令牌时失败: %w", err))
+		return
+	}
+
+	return accessToken, refreshToken, accessPayload, refreshPayload, nil
 }

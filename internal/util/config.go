@@ -2,6 +2,7 @@ package util
 
 import (
 	"log"
+	"strings"
 	"time"
 
 	"github.com/spf13/viper"
@@ -29,7 +30,7 @@ func LoadConfig(path string) (config Config, err error) {
 
 	err = viper.ReadInConfig()
 	if err != nil {
-		log.Fatal("初始化配置错误")
+		log.Fatal("初始化配置错误", err)
 		return
 	}
 
@@ -60,4 +61,8 @@ func HashPassword(password string) (string, error) {
 
 func CheckPassword(password string, hashedPassword string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+}
+
+func (c *Config) IsProduction() bool {
+	return strings.ToLower(c.Environment) == "production"
 }

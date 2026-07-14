@@ -4,9 +4,12 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/raozhaizhu/go-estate/internal/dao/cache"
 	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
+	"github.com/raozhaizhu/go-estate/internal/domain/app"
 	role "github.com/raozhaizhu/go-estate/internal/domain/user"
 	"github.com/raozhaizhu/go-estate/internal/util"
+	"github.com/raozhaizhu/go-estate/internal/worker"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 )
 
@@ -17,12 +20,15 @@ import (
 
 // service 用户服务
 type service struct {
-	store db.UserStore
+	store        db.UserStore
+	txRunner     db.TxRunner
+	sessionCache cache.SessionCache
+	distributor  worker.TaskDistributor
 }
 
 // New 返回用户服务指针
-func New(store db.UserStore) *service {
-	return &service{store: store}
+func New(deps app.Deps) *service {
+	return &service{store: deps.Store, txRunner: deps.Store, sessionCache: deps.Cache, distributor: deps.Distributor}
 }
 
 // DTO 返回给 Controller 的 User 数据结构
@@ -90,8 +96,8 @@ type UpdateUserInput struct {
 	Email    *string
 }
 
-// toDBParams
-func (input *UpdateUserInput) toDBParams() (db.UpdateUserParams, error) {
+// ToDBParams
+func (input *UpdateUserInput) ToDBParams() (db.UpdateUserParams, error) {
 	params := db.UpdateUserParams{
 		Username: input.Username,
 	}

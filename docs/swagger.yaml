@@ -1,0 +1,573 @@
+basePath: /
+definitions:
+  github_com_raozhaizhu_go-estate_internal_dao_sqlc.DailyDatum:
+    properties:
+      area:
+        type: string
+      avg_price:
+        $ref: '#/definitions/sql.NullString'
+      category:
+        type: string
+      date:
+        type: string
+      house_count:
+        type: integer
+      id:
+        type: integer
+      license_no:
+        type: string
+      project_name:
+        type: string
+      region:
+        type: integer
+    type: object
+  github_com_raozhaizhu_go-estate_internal_domain_user.Role:
+    enum:
+    - 1
+    - 2
+    - 3
+    format: int32
+    type: integer
+    x-enum-varnames:
+    - RoleUser
+    - RoleVip
+    - RoleAdmin
+  github_com_raozhaizhu_go-estate_internal_service_auth.DTO:
+    properties:
+      access_token:
+        type: string
+      access_token_expired_at:
+        type: string
+      user_info:
+        $ref: '#/definitions/github_com_raozhaizhu_go-estate_internal_service_auth.UserInfo'
+    type: object
+  github_com_raozhaizhu_go-estate_internal_service_auth.UserInfo:
+    properties:
+      role:
+        $ref: '#/definitions/github_com_raozhaizhu_go-estate_internal_domain_user.Role'
+      username:
+        type: string
+    type: object
+  github_com_raozhaizhu_go-estate_internal_service_user.DTO:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      role:
+        $ref: '#/definitions/github_com_raozhaizhu_go-estate_internal_domain_user.Role'
+      username:
+        type: string
+    type: object
+  github_com_raozhaizhu_go-estate_pkg_api.AuthErrorResult:
+    properties:
+      code:
+        example: 40100
+        type: integer
+      msg:
+        example: 未授权，请检查令牌
+        type: string
+    type: object
+  github_com_raozhaizhu_go-estate_pkg_api.ClientErrorResult:
+    properties:
+      code:
+        example: 40000
+        type: integer
+      msg:
+        example: 参数校验失败
+        type: string
+    type: object
+  github_com_raozhaizhu_go-estate_pkg_api.ConflictErrorResult:
+    properties:
+      code:
+        example: 40900
+        type: integer
+      msg:
+        example: 数据冲突，操作无法完成
+        type: string
+    type: object
+  github_com_raozhaizhu_go-estate_pkg_api.NotFoundErrorResult:
+    properties:
+      code:
+        example: 40400
+        type: integer
+      msg:
+        example: 资源不存在
+        type: string
+    type: object
+  github_com_raozhaizhu_go-estate_pkg_api.ServerErrorResult:
+    properties:
+      code:
+        example: 50000
+        type: integer
+      msg:
+        example: 服务器内部发生错误
+        type: string
+    type: object
+  github_com_raozhaizhu_go-estate_pkg_api.SuccessResult-any:
+    properties:
+      code:
+        example: 200
+        type: integer
+      data: {}
+      msg:
+        example: 操作成功
+        type: string
+    type: object
+  github_com_raozhaizhu_go-estate_pkg_api.SuccessResult-github_com_raozhaizhu_go-estate_internal_service_auth_DTO:
+    properties:
+      code:
+        example: 200
+        type: integer
+      data:
+        $ref: '#/definitions/github_com_raozhaizhu_go-estate_internal_service_auth.DTO'
+      msg:
+        example: 操作成功
+        type: string
+    type: object
+  github_com_raozhaizhu_go-estate_pkg_api.SuccessResult-github_com_raozhaizhu_go-estate_internal_service_user_DTO:
+    properties:
+      code:
+        example: 200
+        type: integer
+      data:
+        $ref: '#/definitions/github_com_raozhaizhu_go-estate_internal_service_user.DTO'
+      msg:
+        example: 操作成功
+        type: string
+    type: object
+  github_com_raozhaizhu_go-estate_pkg_api.SuccessResult-internal_controller_daily_data_DailyDataList:
+    properties:
+      code:
+        example: 200
+        type: integer
+      data:
+        items:
+          $ref: '#/definitions/github_com_raozhaizhu_go-estate_internal_dao_sqlc.DailyDatum'
+        type: array
+      msg:
+        example: 操作成功
+        type: string
+    type: object
+  internal_controller_auth.LoginRequest:
+    properties:
+      password:
+        maxLength: 16
+        minLength: 8
+        type: string
+      username:
+        minLength: 3
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  internal_controller_user.CreateUserRequest:
+    properties:
+      email:
+        type: string
+      password:
+        maxLength: 16
+        minLength: 8
+        type: string
+      username:
+        maxLength: 32
+        minLength: 3
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  internal_controller_user.UpdateUserRequest:
+    properties:
+      email:
+        type: string
+      password:
+        maxLength: 16
+        minLength: 8
+        type: string
+      username:
+        maxLength: 32
+        minLength: 3
+        type: string
+    required:
+    - username
+    type: object
+  sql.NullString:
+    properties:
+      string:
+        type: string
+      valid:
+        description: Valid is true if String is not NULL
+        type: boolean
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: 房地产项目的后端 API 接口文档
+  title: Go Estate API 文档
+  version: "1.0"
+paths:
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: 用户通过账号密码登录。成功后返回 AccessToken，并将 RefreshToken 写入 Cookie。
+      parameters:
+      - description: 登录参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controller_auth.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 登录成功 (返回 auth.DTO 载荷)
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.SuccessResult-github_com_raozhaizhu_go-estate_internal_service_auth_DTO'
+        "400":
+          description: '参数解析或校验错误 (HTTP 返回 200, code: 400xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.ClientErrorResult'
+        "401":
+          description: '账户名或密码错误 (HTTP 返回 200, code: 401xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.AuthErrorResult'
+        "404":
+          description: '账户不存在 (HTTP 返回 200, code: 404xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.NotFoundErrorResult'
+        "500":
+          description: '服务器内部错误 (HTTP 返回 500, code: 500xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.ServerErrorResult'
+      security:
+      - DeviceIDAuth: []
+      - UserAgentAuth: []
+      summary: 账户登录
+      tags:
+      - Auth (身份认证)
+  /api/v1/auth/logout:
+    post:
+      description: 清理当前设备的登录状态。需要携带 AccessToken 和设备标识 ID。
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 登出成功 (data 为 null)
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.SuccessResult-any'
+        "401":
+          description: '未登录或 Token 失效 (HTTP 返回 200, code: 401xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.AuthErrorResult'
+        "500":
+          description: '服务器内部错误 (HTTP 返回 500, code: 500xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.ServerErrorResult'
+      security:
+      - BearerAuth: []
+      - DeviceIDAuth: []
+      - UserAgentAuth: []
+      summary: 用户登出当前设备
+      tags:
+      - Auth (身份认证)
+  /api/v1/auth/refresh:
+    post:
+      description: 通过 Cookie 中的 RefreshToken 换取新的 AccessToken (注意：需要浏览器自动携带名为 refresh_token
+        的 Cookie)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 刷新成功
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.SuccessResult-github_com_raozhaizhu_go-estate_internal_service_auth_DTO'
+        "401":
+          description: '刷新令牌不存在或已失效 (HTTP 返回 200, code: 401xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.AuthErrorResult'
+        "500":
+          description: '服务器内部错误 (HTTP 返回 500, code: 500xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.ServerErrorResult'
+      security:
+      - DeviceIDAuth: []
+      - UserAgentAuth: []
+      summary: 刷新访问令牌
+      tags:
+      - Auth (身份认证)
+  /api/v1/daily_data/all:
+    get:
+      description: 获取系统内所有的楼盘成交数据（需登录，且仅限 Admin 权限访问）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.SuccessResult-internal_controller_daily_data_DailyDataList'
+        "401":
+          description: '未登录或权限不足 (HTTP 返回 200, code: 401xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.AuthErrorResult'
+        "500":
+          description: '服务器内部错误 (HTTP 返回 500, code: 500xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.ServerErrorResult'
+      security:
+      - BearerAuth: []
+      - DeviceIDAuth: []
+      - UserAgentAuth: []
+      summary: 获取所有楼盘成交数据
+      tags:
+      - DailyData (成交数据)
+  /api/v1/daily_data/day:
+    get:
+      description: 获取指定单日的楼盘成交数据（需登录，且至少需要 User 权限）
+      parameters:
+      - in: query
+        name: date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.SuccessResult-internal_controller_daily_data_DailyDataList'
+        "400":
+          description: '参数校验失败 (HTTP 返回 200, code: 400xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.ClientErrorResult'
+        "401":
+          description: '未登录或权限不足 (HTTP 返回 200, code: 401xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.AuthErrorResult'
+        "500":
+          description: '服务器内部错误 (HTTP 返回 500, code: 500xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.ServerErrorResult'
+      security:
+      - BearerAuth: []
+      - DeviceIDAuth: []
+      - UserAgentAuth: []
+      summary: 按日获取楼盘成交数据
+      tags:
+      - DailyData (成交数据)
+  /api/v1/daily_data/period:
+    get:
+      description: 获取指定时间范围内的楼盘成交数据（需登录，且至少需要 VIP 权限）
+      parameters:
+      - in: query
+        name: end
+        required: true
+        type: string
+      - in: query
+        name: start
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.SuccessResult-internal_controller_daily_data_DailyDataList'
+        "400":
+          description: '参数校验失败 (HTTP 返回 200, code: 400xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.ClientErrorResult'
+        "401":
+          description: '未登录或权限不足 (HTTP 返回 200, code: 401xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.AuthErrorResult'
+        "500":
+          description: '服务器内部错误 (HTTP 返回 500, code: 500xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.ServerErrorResult'
+      security:
+      - BearerAuth: []
+      - DeviceIDAuth: []
+      - UserAgentAuth: []
+      summary: 按周期获取楼盘成交数据
+      tags:
+      - DailyData (成交数据)
+  /api/v1/user:
+    post:
+      consumes:
+      - application/json
+      description: 公开访问接口，用于普通用户的注册。任何人均可尝试创建。
+      parameters:
+      - description: 注册参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controller_user.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 注册成功
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.SuccessResult-github_com_raozhaizhu_go-estate_internal_service_user_DTO'
+        "400":
+          description: '参数校验失败 (HTTP 返回 200, code: 400xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.ClientErrorResult'
+        "409":
+          description: '用户名或邮箱已存在 (HTTP 返回 200, code: 409xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.ConflictErrorResult'
+        "500":
+          description: '服务器内部错误 (HTTP 返回 500, code: 500xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.ServerErrorResult'
+      security:
+      - DeviceIDAuth: []
+      - UserAgentAuth: []
+      summary: 注册普通用户
+      tags:
+      - User (用户管理)
+  /api/v1/user/{username}:
+    get:
+      description: 获取指定用户的详细资料。（安全策略：仅限用户本人访问自己的数据，或者由 Admin 管理员强行调取）
+      parameters:
+      - description: 目标用户名
+        in: path
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.SuccessResult-github_com_raozhaizhu_go-estate_internal_service_user_DTO'
+        "401":
+          description: '未登录或越权非法访问 (HTTP 返回 200, code: 401xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.AuthErrorResult'
+        "404":
+          description: '该用户不存在 (HTTP 返回 200, code: 404xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.NotFoundErrorResult'
+        "500":
+          description: '服务器内部错误 (HTTP 返回 500, code: 500xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.ServerErrorResult'
+      security:
+      - BearerAuth: []
+      - DeviceIDAuth: []
+      - UserAgentAuth: []
+      summary: 查询指定用户信息
+      tags:
+      - User (用户管理)
+    patch:
+      consumes:
+      - application/json
+      description: 局部修改用户字段。（安全策略：仅限用户本人操作，或者由 Admin 管理员代为修改）
+      parameters:
+      - description: 目标用户名
+        in: path
+        name: username
+        required: true
+        type: string
+      - description: 需要更新的字段参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controller_user.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 修改成功
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.SuccessResult-github_com_raozhaizhu_go-estate_internal_service_user_DTO'
+        "400":
+          description: '参数解析错误或没有任何可更新的字段 (HTTP 返回 200, code: 400xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.ClientErrorResult'
+        "401":
+          description: '未登录或越权非法操作 (HTTP 返回 200, code: 401xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.AuthErrorResult'
+        "404":
+          description: '该用户不存在 (HTTP 返回 200, code: 404xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.NotFoundErrorResult'
+        "500":
+          description: '服务器内部错误 (HTTP 返回 500, code: 500xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.ServerErrorResult'
+      security:
+      - BearerAuth: []
+      - DeviceIDAuth: []
+      - UserAgentAuth: []
+      summary: 修改指定用户信息
+      tags:
+      - User (用户管理)
+  /api/v1/user/vip:
+    post:
+      consumes:
+      - application/json
+      description: 受保护接口，仅限 Admin 管理员权限调用，用于直接创建带有 VIP 身份的用户。
+      parameters:
+      - description: VIP 用户参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controller_user.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.SuccessResult-github_com_raozhaizhu_go-estate_internal_service_user_DTO'
+        "400":
+          description: '参数校验失败 (HTTP 返回 200, code: 400xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.ClientErrorResult'
+        "401":
+          description: '未登录或角色权限不足 (HTTP 返回 200, code: 401xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.AuthErrorResult'
+        "409":
+          description: '用户名或邮箱已存在 (HTTP 返回 200, code: 409xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.ConflictErrorResult'
+        "500":
+          description: '服务器内部错误 (HTTP 返回 500, code: 500xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.ServerErrorResult'
+      security:
+      - BearerAuth: []
+      - DeviceIDAuth: []
+      - UserAgentAuth: []
+      summary: 管理员创建 VIP 用户
+      tags:
+      - User (用户管理)
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+  DeviceIDAuth:
+    in: header
+    name: X-Device-ID
+    type: apiKey
+  UserAgentAuth:
+    in: header
+    name: User-Agent
+    type: apiKey
+swagger: "2.0"

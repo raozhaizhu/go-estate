@@ -35,6 +35,7 @@ func TestGetAllData(t *testing.T) {
 // TestGetDataByDay 测试GetDataByDay, 能正常获取数据, 并且数据格式正常, 日期和查询日期一致
 func TestGetDataByDay(t *testing.T) {
 	day := util.GetRandomDayInRange()
+	t.Logf("day: %v", day)
 	// 查询正常
 	sales, err := testStore.GetDataByDay(context.Background(), day)
 	require.NoError(t, err)

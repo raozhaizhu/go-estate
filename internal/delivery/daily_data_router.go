@@ -20,11 +20,11 @@ func RegisterDailyData(authGroup *gin.RouterGroup, service dailyDataController.S
 
 	{
 		// 至少是 User 才可以获取单日数据
-		dailyGroup.GET("/day", middleware.RoleMiddleware(role.RoleAtLeastUser), response.Wrapper(controller.GetDataByDay))
+		dailyGroup.GET("/day", middleware.RequireRoles(role.RoleAtLeastUser), response.Wrapper(controller.GetDataByDay))
 		// 至少是 VIP 才可以获取范围数据
-		dailyGroup.GET("/period", middleware.RoleMiddleware(role.RoleAtLeastVip), response.Wrapper(controller.GetDataByPeriod))
+		dailyGroup.GET("/period", middleware.RequireRoles(role.RoleAtLeastVip), response.Wrapper(controller.GetDataByPeriod))
 		// 至少是 Admin 才可以获取所有数据
-		dailyGroup.GET("/all", middleware.RoleMiddleware(role.RoleAtLeastAdmin), response.Wrapper(controller.GetAllData))
+		dailyGroup.GET("/all", middleware.RequireRoles(role.RoleAtLeastAdmin), response.Wrapper(controller.GetAllData))
 	}
 
 }

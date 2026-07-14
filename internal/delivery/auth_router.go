@@ -2,16 +2,16 @@ package delivery
 
 import (
 	"github.com/gin-gonic/gin"
-	authController "github.com/raozhaizhu/go-estate/internal/controller/auth"
+	"github.com/raozhaizhu/go-estate/internal/controller/auth"
 	"github.com/raozhaizhu/go-estate/internal/util"
 	response "github.com/raozhaizhu/go-estate/pkg/api"
 )
 
-func RegisterAuth(metaGroup *gin.RouterGroup, authGroup *gin.RouterGroup, service authController.Service, config util.Config) {
+func RegisterAuth(metaGroup *gin.RouterGroup, authGroup *gin.RouterGroup, service auth.Service, config util.Config) {
 	if service == nil {
 		return
 	}
-	ctrl := authController.New(service, config.RefreshTokenDuration)
+	ctrl := auth.New(service, config.RefreshTokenDuration, config.IsProduction())
 
 	authPublicGroup := metaGroup.Group("/auth")
 	{
