@@ -5,10 +5,12 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	mock_db "github.com/raozhaizhu/go-estate/internal/dao/mock"
 	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
+	"github.com/raozhaizhu/go-estate/internal/domain/app"
 	role "github.com/raozhaizhu/go-estate/internal/domain/user"
-	mock_service "github.com/raozhaizhu/go-estate/internal/service/user/mock"
 	"github.com/raozhaizhu/go-estate/internal/util"
+	mock_worker "github.com/raozhaizhu/go-estate/internal/worker/mock"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 	"github.com/raozhaizhu/go-estate/pkg/token"
 	"github.com/stretchr/testify/assert"
@@ -24,7 +26,7 @@ type getUserTC struct {
 	name          string
 	input         GetUserInput
 	buildCtx      func() context.Context
-	buildStubs    func(store *mock_service.MockUserStore)
+	buildStubs    func(store *mock_db.MockStore)
 	checkResponse func(t *testing.T, res *DTO, err error)
 }
 
@@ -45,7 +47,7 @@ func TestGetUser_Authorization(t *testing.T) {
 		{
 			name:  "User 查别人",
 			input: input,
-			buildStubs: func(store *mock_service.MockUserStore) {
+			buildStubs: func(store *mock_db.MockStore) {
 				store.EXPECT().
 					GetUser(gomock.Any(), gomock.Any()).
 					Times(0)
@@ -62,7 +64,7 @@ func TestGetUser_Authorization(t *testing.T) {
 		{
 			name:  "Vip 查别人",
 			input: input,
-			buildStubs: func(store *mock_service.MockUserStore) {
+			buildStubs: func(store *mock_db.MockStore) {
 				store.EXPECT().
 					GetUser(gomock.Any(), gomock.Any()).
 					Times(0)
@@ -99,7 +101,7 @@ func TestGetUser_Success(t *testing.T) {
 		{
 			name:  "User 查询自己",
 			input: input,
-			buildStubs: func(store *mock_service.MockUserStore) {
+			buildStubs: func(store *mock_db.MockStore) {
 				store.EXPECT().
 					GetUser(gomock.Any(), input.Username).
 					Return(user, nil).
@@ -116,7 +118,7 @@ func TestGetUser_Success(t *testing.T) {
 		{
 			name:  "Admin 查询 User",
 			input: input,
-			buildStubs: func(store *mock_service.MockUserStore) {
+			buildStubs: func(store *mock_db.MockStore) {
 				store.EXPECT().
 					GetUser(gomock.Any(), input.Username).
 					Return(user, nil).
@@ -169,8 +171,15 @@ func runGetUserTC(t *testing.T, testCases []getUserTC) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			// 初始化 store, svc
-			storeMock := mock_service.NewMockUserStore(ctrl)
-			svc := New(storeMock)
+			storeMock := mock_db.NewMockStore(ctrl)
+			cacheMock := mock_db.NewMockSessionCache(ctrl)
+			distributorMock := mock_worker.NewMockTaskDistributor(ctrl)
+			deps := app.Deps{
+				Store:       storeMock,
+				Cache:       cacheMock,
+				Distributor: distributorMock,
+			}
+			svc := New(deps)
 
 			// 数据库埋桩
 			tc.buildStubs(storeMock)

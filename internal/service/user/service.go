@@ -3,7 +3,7 @@ package user
 import (
 	"context"
 	"errors"
-	"log"
+	"fmt"
 
 	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
 	role "github.com/raozhaizhu/go-estate/internal/domain/user"
@@ -64,7 +64,7 @@ func (svc *service) GetUser(ctx context.Context, input GetUserInput) (*DTO, erro
 // UpdateUser 更新用户信息, 返回 UserDTO
 func (svc *service) UpdateUser(ctx context.Context, input UpdateUserInput) (*DTO, error) {
 	// 转换参数
-	params, err := input.toDBParams()
+	params, err := input.ToDBParams()
 	if err != nil {
 		return nil, err
 	}
@@ -75,10 +75,51 @@ func (svc *service) UpdateUser(ctx context.Context, input UpdateUserInput) (*DTO
 		return nil, err
 	}
 
+	// 事务函数, 用于在更新密码后删除旧的 token
+	var jtis []string
+	updateUserBlockSessions := func(q db.Querier) error {
+		// 更新用户
+		result, err := q.UpdateUser(ctx, params)
+		if err != nil {
+			return err
+		}
+		rows, err := result.RowsAffected()
+		if err != nil {
+			return appError.ErrServerErr.WithErr(fmt.Errorf("更新用户时发生内部错误: %w", err))
+		}
+		if rows == 0 { // 受影响条目为 0(用户不存在)
+			return appError.ErrUserNotFound
+		}
+		// 获取用户 Sessions
+		jtis, err = q.GetSessionIDsByUsernameForUpdate(ctx, params.Username)
+		if err != nil {
+			return appError.ErrServerErr.WithErr(fmt.Errorf("获取用户活跃 Session时发生内部错误: %w", err))
+		}
+
+		err = q.BlockSessionsByIDs(ctx, jtis)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
 	// -> db 更新用户
-	_, err = svc.store.UpdateUser(ctx, params)
-	if err != nil {
-		return nil, svc.mapDBError(err)
+	if params.HashedPassword.Valid { // 密码变更, 需标记 token并清除缓存
+		err := svc.txRunner.ExecTx(ctx, updateUserBlockSessions) // -> db 标记 sessions
+		if err != nil {
+			return nil, err
+		}
+		err = svc.distributor.DistributeTaskDeleteSessions(ctx, jtis) // -> cache 任务入队
+		if err != nil {
+			return nil, err
+		}
+	} else { // 密码未变, 仅更新邮箱
+		_, err = svc.store.UpdateUser(ctx, params)
+		if err != nil {
+			return nil, svc.mapDBError(err)
+		}
+
 	}
 
 	// -> db 返回用户
@@ -146,8 +187,7 @@ func (svc *service) authorizeCreate(ctx context.Context, roleToCreate role.Role)
 
 		return appError.ErrAuthPermissionDenied
 	default:
-		log.Printf("verifyCreatePermission 抵达了不应抵达的位置")
-		return appError.ErrServerErr
+		return appError.ErrServerErr.WithErr(fmt.Errorf("verifyCreatePermission 抵达了不应抵达的位置"))
 	}
 }
 

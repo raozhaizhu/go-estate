@@ -2,6 +2,7 @@ package token
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -151,7 +152,7 @@ func GetPayload(ctx context.Context) (*Payload, error) {
 
 	// 提取失败, 返回错误
 	if val == nil {
-		return nil, appError.ErrAuthRequired
+		return nil, appError.ErrServerErr.WithErr(fmt.Errorf("开发错误: 忘记挂载 AuthMiddleware"))
 	}
 	payload := val.(*Payload)
 

@@ -12,6 +12,7 @@ import (
 
 // 错误组
 const (
+	CodeSuccess          = 200
 	CodeGroupClientError = 40000
 	CodeGroupAuthError   = 40100
 	CodeGroupNotFound    = 40400
@@ -54,7 +55,7 @@ const (
 const (
 	// 404 资源不存在
 	CodePathNotFound = CodeGroupNotFound + iota // 路径不存在
-	CodeUserNotFound                            // 用户不存在
+	CodeUserNotFound
 )
 
 const (
@@ -72,10 +73,30 @@ const (
 type BizError struct {
 	Code int    `json:"code"`
 	Msg  string `json:"msg"`
+	Err  error  `json:"-"`
 }
 
 func (e *BizError) Error() string {
 	return fmt.Sprintf("code:% d, msg: %s", e.Code, e.Msg)
+}
+
+func (e *BizError) Unwrap() error {
+	return e.Err
+}
+func (e *BizError) Is(targetErr error) bool {
+	t, ok := targetErr.(*BizError)
+	if !ok {
+		return false
+	}
+	return e.Code == t.Code
+}
+
+func (e *BizError) WithErr(err error) *BizError {
+	return &BizError{
+		Code: e.Code,
+		Msg:  e.Msg,
+		Err:  err,
+	}
 }
 
 func New(code int, msg string) *BizError {
@@ -105,19 +126,19 @@ var (
 	ErrCookieNoRefreshToken = New(CodeCookieNoRefreshToken, "cookie 内没有 freshToken")
 
 	ErrMissSession    = New(CodeMissRefreshToken, "缓存内没有 session")
-	ErrNoSession      = New(CodeNoSession, "数据内没有 session")
+	ErrNoSession      = New(CodeNoSession, "会话不存在")
 	ErrBlockedSession = New(CodeBlockedSession, "session 已注销")
 
 	// 404 资源不存在
 	ErrPathNotFound = New(CodePathNotFound, "请求路径不存在")
-	ErrUserNotFound = New(CodeUserNotFound, "该用户不存在")
+	ErrUserNotFound = New(CodeUserNotFound, "用户不存在")
 
 	// 409 值冲突
 	ErrUserAlreadyExits  = New(CodeUserAlreadyExits, "该用户已经存在")
 	ErrEmailAlreadyExits = New(CodeEmailAlreadyExits, "该邮箱已经存在")
 
 	// 500 服务器内部错误
-	ErrServerErr = New(CodeServerErr, "服务器内部错误")
+	ErrServerErr = New(CodeServerErr, "服务器开小差了")
 )
 
 func NewInvalidKeySizeError(actual, minSize int) error {

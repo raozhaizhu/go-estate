@@ -38,20 +38,19 @@ sqlc_gen:
 # mock
 mock:
 	mockgen -destination=$(DB_DIR)/mock/store.go -package=mock_db $(PROJECT_INTERNAL_PATH)/dao/sqlc Store && \
-	mockgen -destination=$(SESSION_SERVICE_DIR)/mock/cache.go -package=mock_service $(PROJECT_INTERNAL_PATH)/dao/cache SessionCache && \
-	mockgen -destination=$(DAILY_DATA_SERVICE_DIR)/mock/service.go -package=mock_service $(PROJECT_INTERNAL_PATH)/dao/sqlc DailyDataStore && \
-	mockgen -destination=$(USER_SERVICE_DIR)/mock/service.go -package=mock_service $(PROJECT_INTERNAL_PATH)/dao/sqlc UserStore && \
-	mockgen -destination=$(SESSION_SERVICE_DIR)/mock/service.go -package=mock_service $(PROJECT_INTERNAL_PATH)/dao/sqlc AuthStore && \
+	mockgen -destination=$(DB_DIR)/mock/cache.go -package=mock_db $(PROJECT_INTERNAL_PATH)/dao/cache SessionCache && \
 	mockgen -destination=$(DAILY_DATA_CONTROLLER_DIR)/mock/controller.go -package=mock_controller $(DAILY_DATA_CONTROLLER_PATH) Service && \
-	mockgen -destination=$(USER_CONTROLLER_DIR)/mock/controller.go -package=mock_controller $(USER_CONTROLLER_PATH) Service
-
+	mockgen -destination=$(USER_CONTROLLER_DIR)/mock/controller.go -package=mock_controller $(USER_CONTROLLER_PATH) Service && \
+	mockgen -destination=$(AUTH_CONTROLLER_DIR)/mock/controller.go -package=mock_controller $(AUTH_CONTROLLER_PATH) Service && \
+	mockgen -source=internal/worker/types.go -destination=internal/worker/mock/task_distributor.go -package=mock_worker && \
+	mockgen -destination=$(PKG_DIR)/token/mock/maker.go -package=mock_token $(MAKER_PATH) Maker
 # test
 test:
-	go test -cover -race -count=1 $(DAILY_DATA_SERVICE_DIR)
-	go test -cover -race -count=1 $(DAILY_DATA_CONTROLLER_DIR)
-	go test -cover -race -count=1 $(DB_SQLC_DIR)
+	gotestsum --format dots --no-summary=output
 
+swag:
+	swag init -g cmd/api/main.go --parseDependency --parseInternal
 
 .PHONY: migrate_create migrate_up migrate_up_1 migrate_down migrate_down_1
-.PHONY: docker_down docker_up q
-.PHONY: sqlc_gen mock test
+.PHONY: docker_down docker_up q docker_rebuild
+.PHONY: sqlc_gen mock test swag

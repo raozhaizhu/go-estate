@@ -15,9 +15,10 @@ import (
  */
 
 type SessionStore interface {
-	GetSession(ctx context.Context, id string) (Session, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) error
-	GetActiveSessionIDsByUserDevice(ctx context.Context, arg GetActiveSessionIDsByUserDeviceParams) ([]string, error)
+	GetSession(ctx context.Context, id string) (Session, error)
+	GetActiveSessionIDsByUserDeviceForUpdate(ctx context.Context, arg GetActiveSessionIDsByUserDeviceForUpdateParams) ([]string, error)
+	GetSessionIDsByUsernameForUpdate(ctx context.Context, username string) ([]string, error)
 	BlockSessionsByIDs(ctx context.Context, ids []string) error
 }
 
@@ -36,6 +37,10 @@ type DailyDataStore interface {
 type AuthStore interface {
 	GetUser(ctx context.Context, username string) (User, error)
 	SessionStore
+}
+
+type TxRunner interface {
+	ExecTx(ctx context.Context, fn func(q Querier) error) error
 }
 
 /** ====================================================================================

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
+	"github.com/raozhaizhu/go-estate/internal/domain/app"
 	dailyData "github.com/raozhaizhu/go-estate/internal/domain/daily_data"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 )
@@ -18,8 +19,8 @@ type service struct {
 	store db.DailyDataStore
 }
 
-func New(store db.DailyDataStore) *service {
-	return &service{store: store}
+func New(deps app.Deps) *service {
+	return &service{store: deps.Store}
 }
 
 /** ====================================================================================

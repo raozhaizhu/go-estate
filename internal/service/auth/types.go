@@ -1,13 +1,16 @@
 package auth
 
 import (
+	"log/slog"
 	"time"
 
-	"github.com/hibiken/asynq"
 	"github.com/raozhaizhu/go-estate/internal/dao/cache"
 	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
+	"github.com/raozhaizhu/go-estate/internal/domain/app"
 	role "github.com/raozhaizhu/go-estate/internal/domain/user"
 	"github.com/raozhaizhu/go-estate/internal/util"
+	"github.com/raozhaizhu/go-estate/internal/worker"
+	"github.com/raozhaizhu/go-estate/pkg/async"
 	"github.com/raozhaizhu/go-estate/pkg/token"
 )
 
@@ -22,12 +25,14 @@ type service struct {
 	sessionCache cache.SessionCache
 	config       util.Config
 	tokenMaker   token.Maker
-	taskClient   *asynq.Client
+	distributor  worker.TaskDistributor
+	logger       *slog.Logger
+	asyncRunner  async.AsyncRunner
 }
 
 // New 返回用户服务指针
-func New(store db.AuthStore, sessionCache cache.SessionCache, config util.Config, tokenMaker token.Maker, asynqClnt *asynq.Client) *service {
-	return &service{store: store, sessionCache: sessionCache, config: config, tokenMaker: tokenMaker, taskClient: asynqClnt}
+func New(deps app.Deps) *service {
+	return &service{store: deps.Store, sessionCache: deps.Cache, config: deps.Config, tokenMaker: deps.TokenMaker, distributor: deps.Distributor, logger: deps.Logger, asyncRunner: deps.AsyncRunner}
 }
 
 /** ====================================================================================
@@ -64,8 +69,8 @@ type LogoutInput struct {
 	DeviceID string
 }
 
-func (input *LogoutInput) toDBParams() db.GetActiveSessionIDsByUserDeviceParams {
-	return db.GetActiveSessionIDsByUserDeviceParams{
+func (input *LogoutInput) ToDBParams() db.GetActiveSessionIDsByUserDeviceForUpdateParams {
+	return db.GetActiveSessionIDsByUserDeviceForUpdateParams{
 		Username: input.Username,
 		DeviceID: input.DeviceID,
 	}

@@ -8,9 +8,11 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	mock_db "github.com/raozhaizhu/go-estate/internal/dao/mock"
 	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
+	"github.com/raozhaizhu/go-estate/internal/domain/app"
 	role "github.com/raozhaizhu/go-estate/internal/domain/user"
-	mock_service "github.com/raozhaizhu/go-estate/internal/service/user/mock"
+	mock_worker "github.com/raozhaizhu/go-estate/internal/worker/mock"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 	"github.com/raozhaizhu/go-estate/pkg/token"
 
@@ -28,7 +30,7 @@ type createUserTC struct {
 	input         CreateUserInput
 	roleToCreate  role.Role
 	buildCtx      func() context.Context
-	buildStubs    func(store *mock_service.MockUserStore)
+	buildStubs    func(store *mock_db.MockStore)
 	checkResponse func(t *testing.T, res *DTO, err error)
 }
 
@@ -42,7 +44,7 @@ func TestCreateUser_Duplicate(t *testing.T) {
 			name:         "用重复 username 创建 User",
 			input:        input,
 			roleToCreate: role.RoleUser,
-			buildStubs: func(store *mock_service.MockUserStore) {
+			buildStubs: func(store *mock_db.MockStore) {
 				store.EXPECT().
 					CreateUser(gomock.Any(), EqCreateUserParams(params, input.Password)).
 					Return(nil, db.ErrUsernameDuplicate).
@@ -64,7 +66,7 @@ func TestCreateUser_Duplicate(t *testing.T) {
 			name:         "用重复 email 创建 User",
 			input:        input,
 			roleToCreate: role.RoleUser,
-			buildStubs: func(store *mock_service.MockUserStore) {
+			buildStubs: func(store *mock_db.MockStore) {
 				store.EXPECT().
 					CreateUser(gomock.Any(), EqCreateUserParams(params, input.Password)).
 					Return(nil, db.ErrEmailDuplicate).
@@ -100,7 +102,7 @@ func TestCreateUser_Authorization(t *testing.T) {
 			name:         "用 User 创建 Vip",
 			input:        input,
 			roleToCreate: role.RoleVip,
-			buildStubs: func(store *mock_service.MockUserStore) {
+			buildStubs: func(store *mock_db.MockStore) {
 				store.EXPECT().
 					CreateUser(gomock.Any(), gomock.Any()).
 					Times(0)
@@ -121,7 +123,7 @@ func TestCreateUser_Authorization(t *testing.T) {
 			name:         "创建不被允许的角色(Admin)",
 			input:        input,
 			roleToCreate: role.RoleAdmin,
-			buildStubs: func(store *mock_service.MockUserStore) {
+			buildStubs: func(store *mock_db.MockStore) {
 				store.EXPECT().
 					CreateUser(gomock.Any(), gomock.Any()).
 					Times(0)
@@ -171,7 +173,7 @@ func TestCreateUser_Success(t *testing.T) {
 			input:        input,
 			roleToCreate: role.RoleVip,
 			// 执行 svc 逻辑(先调用 create 后调用 get)
-			buildStubs: func(store *mock_service.MockUserStore) {
+			buildStubs: func(store *mock_db.MockStore) {
 				store.EXPECT().
 					CreateUser(gomock.Any(), EqCreateUserParams(vipParams, input.Password)).
 					Return(driver.RowsAffected(1), nil).
@@ -194,7 +196,7 @@ func TestCreateUser_Success(t *testing.T) {
 			input:        input,
 			roleToCreate: role.RoleUser,
 			// 执行 svc 逻辑(先调用 create 后调用 get)
-			buildStubs: func(store *mock_service.MockUserStore) {
+			buildStubs: func(store *mock_db.MockStore) {
 				store.EXPECT().
 					CreateUser(gomock.Any(), EqCreateUserParams(params, input.Password)).
 					Return(driver.RowsAffected(1), nil).
@@ -263,8 +265,15 @@ func runCreateUserTC(t *testing.T, testCases []createUserTC) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			// 初始化 store, svc
-			storeMock := mock_service.NewMockUserStore(ctrl)
-			svc := New(storeMock)
+			storeMock := mock_db.NewMockStore(ctrl)
+			cacheMock := mock_db.NewMockSessionCache(ctrl)
+			distributorMock := mock_worker.NewMockTaskDistributor(ctrl)
+			deps := app.Deps{
+				Store:       storeMock,
+				Cache:       cacheMock,
+				Distributor: distributorMock,
+			}
+			svc := New(deps)
 
 			// 数据库埋桩
 			tc.buildStubs(storeMock)

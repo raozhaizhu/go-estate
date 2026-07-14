@@ -11,20 +11,6 @@ import (
 	"time"
 )
 
-const blockAllUserSessions = `-- name: BlockAllUserSessions :exec
-UPDATE
-        ` + "`" + `sessions` + "`" + `
-SET
-        is_blocked = TRUE
-WHERE
-        username = ?
-`
-
-func (q *Queries) BlockAllUserSessions(ctx context.Context, username string) error {
-	_, err := q.db.ExecContext(ctx, blockAllUserSessions, username)
-	return err
-}
-
 const blockSessionsByIDs = `-- name: BlockSessionsByIDs :exec
 UPDATE
         ` + "`" + `sessions` + "`" + `
@@ -87,7 +73,7 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) er
 	return err
 }
 
-const getActiveSessionIDsByUserDevice = `-- name: GetActiveSessionIDsByUserDevice :many
+const getActiveSessionIDsByUserDeviceForUpdate = `-- name: GetActiveSessionIDsByUserDeviceForUpdate :many
 SELECT
         id
 FROM
@@ -95,16 +81,17 @@ FROM
 WHERE
         username = ?
         AND device_id = ?
-        AND is_blocked = false
+        AND is_blocked = false FOR
+UPDATE
 `
 
-type GetActiveSessionIDsByUserDeviceParams struct {
+type GetActiveSessionIDsByUserDeviceForUpdateParams struct {
 	Username string `json:"username"`
 	DeviceID string `json:"device_id"`
 }
 
-func (q *Queries) GetActiveSessionIDsByUserDevice(ctx context.Context, arg GetActiveSessionIDsByUserDeviceParams) ([]string, error) {
-	rows, err := q.db.QueryContext(ctx, getActiveSessionIDsByUserDevice, arg.Username, arg.DeviceID)
+func (q *Queries) GetActiveSessionIDsByUserDeviceForUpdate(ctx context.Context, arg GetActiveSessionIDsByUserDeviceForUpdateParams) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, getActiveSessionIDsByUserDeviceForUpdate, arg.Username, arg.DeviceID)
 	if err != nil {
 		return nil, err
 	}
@@ -151,4 +138,38 @@ func (q *Queries) GetSession(ctx context.Context, id string) (Session, error) {
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const getSessionIDsByUsernameForUpdate = `-- name: GetSessionIDsByUsernameForUpdate :many
+SELECT
+        id
+FROM
+        ` + "`" + `sessions` + "`" + `
+WHERE
+        username = ?
+        AND is_blocked = false FOR
+UPDATE
+`
+
+func (q *Queries) GetSessionIDsByUsernameForUpdate(ctx context.Context, username string) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, getSessionIDsByUsernameForUpdate, username)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

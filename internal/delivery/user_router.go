@@ -32,10 +32,10 @@ func RegisterUserRoutes(publicGroup *gin.RouterGroup, protectedGroup *gin.Router
 		userPublicGroup.POST("", response.Wrapper(controller.CreateNormalUser))
 	}
 
-	// 创建 vip 用户, 或者查询/更新信息, 需要登录访问
+	// 创建 vip 用户, 查询/更新用户信息, 需要身份验证
 	userProtectedGroup := protectedGroup.Group("/user")
 	{
-		userProtectedGroup.POST("/vip", middleware.RoleMiddleware(userDomain.RoleAtLeastAdmin), response.Wrapper(controller.CreateVip))
+		userProtectedGroup.POST("/vip", middleware.RequireRoles(userDomain.RoleAtLeastAdmin), response.Wrapper(controller.CreateVip))
 		userProtectedGroup.GET("/:username", response.Wrapper(controller.GetUser))
 		userProtectedGroup.PATCH("/:username", response.Wrapper(controller.UpdateUser))
 	}

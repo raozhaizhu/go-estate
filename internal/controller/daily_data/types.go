@@ -29,6 +29,8 @@ func NewDailyDataController(svc Service) *Controller {
 	return &Controller{service: svc}
 }
 
+type DailyDataList []db.DailyDatum
+
 /** ====================================================================================
  * 🏁 GetDataByDay
  * =====================================================================================
@@ -38,15 +40,11 @@ type GetDataByDayRequest struct {
 	Date string `form:"date" binding:"required,datetime=2006-01-02"`
 }
 
-func (r *GetDataByDayRequest) toSvcInput() (service.GetDataByDayInput, error) {
+func (r *GetDataByDayRequest) toSvcInput() service.GetDataByDayInput {
 	// 转换为标准日期字符串
-	targetTime, err := time.Parse(dailyData.DateFormat, r.Date)
-	// 已知错误: 查询日期格式错误
-	if err != nil {
-		return service.GetDataByDayInput{}, appError.ErrBadDate
-	}
+	targetTime, _ := time.Parse(dailyData.DateFormat, r.Date)
 
-	return service.GetDataByDayInput{TargetDate: targetTime}, nil
+	return service.GetDataByDayInput{TargetDate: targetTime}
 }
 
 /** ====================================================================================
@@ -60,17 +58,13 @@ type GetDataByPeriodRequest struct {
 }
 
 func (r *GetDataByPeriodRequest) toSvcInput() (service.GetDataByPeriodInput, error) {
-	// 转换为标准日期字符串
-	// 已知错误: 开始日期格式错误
-	start, err := time.Parse(dailyData.DateFormat, r.Start)
-	if err != nil {
-		return service.GetDataByPeriodInput{}, appError.ErrBadStartDate
+	start, _ := time.Parse(dailyData.DateFormat, r.Start)
+	end, _ := time.Parse(dailyData.DateFormat, r.End)
+
+	if end.Before(start) {
+		return service.GetDataByPeriodInput{}, appError.ErrBadTimerOrder
 	}
-	// 已知错误: 结束日期格式错误
-	end, err := time.Parse(dailyData.DateFormat, r.End)
-	if err != nil {
-		return service.GetDataByPeriodInput{}, appError.ErrBadEndDate
-	}
+
 	return service.GetDataByPeriodInput{StartDate: start, EndDate: end}, nil
 }
 

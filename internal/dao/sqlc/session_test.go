@@ -62,7 +62,7 @@ func TestGetActiveSessionIDsByUserDevice_Success(t *testing.T) {
 	session1 := createThenGetSessionByUser(t, user, deviceID)
 	session2 := createThenGetSessionByUser(t, user, deviceID)
 	// act
-	ids, err := testStore.GetActiveSessionIDsByUserDevice(context.Background(), db.GetActiveSessionIDsByUserDeviceParams{
+	ids, err := testStore.GetActiveSessionIDsByUserDeviceForUpdate(context.Background(), db.GetActiveSessionIDsByUserDeviceForUpdateParams{
 		Username: user.Username,
 		DeviceID: deviceID,
 	})
@@ -91,18 +91,18 @@ func TestBlockSessionsByIDs_Success(t *testing.T) {
 }
 
 // TestBlockAllUserSessions_Success 测试封锁 user 名下所有 sessions
-func TestBlockAllUserSessions_Success(t *testing.T) {
-	// arrange
-	user := testUtil.CreateRandomUser(t, testStore)
-	deviceID := testUtil.DeviceID
-	session1 := createThenGetSessionByUser(t, user, deviceID)
-	session2 := createThenGetSessionByUser(t, user, deviceID)
-	// act
-	err := testStore.BlockAllUserSessions(context.Background(), user.Username)
-	// assert
-	require.NoError(t, err)
-	session1Changed, _ := testStore.GetSession(context.Background(), session1.ID)
-	session2Changed, _ := testStore.GetSession(context.Background(), session2.ID)
-	require.True(t, session1Changed.IsBlocked)
-	require.True(t, session2Changed.IsBlocked)
-}
+// func TestBlockAllUserSessions_Success(t *testing.T) {
+// 	// arrange
+// 	user := testUtil.CreateRandomUser(t, testStore)
+// 	deviceID := testUtil.DeviceID
+// 	session1 := createThenGetSessionByUser(t, user, deviceID)
+// 	session2 := createThenGetSessionByUser(t, user, deviceID)
+// 	// act
+// 	err := testStore.BlockAllUserSessions(context.Background(), user.Username)
+// 	// assert
+// 	require.NoError(t, err)
+// 	session1Changed, _ := testStore.GetSession(context.Background(), session1.ID)
+// 	session2Changed, _ := testStore.GetSession(context.Background(), session2.ID)
+// 	require.True(t, session1Changed.IsBlocked)
+// 	require.True(t, session2Changed.IsBlocked)
+// }

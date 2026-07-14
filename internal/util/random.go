@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	dailyData "github.com/raozhaizhu/go-estate/internal/domain/daily_data"
+	dailyDataDomain "github.com/raozhaizhu/go-estate/internal/domain/daily_data"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 )
 
@@ -37,14 +37,14 @@ func startOfDay(t time.Time) time.Time {
 }
 
 func GetRandomDayInRange() time.Time {
-	day, _ := RandomDate(dailyData.MinDate, dailyData.MaxDate)
+	day, _ := RandomDate(dailyDataDomain.MinDate, dailyDataDomain.MaxDate)
 	return day
 }
 
 func GetRandom2DayInRange() (time.Time, time.Time) {
 	// 默认 day1 在前,day2 在后, 若不满足则互换顺序
-	day1, _ := RandomDate(dailyData.MinDate, dailyData.MaxDate)
-	day2, _ := RandomDate(dailyData.MinDate, dailyData.MaxDate)
+	day1, _ := RandomDate(dailyDataDomain.MinDate, dailyDataDomain.MaxDate)
+	day2, _ := RandomDate(dailyDataDomain.MinDate, dailyDataDomain.MaxDate)
 	if day1.After(day2) {
 		day1, day2 = day2, day1
 	}

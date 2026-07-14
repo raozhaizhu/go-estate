@@ -56,7 +56,7 @@ SELECT
 FROM
         daily_data
 WHERE
-        date = ?
+        DATE(date) = DATE(?)
 `
 
 func (q *Queries) GetDataByDay(ctx context.Context, targetDate time.Time) ([]DailyDatum, error) {
@@ -98,8 +98,8 @@ SELECT
 FROM
         daily_data
 WHERE
-        date >= ?
-        AND date <= ?
+        DATE(date) >= DATE(?)
+        AND DATE(date) <= DATE(?)
 `
 
 type GetDataByPeriodParams struct {

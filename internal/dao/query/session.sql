@@ -22,7 +22,7 @@ WHERE
 LIMIT
         1;
 
--- name: GetActiveSessionIDsByUserDevice :many
+-- name: GetActiveSessionIDsByUserDeviceForUpdate :many
 SELECT
         id
 FROM
@@ -30,7 +30,9 @@ FROM
 WHERE
         username = sqlc.arg(username)
         AND device_id = sqlc.arg(device_id)
-        AND is_blocked = false;
+        AND is_blocked = false FOR
+UPDATE
+;
 
 -- name: BlockSessionsByIDs :exec
 UPDATE
@@ -40,14 +42,41 @@ SET
 WHERE
         id IN (sqlc.slice('ids'));
 
--- name: BlockAllUserSessions :exec
-UPDATE
+-- name: GetSessionIDsByUsernameForUpdate :many
+SELECT
+        id
+FROM
         `sessions`
-SET
-        is_blocked = TRUE
 WHERE
-        username = ?;
+        username = sqlc.arg(username)
+        AND is_blocked = false FOR
+UPDATE
+;
 
+-- -- name: GetActiveSessionIDsByUserDevice :many
+-- SELECT
+--         id
+-- FROM
+--         `sessions`
+-- WHERE
+--         username = sqlc.arg(username)
+--         AND device_id = sqlc.arg(device_id)
+--         AND is_blocked = false;
+-- -- name: GetSessionIDsByUsername :many
+-- SELECT
+--         id
+-- FROM
+--         `sessions`
+-- WHERE
+--         username = sqlc.arg(username)
+--         AND is_blocked = false;
+-- -- name: BlockAllUserSessions :exec
+-- UPDATE
+--         `sessions`
+-- SET
+--         is_blocked = TRUE
+-- WHERE
+--         username = ?;
 -- -- name: BlockSession :exec
 -- UPDATE
 --         `sessions`

@@ -10,7 +10,7 @@ SELECT
 FROM
         daily_data
 WHERE
-        date = sqlc.arg(target_date);
+        DATE(date) = DATE(sqlc.arg(target_date));
 
 -- name: GetDataByPeriod :many
 SELECT
@@ -18,6 +18,5 @@ SELECT
 FROM
         daily_data
 WHERE
-        date >= sqlc.arg(start_date)
-        AND date <= sqlc.arg(end_date);
-
+        DATE(date) >= DATE(sqlc.arg(start_date))
+        AND DATE(date) <= DATE(sqlc.arg(end_date));

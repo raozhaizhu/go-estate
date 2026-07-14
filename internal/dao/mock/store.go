@@ -37,20 +37,6 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// BlockAllUserSessions mocks base method.
-func (m *MockStore) BlockAllUserSessions(arg0 context.Context, arg1 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BlockAllUserSessions", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// BlockAllUserSessions indicates an expected call of BlockAllUserSessions.
-func (mr *MockStoreMockRecorder) BlockAllUserSessions(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BlockAllUserSessions", reflect.TypeOf((*MockStore)(nil).BlockAllUserSessions), arg0, arg1)
-}
-
 // BlockSessionsByIDs mocks base method.
 func (m *MockStore) BlockSessionsByIDs(arg0 context.Context, arg1 []string) error {
 	m.ctrl.T.Helper()
@@ -94,19 +80,33 @@ func (mr *MockStoreMockRecorder) CreateUser(arg0, arg1 interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockStore)(nil).CreateUser), arg0, arg1)
 }
 
-// GetActiveSessionIDsByUserDevice mocks base method.
-func (m *MockStore) GetActiveSessionIDsByUserDevice(arg0 context.Context, arg1 db.GetActiveSessionIDsByUserDeviceParams) ([]string, error) {
+// ExecTx mocks base method.
+func (m *MockStore) ExecTx(arg0 context.Context, arg1 func(db.Querier) error) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetActiveSessionIDsByUserDevice", arg0, arg1)
+	ret := m.ctrl.Call(m, "ExecTx", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ExecTx indicates an expected call of ExecTx.
+func (mr *MockStoreMockRecorder) ExecTx(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecTx", reflect.TypeOf((*MockStore)(nil).ExecTx), arg0, arg1)
+}
+
+// GetActiveSessionIDsByUserDeviceForUpdate mocks base method.
+func (m *MockStore) GetActiveSessionIDsByUserDeviceForUpdate(arg0 context.Context, arg1 db.GetActiveSessionIDsByUserDeviceForUpdateParams) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetActiveSessionIDsByUserDeviceForUpdate", arg0, arg1)
 	ret0, _ := ret[0].([]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetActiveSessionIDsByUserDevice indicates an expected call of GetActiveSessionIDsByUserDevice.
-func (mr *MockStoreMockRecorder) GetActiveSessionIDsByUserDevice(arg0, arg1 interface{}) *gomock.Call {
+// GetActiveSessionIDsByUserDeviceForUpdate indicates an expected call of GetActiveSessionIDsByUserDeviceForUpdate.
+func (mr *MockStoreMockRecorder) GetActiveSessionIDsByUserDeviceForUpdate(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveSessionIDsByUserDevice", reflect.TypeOf((*MockStore)(nil).GetActiveSessionIDsByUserDevice), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveSessionIDsByUserDeviceForUpdate", reflect.TypeOf((*MockStore)(nil).GetActiveSessionIDsByUserDeviceForUpdate), arg0, arg1)
 }
 
 // GetAllData mocks base method.
@@ -167,6 +167,21 @@ func (m *MockStore) GetSession(arg0 context.Context, arg1 string) (db.Session, e
 func (mr *MockStoreMockRecorder) GetSession(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSession", reflect.TypeOf((*MockStore)(nil).GetSession), arg0, arg1)
+}
+
+// GetSessionIDsByUsernameForUpdate mocks base method.
+func (m *MockStore) GetSessionIDsByUsernameForUpdate(arg0 context.Context, arg1 string) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSessionIDsByUsernameForUpdate", arg0, arg1)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSessionIDsByUsernameForUpdate indicates an expected call of GetSessionIDsByUsernameForUpdate.
+func (mr *MockStoreMockRecorder) GetSessionIDsByUsernameForUpdate(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSessionIDsByUsernameForUpdate", reflect.TypeOf((*MockStore)(nil).GetSessionIDsByUsernameForUpdate), arg0, arg1)
 }
 
 // GetUser mocks base method.

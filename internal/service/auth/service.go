@@ -2,15 +2,17 @@ package auth
 
 import (
 	"context"
-	"encoding/json"
-	"log/slog"
+	"database/sql"
+	"errors"
+	"fmt"
+	"time"
 
-	"github.com/hibiken/asynq"
+	"github.com/raozhaizhu/go-estate/internal/dao/cache"
 	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
 	role "github.com/raozhaizhu/go-estate/internal/domain/user"
 	"github.com/raozhaizhu/go-estate/internal/util"
-	"github.com/raozhaizhu/go-estate/internal/worker"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
+	"github.com/raozhaizhu/go-estate/pkg/async"
 	"github.com/raozhaizhu/go-estate/pkg/token"
 )
 
@@ -28,14 +30,17 @@ func (svc *service) Login(ctx context.Context, input LoginInput) (*DTO, string, 
 	}
 
 	// 踢掉该用户在该设备下的所有旧会话
-	_ = svc.Logout(ctx, LogoutInput{
+	err = svc.Logout(ctx, LogoutInput{
 		Username: input.Username,
 		DeviceID: input.DeviceID,
 	})
+	if err != nil {
+		return nil, "", err
+	}
 
 	// 获取访问令牌, 刷新令牌
-	accessToken, refreshToken, accessPayload, refreshPayload, err := svc.forgeTokenPair(user)
-	if err != nil {
+	accessToken, refreshToken, accessPayload, refreshPayload, err := svc.tokenMaker.ForgeTokenPair(user, &svc.config)
+	if err != nil { // 内部错误, 铸造失败
 		return nil, "", err
 	}
 
@@ -61,7 +66,7 @@ func (svc *service) checkUser(ctx context.Context, input LoginInput) (*db.User, 
 	// 查询用户
 	user, err := svc.store.GetUser(ctx, input.Username)
 	if err != nil { // 用户不存在
-		return nil, appError.ErrWrongUsernamePassword
+		return nil, appError.ErrWrongUsernamePassword // 返回账号密码错误
 	}
 
 	// 校对密码
@@ -73,25 +78,6 @@ func (svc *service) checkUser(ctx context.Context, input LoginInput) (*db.User, 
 	return &user, nil
 }
 
-// forgeTokenPair 锻造 访问令牌 + 刷新令牌
-func (svc *service) forgeTokenPair(user *db.User) (accessToken, refreshToken string, accessPayload, refreshPayload *token.Payload, err error) {
-	// 发放访问令牌
-	accessToken, accessPayload, err = svc.tokenMaker.CreateToken(user.Username, role.Role(user.Role),
-		svc.config.AccessTokenDuration, token.TokenTypeAccessToken)
-	if err != nil {
-		return
-	}
-
-	// 发放刷新令牌
-	refreshToken, refreshPayload, err = svc.tokenMaker.CreateToken(user.Username, role.Role(user.Role),
-		svc.config.RefreshTokenDuration, token.TokenTypeRefreshToken)
-	if err != nil {
-		return
-	}
-
-	return accessToken, refreshToken, accessPayload, refreshPayload, nil
-}
-
 // restoreSession 将会话保存到 db redis
 func (svc *service) restoreSession(ctx context.Context, refreshPayload *token.Payload, input LoginInput) error {
 	// 参数转化
@@ -101,14 +87,12 @@ func (svc *service) restoreSession(ctx context.Context, refreshPayload *token.Pa
 	// 存刷新令牌到 db
 	err := svc.store.CreateSession(ctx, dbParams)
 	if err != nil {
-		return err
+		return appError.ErrServerErr.WithErr(fmt.Errorf("存入会话到 DB 失败: %w)", err))
+
 	}
 
-	// 存刷新令牌到 redis
-	err = svc.sessionCache.AddNewSession(ctx, cacheParams)
-	if err != nil {
-		return err
-	}
+	// 尽力而为, 存刷新令牌到 redis
+	svc.asyncAddNewSession(ctx, cacheParams)
 
 	return nil
 }
@@ -156,7 +140,7 @@ func (svc *service) Refresh(ctx context.Context, refreshTokenStr string) (*DTO, 
 
 // isSessionValid 查询 redis(若 miss 则查询 db), 校验令牌是否有效
 func (svc *service) isSessionValid(ctx context.Context, jti string) error {
-	// 查 redis
+	// 从 redis 找 Session
 	session, err := svc.sessionCache.GetSession(ctx, jti)
 
 	// 校验错误类型
@@ -164,24 +148,38 @@ func (svc *service) isSessionValid(ctx context.Context, jti string) error {
 	case appError.ErrMissSession: // 1. 缓存 miss, 尝试去数据库取
 		dbSession, dbErr := svc.store.GetSession(ctx, jti)
 		if dbErr != nil { // 数据库内也没有 session
-			return appError.ErrNoSession
+			if errors.Is(dbErr, sql.ErrNoRows) {
+				return appError.ErrNoSession
+			}
+			return appError.ErrServerErr.WithErr(fmt.Errorf("从数据库获取 Session 失败: %w", dbErr))
 		}
 		err := dbSession.IsValid()
 		if err != nil { // 校验注销,过期
 			return err
 		}
 		// 尽力而为, 存到缓存
-		svc.sessionCache.AddNewSession(ctx, dbSession.ToCacheParams())
+		svc.asyncAddNewSession(ctx, dbSession.ToCacheParams())
+
 	case nil: // 2. 缓存命中, 校验 session 注销或过期
 		err = session.IsValid()
 		if err != nil {
 			return err
 		}
 	default: // 3. 其他错误,直接返错
-		return err
+		return appError.ErrServerErr.WithErr(fmt.Errorf("缓存获取 Session 失败: %w", err))
 	}
 
 	return nil
+}
+
+// asyncAddNewSession 尽力而为, 异步将 Session 存到 Redis
+func (svc *service) asyncAddNewSession(ctx context.Context, params cache.AddNewSessionParams) {
+	svc.asyncRunner(ctx, svc.logger, "回写 Session 缓存", 5*time.Second, func(asyncCtx context.Context) {
+		cacheErr := svc.sessionCache.AddNewSession(asyncCtx, params)
+		if cacheErr != nil {
+			async.LogAsyncError(asyncCtx, svc.logger, "/async/refresh_cache", "回写 Session 缓存失败", cacheErr, "jti", params.JTI)
+		}
+	})
 }
 
 /** ====================================================================================
@@ -193,12 +191,12 @@ func (svc *service) isSessionValid(ctx context.Context, jti string) error {
 // 将用户指定设备下的 session 禁用
 func (svc *service) Logout(ctx context.Context, input LogoutInput) error {
 	// 获取参数
-	params := input.toDBParams()
+	params := input.ToDBParams()
 
 	// ->db 获取该用户指定设备下所有 session_ids
-	ids, err := svc.store.GetActiveSessionIDsByUserDevice(ctx, params)
+	ids, err := svc.store.GetActiveSessionIDsByUserDeviceForUpdate(ctx, params)
 	if err != nil {
-		return err
+		return appError.ErrServerErr.WithErr(fmt.Errorf("获取用户活跃 Sessions 失败: %w", err))
 	}
 	if len(ids) == 0 { //没有需要清理的 token,任务已经完成
 		return nil
@@ -207,30 +205,13 @@ func (svc *service) Logout(ctx context.Context, input LogoutInput) error {
 	// ->db 将这些 sessions 清除
 	err = svc.store.BlockSessionsByIDs(ctx, ids)
 	if err != nil {
-		return err
+		return appError.ErrServerErr.WithErr(fmt.Errorf("清除 Sessions 时失败: %w)", err))
 	}
 
 	// worker->redis 调用 worker 异步清理 redis
-	err = svc.deleteSessionsTaskEnqueue(ids)
+	err = svc.distributor.DistributeTaskDeleteSessions(ctx, ids)
 	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// deleteSessionsTaskEnqueue 将清理会话任务加入队列
-func (svc *service) deleteSessionsTaskEnqueue(ids []string) error {
-	// worker->redis 调用 worker 异步清理 redis
-	payload := worker.DeleteSessionsPayload{JTIs: ids}
-	payloadBytes, err := json.Marshal(payload)
-	if err != nil {
-		return err
-	}
-	task := asynq.NewTask(worker.TaskDeleteSessions, payloadBytes, asynq.MaxRetry(3))
-	_, err = svc.taskClient.Enqueue(task)
-	if err != nil {
-		slog.Error("failed to enqueue delete cache task", "error", err)
+		return appError.ErrServerErr.WithErr(fmt.Errorf("调用 worker 异步清理 redis时失败: %w)", err))
 	}
 
 	return nil
