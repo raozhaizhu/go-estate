@@ -3,7 +3,7 @@ mysql_data/
 node_modules/
 data-volume/
 tmp/
-
-app.env
 .vscode/
 logs/
+
+app.env
