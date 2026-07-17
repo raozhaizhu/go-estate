@@ -34,7 +34,7 @@ func New(svc Service) *Controller {
  */
 
 type GetUserRequest struct {
-	Username string `uri:"username" binding:"required,min=3,max=32"`
+	Username string `uri:"username" binding:"required,min=3,max=32" example:"Bob"`
 }
 
 func (r *GetUserRequest) toSvcInput() service.GetUserInput {
@@ -49,9 +49,9 @@ func (r *GetUserRequest) toSvcInput() service.GetUserInput {
  */
 
 type CreateUserRequest struct {
-	Username string `json:"username" binding:"required,min=3,max=32"`
-	Password string `json:"password" binding:"required,min=8,max=16"`
-	Email    string `json:"email" binding:"required,email"`
+	Username string `json:"username" binding:"required,min=3,max=32" example:"Bob"`
+	Password string `json:"password" binding:"required,min=8,max=16" example:"12345678"`
+	Email    string `json:"email" binding:"required,email" example:"Bob@test.com"`
 }
 
 func (r *CreateUserRequest) toSvcInput() service.CreateUserInput {
@@ -68,9 +68,9 @@ func (r *CreateUserRequest) toSvcInput() service.CreateUserInput {
  */
 
 type UpdateUserRequest struct {
-	Username string  `uri:"username" binding:"required,min=3,max=32"`
-	Password *string `json:"password" binding:"omitempty,min=8,max=16"`
-	Email    *string `json:"email" binding:"omitempty,email"`
+	Username string  `uri:"username" binding:"required,min=3,max=32" example:"Bob"`
+	Password *string `json:"password" binding:"omitempty,min=8,max=16" example:"12345678"`
+	Email    *string `json:"email" binding:"omitempty,email" example:"Bob@test.com"`
 }
 
 func (r *UpdateUserRequest) toSvcInput() service.UpdateUserInput {

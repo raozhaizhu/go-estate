@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	dailyDataCtrl "github.com/raozhaizhu/go-estate/internal/controller/daily_data"
 	mock_controller "github.com/raozhaizhu/go-estate/internal/controller/daily_data/mock"
 	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
 	"github.com/raozhaizhu/go-estate/internal/delivery"
@@ -81,7 +82,7 @@ func TestGetDataByPeriod(t *testing.T) {
 		router.ServeHTTP(writer, req)
 	}
 	successCheckResponse := func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string) {
-		var results response.Result[[]db.DailyDatum]
+		var results response.Result[dailyDataCtrl.DailyDataList]
 		// 反序列化结果
 		err := json.Unmarshal(writer.Body.Bytes(), &results)
 		require.NoError(t, err)
@@ -90,7 +91,7 @@ func TestGetDataByPeriod(t *testing.T) {
 		assert.Equal(t, expectedMsg, results.Msg)
 	}
 	failCheckResponse := func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string) {
-		var results response.Result[[]db.DailyDatum]
+		var results response.Result[dailyDataCtrl.DailyDataList]
 		// 反序列化结果
 		err := json.Unmarshal(writer.Body.Bytes(), &results)
 		require.NoError(t, err)

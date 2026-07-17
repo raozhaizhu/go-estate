@@ -5,3 +5,4 @@ data-volume/
 tmp/
 
 app.env
+.vscode/
