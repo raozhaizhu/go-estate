@@ -13,6 +13,7 @@ import (
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	ginprometheus "github.com/zsais/go-gin-prometheus"
 )
 
 // 定义全局版本路由
@@ -27,6 +28,10 @@ type Services struct {
 func SetupRouter(services Services, deps app.Deps) *gin.Engine {
 	// 初始化路由引擎
 	router := gin.New()
+
+	// 实例化 Prometheus
+	p := ginprometheus.NewPrometheus("gin")
+	p.Use(router)
 
 	// 挂载全局中间件
 	router.Use(gin.Recovery())                         // 防崩溃

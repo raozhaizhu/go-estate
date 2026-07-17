@@ -1,0 +1,26 @@
+logger=settings t=2026-07-17T10:15:23.499112424Z level=info msg="Config overridden from command line" arg="default.paths.provisioning=/etc/grafana/provisioning"
+logger=settings t=2026-07-17T10:15:23.499117674Z level=info msg="Config overridden from Environment variable" var="GF_PATHS_PROVISIONING=/etc/grafana/provisioning"
+logger=settings t=2026-07-17T10:15:23.499131841Z level=info msg="Path Provisioning" path=/etc/grafana/provisioning
+logger=migrator t=2026-07-17T10:15:23.972141382Z level=info msg="Executing migration" id="create dashboard_provisioning"
+logger=migrator t=2026-07-17T10:15:23.972354049Z level=info msg="Migration successfully executed" id="create dashboard_provisioning" duration=212.5µs
+logger=migrator t=2026-07-17T10:15:23.975680632Z level=info msg="Executing migration" id="Rename table dashboard_provisioning to dashboard_provisioning_tmp_qwerty - v1"
+logger=migrator t=2026-07-17T10:15:23.977264591Z level=info msg="Migration successfully executed" id="Rename table dashboard_provisioning to dashboard_provisioning_tmp_qwerty - v1" duration=1.584375ms
+logger=migrator t=2026-07-17T10:15:23.981300299Z level=info msg="Executing migration" id="create dashboard_provisioning v2"
+logger=migrator t=2026-07-17T10:15:23.981511716Z level=info msg="Migration successfully executed" id="create dashboard_provisioning v2" duration=211.25µs
+logger=migrator t=2026-07-17T10:15:23.985146757Z level=info msg="Executing migration" id="create index IDX_dashboard_provisioning_dashboard_id - v2"
+logger=migrator t=2026-07-17T10:15:23.985348216Z level=info msg="Migration successfully executed" id="create index IDX_dashboard_provisioning_dashboard_id - v2" duration=201.584µs
+logger=migrator t=2026-07-17T10:15:23.989914466Z level=info msg="Executing migration" id="create index IDX_dashboard_provisioning_dashboard_id_name - v2"
+logger=migrator t=2026-07-17T10:15:23.990202966Z level=info msg="Migration successfully executed" id="create index IDX_dashboard_provisioning_dashboard_id_name - v2" duration=288.708µs
+logger=migrator t=2026-07-17T10:15:23.993889716Z level=info msg="Executing migration" id="copy dashboard_provisioning v1 to v2"
+logger=migrator t=2026-07-17T10:15:23.993965716Z level=info msg="Migration successfully executed" id="copy dashboard_provisioning v1 to v2" duration=76.084µs
+logger=migrator t=2026-07-17T10:15:23.996970966Z level=info msg="Executing migration" id="drop dashboard_provisioning_tmp_qwerty"
+logger=migrator t=2026-07-17T10:15:23.997112299Z level=info msg="Migration successfully executed" id="drop dashboard_provisioning_tmp_qwerty" duration=141.416µs
+logger=migrator t=2026-07-17T10:15:25.480156675Z level=info msg="Executing migration" id="add provisioning column"
+logger=migrator t=2026-07-17T10:15:25.48271055Z level=info msg="Migration successfully executed" id="add provisioning column" duration=2.553792ms
+logger=provisioning.datasources t=2026-07-17T10:15:26.554882717Z level=info msg="inserting datasource from configuration" name=Prometheus uid=PBFA97CFB590B2093
+logger=provisioning.plugins t=2026-07-17T10:15:26.56507455Z level=error msg="Failed to read plugin provisioning files from directory" path=/etc/grafana/provisioning/plugins error="open /etc/grafana/provisioning/plugins: no such file or directory"
+logger=provisioning.alerting t=2026-07-17T10:15:26.565126425Z level=error msg="can't read alerting provisioning files from directory" path=/etc/grafana/provisioning/alerting error="open /etc/grafana/provisioning/alerting: no such file or directory"
+logger=provisioning.alerting t=2026-07-17T10:15:26.56513205Z level=info msg="starting to provision alerting"
+logger=provisioning.alerting t=2026-07-17T10:15:26.565138592Z level=info msg="finished to provision alerting"
+logger=provisioning.dashboard t=2026-07-17T10:15:26.5657478Z level=info msg="starting to provision dashboards"
+logger=provisioning.dashboard t=2026-07-17T10:15:26.584043467Z level=info msg="finished to provision dashboards"
