@@ -15,12 +15,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	dailyDataCtrl "github.com/raozhaizhu/go-estate/internal/controller/daily_data"
 	mock_controller "github.com/raozhaizhu/go-estate/internal/controller/daily_data/mock"
 	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
 	"github.com/raozhaizhu/go-estate/internal/delivery"
 	dailyDataDomain "github.com/raozhaizhu/go-estate/internal/domain/daily_data"
 	userDomain "github.com/raozhaizhu/go-estate/internal/domain/user"
 	dailyData "github.com/raozhaizhu/go-estate/internal/service/daily_data"
+
 	testUtil "github.com/raozhaizhu/go-estate/internal/test_util"
 	"github.com/raozhaizhu/go-estate/internal/util"
 	response "github.com/raozhaizhu/go-estate/pkg/api"
@@ -47,8 +49,7 @@ func TestGetDataByDay(t *testing.T) {
 	expiredInput := dailyData.GetDataByDayInput{
 		TargetDate: expiredDate,
 	}
-
-	dummyData := []db.DailyDatum{{ID: 1}}
+	dummyDBData := []db.DailyDatum{{ID: 1}}
 	deviceID, userAgent, _, clientIPWithPort := testUtil.DeviceID, testUtil.UserAgent, testUtil.ClientIp, testUtil.ClientIpWithPort
 	_, authorization := testUtil.AccessStr, testUtil.AuthorizationAccessToken
 	correctHeader := map[string]any{
@@ -78,7 +79,7 @@ func TestGetDataByDay(t *testing.T) {
 		router.ServeHTTP(writer, req)
 	}
 	successCheckResponse := func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string) {
-		var results response.Result[[]db.DailyDatum]
+		var results response.Result[dailyDataCtrl.DailyDataList]
 		// 反序列化结果
 		err := json.Unmarshal(writer.Body.Bytes(), &results)
 		require.NoError(t, err)
@@ -87,7 +88,7 @@ func TestGetDataByDay(t *testing.T) {
 		assert.Equal(t, expectedMsg, results.Msg)
 	}
 	failCheckResponse := func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string) {
-		var results response.Result[[]db.DailyDatum]
+		var results response.Result[dailyDataCtrl.DailyDataList]
 		// 反序列化结果
 		err := json.Unmarshal(writer.Body.Bytes(), &results)
 		require.NoError(t, err)
@@ -118,7 +119,7 @@ func TestGetDataByDay(t *testing.T) {
 			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
 				stubVerifyTokenSuccess(tokenMakerMock)
 				svcMock.EXPECT().GetDataByDay(gomock.Any(), validInput).
-					Return(dummyData, nil).Times(1)
+					Return(dummyDBData, nil).Times(1)
 			},
 			action:           defaultAction,
 			checkResponse:    successCheckResponse,

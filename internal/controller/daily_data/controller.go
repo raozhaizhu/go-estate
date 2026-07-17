@@ -39,7 +39,9 @@ func (c *Controller) GetDataByDay(ctx *gin.Context) (interface{}, error) {
 		return nil, err
 	}
 
-	return data, nil
+	resp := toResponse(data)
+
+	return resp, nil
 }
 
 /** ====================================================================================
@@ -80,7 +82,9 @@ func (c *Controller) GetDataByPeriod(ctx *gin.Context) (interface{}, error) {
 
 	}
 
-	return data, nil
+	resp := toResponse(data)
+
+	return resp, nil
 }
 
 /** ====================================================================================
@@ -107,5 +111,7 @@ func (c *Controller) GetAllData(ctx *gin.Context) (interface{}, error) {
 		return nil, err
 	}
 
-	return data, nil
+	resp := toResponse(data)
+
+	return resp, nil
 }

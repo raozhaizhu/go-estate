@@ -33,10 +33,10 @@ func New(deps app.Deps) *service {
 
 // DTO 返回给 Controller 的 User 数据结构
 type DTO struct {
-	ID       int32     `json:"id"`
-	Username string    `json:"username"`
-	Email    string    `json:"email"`
-	Role     role.Role `json:"role"`
+	ID       int32     `json:"id" example:"1"`
+	Username string    `json:"username" example:"Bob"`
+	Email    string    `json:"email" example:"Bob@test.com"`
+	Role     role.Role `json:"role" example:"1"`
 }
 
 /** ====================================================================================

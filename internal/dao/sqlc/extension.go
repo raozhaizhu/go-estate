@@ -72,3 +72,5 @@ func (s *Session) IsValid() error {
 
 	return nil
 }
+
+type DailyDatumList []DailyDatum

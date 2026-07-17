@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	dailyData "github.com/raozhaizhu/go-estate/internal/controller/daily_data"
 	mock_controller "github.com/raozhaizhu/go-estate/internal/controller/daily_data/mock"
 	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
 	"github.com/raozhaizhu/go-estate/internal/delivery"
@@ -37,7 +38,7 @@ func TestGetAll(t *testing.T) {
 	baseUrl := delivery.CurrAPI + "/daily_data/all"
 	username := util.RandomUsername()
 
-	dummyData := []db.DailyDatum{{ID: 1}}
+	dummyDBData := []db.DailyDatum{{ID: 1}}
 	deviceID, userAgent, _, clientIPWithPort := testUtil.DeviceID, testUtil.UserAgent, testUtil.ClientIp, testUtil.ClientIpWithPort
 	_, authorization := testUtil.AccessStr, testUtil.AuthorizationAccessToken
 	correctHeader := map[string]any{
@@ -67,7 +68,7 @@ func TestGetAll(t *testing.T) {
 		router.ServeHTTP(writer, req)
 	}
 	successCheckResponse := func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string) {
-		var results response.Result[[]db.DailyDatum]
+		var results response.Result[dailyData.DailyDataList]
 		// 反序列化结果
 		err := json.Unmarshal(writer.Body.Bytes(), &results)
 		require.NoError(t, err)
@@ -76,7 +77,7 @@ func TestGetAll(t *testing.T) {
 		assert.Equal(t, expectedMsg, results.Msg)
 	}
 	failCheckResponse := func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string) {
-		var results response.Result[[]db.DailyDatum]
+		var results response.Result[dailyData.DailyDataList]
 		// 反序列化结果
 		err := json.Unmarshal(writer.Body.Bytes(), &results)
 		require.NoError(t, err)
@@ -107,7 +108,7 @@ func TestGetAll(t *testing.T) {
 			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
 				stubVerifyTokenSuccess(tokenMakerMock)
 				svcMock.EXPECT().GetAllData(gomock.Any()).
-					Return(dummyData, nil).Times(1)
+					Return(dummyDBData, nil).Times(1)
 			},
 			action:           defaultAction,
 			checkResponse:    successCheckResponse,

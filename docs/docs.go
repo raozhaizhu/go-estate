@@ -231,6 +231,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "example": "2026-05-01",
                         "name": "date",
                         "in": "query",
                         "required": true
@@ -288,12 +289,14 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "example": "2026-05-02",
                         "name": "end",
                         "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
+                        "example": "2026-05-01",
                         "name": "start",
                         "in": "query",
                         "required": true
@@ -590,38 +593,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "github_com_raozhaizhu_go-estate_internal_dao_sqlc.DailyDatum": {
-            "type": "object",
-            "properties": {
-                "area": {
-                    "type": "string"
-                },
-                "avg_price": {
-                    "$ref": "#/definitions/sql.NullString"
-                },
-                "category": {
-                    "type": "string"
-                },
-                "date": {
-                    "type": "string"
-                },
-                "house_count": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "license_no": {
-                    "type": "string"
-                },
-                "project_name": {
-                    "type": "string"
-                },
-                "region": {
-                    "type": "integer"
-                }
-            }
-        },
         "github_com_raozhaizhu_go-estate_internal_domain_user.Role": {
             "type": "integer",
             "format": "int32",
@@ -654,10 +625,16 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "role": {
-                    "$ref": "#/definitions/github_com_raozhaizhu_go-estate_internal_domain_user.Role"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_raozhaizhu_go-estate_internal_domain_user.Role"
+                        }
+                    ],
+                    "example": 1
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Bob"
                 }
             }
         },
@@ -665,16 +642,24 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Bob@test.com"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 },
                 "role": {
-                    "$ref": "#/definitions/github_com_raozhaizhu_go-estate_internal_domain_user.Role"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_raozhaizhu_go-estate_internal_domain_user.Role"
+                        }
+                    ],
+                    "example": 1
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Bob"
                 }
             }
         },
@@ -799,7 +784,7 @@ const docTemplate = `{
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_raozhaizhu_go-estate_internal_dao_sqlc.DailyDatum"
+                        "$ref": "#/definitions/internal_controller_daily_data.DailyDatumSchema"
                     }
                 },
                 "msg": {
@@ -818,11 +803,54 @@ const docTemplate = `{
                 "password": {
                     "type": "string",
                     "maxLength": 16,
-                    "minLength": 8
+                    "minLength": 8,
+                    "example": "12345678"
                 },
                 "username": {
                     "type": "string",
-                    "minLength": 3
+                    "minLength": 3,
+                    "example": "Bob"
+                }
+            }
+        },
+        "internal_controller_daily_data.DailyDatumSchema": {
+            "type": "object",
+            "properties": {
+                "area": {
+                    "type": "string",
+                    "example": "1003.96"
+                },
+                "avg_price": {
+                    "type": "string",
+                    "example": "14331.00"
+                },
+                "category": {
+                    "type": "string",
+                    "example": "住宅"
+                },
+                "date": {
+                    "type": "string",
+                    "example": "2026-05-01"
+                },
+                "house_count": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "license_no": {
+                    "type": "string",
+                    "example": "温房预许字（2026）第00051号"
+                },
+                "project_name": {
+                    "type": "string",
+                    "example": "臻玉园(三期)"
+                },
+                "region": {
+                    "type": "integer",
+                    "example": 1
                 }
             }
         },
@@ -835,17 +863,20 @@ const docTemplate = `{
             ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Bob@test.com"
                 },
                 "password": {
                     "type": "string",
                     "maxLength": 16,
-                    "minLength": 8
+                    "minLength": 8,
+                    "example": "12345678"
                 },
                 "username": {
                     "type": "string",
                     "maxLength": 32,
-                    "minLength": 3
+                    "minLength": 3,
+                    "example": "Bob"
                 }
             }
         },
@@ -856,29 +887,20 @@ const docTemplate = `{
             ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Bob@test.com"
                 },
                 "password": {
                     "type": "string",
                     "maxLength": 16,
-                    "minLength": 8
+                    "minLength": 8,
+                    "example": "12345678"
                 },
                 "username": {
                     "type": "string",
                     "maxLength": 32,
-                    "minLength": 3
-                }
-            }
-        },
-        "sql.NullString": {
-            "type": "object",
-            "properties": {
-                "string": {
-                    "type": "string"
-                },
-                "valid": {
-                    "description": "Valid is true if String is not NULL",
-                    "type": "boolean"
+                    "minLength": 3,
+                    "example": "Bob"
                 }
             }
         }

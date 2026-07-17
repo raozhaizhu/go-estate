@@ -55,8 +55,8 @@ type DTO struct {
 }
 
 type UserInfo struct {
-	Username string    `json:"username"`
-	Role     role.Role `json:"role"`
+	Username string    `json:"username" example:"Bob"`
+	Role     role.Role `json:"role" example:"1"`
 }
 
 /** ====================================================================================

@@ -1,26 +1,5 @@
 basePath: /
 definitions:
-  github_com_raozhaizhu_go-estate_internal_dao_sqlc.DailyDatum:
-    properties:
-      area:
-        type: string
-      avg_price:
-        $ref: '#/definitions/sql.NullString'
-      category:
-        type: string
-      date:
-        type: string
-      house_count:
-        type: integer
-      id:
-        type: integer
-      license_no:
-        type: string
-      project_name:
-        type: string
-      region:
-        type: integer
-    type: object
   github_com_raozhaizhu_go-estate_internal_domain_user.Role:
     enum:
     - 1
@@ -44,19 +23,27 @@ definitions:
   github_com_raozhaizhu_go-estate_internal_service_auth.UserInfo:
     properties:
       role:
-        $ref: '#/definitions/github_com_raozhaizhu_go-estate_internal_domain_user.Role'
+        allOf:
+        - $ref: '#/definitions/github_com_raozhaizhu_go-estate_internal_domain_user.Role'
+        example: 1
       username:
+        example: Bob
         type: string
     type: object
   github_com_raozhaizhu_go-estate_internal_service_user.DTO:
     properties:
       email:
+        example: Bob@test.com
         type: string
       id:
+        example: 1
         type: integer
       role:
-        $ref: '#/definitions/github_com_raozhaizhu_go-estate_internal_domain_user.Role'
+        allOf:
+        - $ref: '#/definitions/github_com_raozhaizhu_go-estate_internal_domain_user.Role'
+        example: 1
       username:
+        example: Bob
         type: string
     type: object
   github_com_raozhaizhu_go-estate_pkg_api.AuthErrorResult:
@@ -143,7 +130,7 @@ definitions:
         type: integer
       data:
         items:
-          $ref: '#/definitions/github_com_raozhaizhu_go-estate_internal_dao_sqlc.DailyDatum'
+          $ref: '#/definitions/internal_controller_daily_data.DailyDatumSchema'
         type: array
       msg:
         example: 操作成功
@@ -152,25 +139,60 @@ definitions:
   internal_controller_auth.LoginRequest:
     properties:
       password:
+        example: "12345678"
         maxLength: 16
         minLength: 8
         type: string
       username:
+        example: Bob
         minLength: 3
         type: string
     required:
     - password
     - username
     type: object
+  internal_controller_daily_data.DailyDatumSchema:
+    properties:
+      area:
+        example: "1003.96"
+        type: string
+      avg_price:
+        example: "14331.00"
+        type: string
+      category:
+        example: 住宅
+        type: string
+      date:
+        example: "2026-05-01"
+        type: string
+      house_count:
+        example: 1
+        type: integer
+      id:
+        example: 1
+        type: integer
+      license_no:
+        example: 温房预许字（2026）第00051号
+        type: string
+      project_name:
+        example: 臻玉园(三期)
+        type: string
+      region:
+        example: 1
+        type: integer
+    type: object
   internal_controller_user.CreateUserRequest:
     properties:
       email:
+        example: Bob@test.com
         type: string
       password:
+        example: "12345678"
         maxLength: 16
         minLength: 8
         type: string
       username:
+        example: Bob
         maxLength: 32
         minLength: 3
         type: string
@@ -182,25 +204,20 @@ definitions:
   internal_controller_user.UpdateUserRequest:
     properties:
       email:
+        example: Bob@test.com
         type: string
       password:
+        example: "12345678"
         maxLength: 16
         minLength: 8
         type: string
       username:
+        example: Bob
         maxLength: 32
         minLength: 3
         type: string
     required:
     - username
-    type: object
-  sql.NullString:
-    properties:
-      string:
-        type: string
-      valid:
-        description: Valid is true if String is not NULL
-        type: boolean
     type: object
 host: localhost:8080
 info:
@@ -329,7 +346,8 @@ paths:
     get:
       description: 获取指定单日的楼盘成交数据（需登录，且至少需要 User 权限）
       parameters:
-      - in: query
+      - example: "2026-05-01"
+        in: query
         name: date
         required: true
         type: string
@@ -363,11 +381,13 @@ paths:
     get:
       description: 获取指定时间范围内的楼盘成交数据（需登录，且至少需要 VIP 权限）
       parameters:
-      - in: query
+      - example: "2026-05-02"
+        in: query
         name: end
         required: true
         type: string
-      - in: query
+      - example: "2026-05-01"
+        in: query
         name: start
         required: true
         type: string

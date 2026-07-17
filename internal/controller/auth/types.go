@@ -37,8 +37,8 @@ func New(service Service, refreshDuration time.Duration, isProduction bool) *con
 
 // LoginRequest 登录请求格式
 type LoginRequest struct {
-	Username string `uri:"username" binding:"required,min=3"`
-	Password string `json:"password" binding:"required,min=8,max=16"`
+	Username string `uri:"username" binding:"required,min=3" example:"Bob"`
+	Password string `json:"password" binding:"required,min=8,max=16" example:"12345678"`
 }
 
 // toSvcInput 转换: LoginRequest -> LoginInput
