@@ -6,3 +6,4 @@ tmp/
 
 app.env
 .vscode/
+logs/
