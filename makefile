@@ -24,7 +24,7 @@ docker_up:
 	docker compose up -d
 docker_rebuild:
 	docker-compose down -v
-	docker compose up -d
+	docker compose up -d --build
 	sleep 10
 	$(MAKE) migrate_up	
 
