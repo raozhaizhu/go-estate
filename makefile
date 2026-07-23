@@ -25,8 +25,8 @@ docker_up:
 docker_rebuild:
 	docker-compose down -v
 	docker compose up -d --build
-	sleep 10
-	$(MAKE) migrate_up	
+# 	sleep 10
+# 	$(MAKE) migrate_up	
 
 # docker-mysql
 q:
@@ -53,4 +53,4 @@ swag:
 
 .PHONY: migrate_create migrate_up migrate_up_1 migrate_down migrate_down_1
 .PHONY: docker_down docker_up q docker_rebuild
-.PHONY: sqlc_gen mock test swag
+.PHONY: sqlc_gen mock test swag act

@@ -1,0 +1,68 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  unit-test:
+    name: Unit Test & Build Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+          cache: true
+
+      - name: Install Deps
+        run: go mod download
+
+      - name: Run Uint Tests
+        run: go test -v -cover -short ./...
+
+  integration-test:
+    name: Integration Tests & Docker Stack
+    runs-on: ubuntu-latest
+    needs: unit-test
+    steps:
+      - name: Check code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+          cache: true
+
+      - name: Start Docker
+        run: |
+          docker compose up --build -d
+
+      - name: Wait for Migration & API Init
+        run: |
+          echo "Waiting for DB migration to finish..."
+          MIG_STATUS=$(docker wait go-estate-migration)
+          if [ "$MIG_STATUS" -ne 0]; then
+            echo "DB Migration Failed"
+            docker logs go-estate-migration
+            exit 1
+          fi
+          echo "DB Migration Succeed"
+
+          echo "Waiting for API service..."
+          sleep 3
+
+      - name: Run Integration Tests
+        env:
+          DB_SOURCE: "root:123456@tcp(127.0.0.1:3306)/go_estate?parseTime=true"
+        run: go test -v -tags=integration ./...
+
+      - name: Clean up
+        if: always()
+        run: docker compose down -v
