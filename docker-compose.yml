@@ -1,4 +1,22 @@
 services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: go-estate-api
+    restart: on-failure
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_SOURCE=root:123456@tcp(mysql:3306)/go_estate?parseTime=true
+      - DB_URL=mysql://root:123456@tcp(mysql:3306)/go_estate?parseTime=true
+      - REDIS_ADDRESS=redis:6379
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+    networks:
+      - app-network
+
   mysql:
     image: mysql:8.0
     container_name: mysql
@@ -15,6 +33,27 @@ services:
       - data-volume:/var/lib/mysql
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p123456"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  migration:
+    image: migrate/migrate:latest
+    container_name: go-estate-migration
+    networks:
+      - app-network
+    volumes:
+      - ./internal/dao/migration:/migrations
+    command:
+      - -path=/migrations
+      - -database=mysql://root:123456@tcp(mysql:3306)/go_estate?parseTime=true
+      - up
+    depends_on:
+      mysql:
+        condition: service_healthy
 
   redis:
     image: redis:8.8.0-alpine
