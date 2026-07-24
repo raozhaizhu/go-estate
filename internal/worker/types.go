@@ -9,6 +9,7 @@ import (
 
 	"github.com/hibiken/asynq"
 	"github.com/raozhaizhu/go-estate/internal/dao/cache"
+	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 )
 
@@ -17,16 +18,27 @@ import (
  * =====================================================================================
  */
 
-type redisTaskProcessor struct {
-	sessionCache cache.SessionCache
+type taskProcessor struct {
+	server *asynq.Server
+	store  db.Store
+	cache  cache.Cache
 }
 
-type RedisTaskProcessor interface {
+type TaskProcessor interface {
 	HandleDeleteSessionsTask(ctx context.Context, t *asynq.Task) error
+	Start() error
+	Stop()
 }
 
-func NewRedisTaskProcessor(sessionCache cache.SessionCache) RedisTaskProcessor {
-	return &redisTaskProcessor{sessionCache: sessionCache}
+func NewRedisTaskProcessor(opt asynq.RedisClientOpt, redisCache cache.Cache, store db.Store) TaskProcessor {
+	// 这样这里就能正常拿到 opt 了
+	server := asynq.NewServer(opt, asynq.Config{Concurrency: 10})
+
+	return &taskProcessor{
+		server: server,
+		store:  store,
+		cache:  redisCache,
+	}
 }
 
 type TaskDistributor interface {
@@ -102,4 +114,15 @@ func (distributor *redisTaskDistributor) DistributeTaskDeleteSessions(ctx contex
 		task.Type(), info.ID, info.Queue, len(jtis))
 
 	return nil
+}
+
+func (processor *taskProcessor) Start() error {
+	mux := asynq.NewServeMux()
+	mux.HandleFunc(TaskDeleteSessions, processor.HandleDeleteSessionsTask)
+
+	return processor.server.Run(mux)
+}
+
+func (processor *taskProcessor) Stop() {
+	processor.server.Stop()
 }

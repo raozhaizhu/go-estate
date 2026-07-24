@@ -12,12 +12,13 @@ import (
 
 // 错误组
 const (
-	CodeSuccess          = 200
-	CodeGroupClientError = 40000
-	CodeGroupAuthError   = 40100
-	CodeGroupNotFound    = 40400
-	CodeGroupConflict    = 40900
-	CodeGroupServer      = 50000
+	CodeSuccess              = 200
+	CodeGroupClientError     = 40000
+	CodeGroupAuthError       = 40100
+	CodeGroupNotFound        = 40400
+	CodeGroupConflict        = 40900
+	CodeGroupTooManyRequests = 42900
+	CodeGroupServer          = 50000
 )
 
 // 已知错误类型
@@ -62,6 +63,11 @@ const (
 	// 409 值冲突
 	CodeUserAlreadyExits  = CodeGroupConflict + iota // 用户已存在
 	CodeEmailAlreadyExits                            // 邮箱已存在
+)
+
+const (
+	// 429 访问次数过高
+	CodeTooManyRequests = CodeGroupTooManyRequests + iota // 访问次数过高
 )
 
 const (
@@ -136,6 +142,8 @@ var (
 	// 409 值冲突
 	ErrUserAlreadyExits  = New(CodeUserAlreadyExits, "该用户已经存在")
 	ErrEmailAlreadyExits = New(CodeEmailAlreadyExits, "该邮箱已经存在")
+
+	ErrTooManyRequests = New(CodeTooManyRequests, "请求过多,之后再试")
 
 	// 500 服务器内部错误
 	ErrServerErr = New(CodeServerErr, "服务器开小差了")

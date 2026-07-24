@@ -2,7 +2,9 @@ package delivery
 
 import (
 	"net/http"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/raozhaizhu/go-estate/internal/controller/auth"
 	dailyData "github.com/raozhaizhu/go-estate/internal/controller/daily_data"
@@ -28,6 +30,15 @@ type Services struct {
 func SetupRouter(services Services, deps app.Deps) *gin.Engine {
 	// 初始化路由引擎
 	router := gin.New()
+
+	// 挂载 CORS 中间件
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "User-Agent", "Device-ID"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	// 实例化 Prometheus
 	p := ginprometheus.NewPrometheus("gin")
@@ -64,9 +75,9 @@ func SetupRouter(services Services, deps app.Deps) *gin.Engine {
 	authGroup.Use(middleware.RequireAuth(deps.TokenMaker))
 
 	// 挂载模块
-	RegisterUser(metaGroup, authGroup, services.UserSvc)              // user模块 部分需登录
-	RegisterAuth(metaGroup, authGroup, services.AuthSvc, deps.Config) // auth模块 部分需登录
-	RegisterDailyData(authGroup, services.DailyDataSvc)               // dailyData模块 必须登录
+	RegisterUser(metaGroup, authGroup, services.UserSvc, deps.Config, deps.Cache) // user模块 部分可公开访问
+	RegisterAuth(metaGroup, authGroup, services.AuthSvc, deps.Config, deps.Cache) // auth模块 部分可公开访问
+	RegisterDailyData(authGroup, services.DailyDataSvc)                           // dailyData模块 不可公开访问
 
 	return router
 }

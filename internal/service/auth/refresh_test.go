@@ -114,7 +114,7 @@ func TestRefresh(t *testing.T) {
 				return refreshPayload, nil
 			}).Times(1)
 	}
-	stubGetCacheSessionSuccess := func(cacheMock *mock_db.MockSessionCache) {
+	stubGetCacheSessionSuccess := func(cacheMock *mock_db.MockCache) {
 		cacheMock.EXPECT().
 			GetSession(gomock.Any(), refreshJti).
 			Return(cacheSession, nil).Times(1)
@@ -134,7 +134,7 @@ func TestRefresh(t *testing.T) {
 			GetSession(gomock.Any(), refreshJti).
 			Return(dbBlockedSession, nil).Times(1)
 	}
-	stubAddNewSessionSuccess := func(cacheMock *mock_db.MockSessionCache) {
+	stubAddNewSessionSuccess := func(cacheMock *mock_db.MockCache) {
 		cacheMock.EXPECT().AddNewSession(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, params cache.AddNewSessionParams) error {
 			require.NotEmpty(t, params.JTI)
 			require.Equal(t, username, params.Username)
@@ -154,7 +154,7 @@ func TestRefresh(t *testing.T) {
 		{
 			name:  "校验刷新令牌失败",
 			input: refreshStr,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 校验刷新令牌失败
 				tokenMakerMock.EXPECT().VerifyToken(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(tokenStr string, tokenType token.TokenType) (*token.Payload, error) {
@@ -170,7 +170,7 @@ func TestRefresh(t *testing.T) {
 		{
 			name:  "Session 在缓存和数据库都不存在",
 			input: refreshStr,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 校验刷新令牌成功
 				stubVerifyTokenSuccess(tokenMakerMock)
 				// 但缓存 Miss, 获取 Session 失败
@@ -189,7 +189,7 @@ func TestRefresh(t *testing.T) {
 		{
 			name:  "缓存 Miss, 去数据库查, 但查询失败, 发生内部错误(譬如断联)",
 			input: refreshStr,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 校验刷新令牌成功
 				stubVerifyTokenSuccess(tokenMakerMock)
 				// 但缓存 Miss, 获取 Session 失败
@@ -208,7 +208,7 @@ func TestRefresh(t *testing.T) {
 		{
 			name:  "缓存 Miss, 成功在数据库找到, 但是 Session 过期",
 			input: refreshStr,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 校验刷新令牌成功
 				stubVerifyTokenSuccess(tokenMakerMock)
 				// 但缓存 Miss, 获取 Session 失败
@@ -225,7 +225,7 @@ func TestRefresh(t *testing.T) {
 		{
 			name:  "缓存 Miss, 成功在数据库找到, 但是 Session 被封禁",
 			input: refreshStr,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 校验刷新令牌成功
 				stubVerifyTokenSuccess(tokenMakerMock)
 				// 但缓存 Miss, 获取 Session 失败
@@ -242,7 +242,7 @@ func TestRefresh(t *testing.T) {
 		{
 			name:  "缓存 Miss, 成功在数据库找到可用 Session, 写回缓存成功, 但发放 accessToken 失败",
 			input: refreshStr,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 校验刷新令牌成功
 				stubVerifyTokenSuccess(tokenMakerMock)
 				// 但缓存 Miss
@@ -267,7 +267,7 @@ func TestRefresh(t *testing.T) {
 		{
 			name:  "缓存 Miss, 成功在数据库找到可用 Session, 但在尽力而为写回缓存时失败, 并不影响整体逻辑成功",
 			input: refreshStr,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 校验刷新令牌成功
 				stubVerifyTokenSuccess(tokenMakerMock)
 				// 但缓存 Miss, 获取 Session 失败
@@ -290,7 +290,7 @@ func TestRefresh(t *testing.T) {
 		{
 			name:  "缓存命中, 但 session 过期",
 			input: refreshStr,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 校验刷新令牌成功
 				stubVerifyTokenSuccess(tokenMakerMock)
 				// 缓存命中,但得到过期 Session
@@ -305,7 +305,7 @@ func TestRefresh(t *testing.T) {
 		{
 			name:  "缓存命中, 但 session 封禁",
 			input: refreshStr,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 校验刷新令牌成功
 				stubVerifyTokenSuccess(tokenMakerMock)
 				// 缓存命中,但得到封禁 Session
@@ -320,7 +320,7 @@ func TestRefresh(t *testing.T) {
 		{
 			name:  "缓存命中, 并且 session 可用, 铸造 token 成功",
 			input: refreshStr,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 校验刷新令牌成功
 				stubVerifyTokenSuccess(tokenMakerMock)
 				// 缓存命中,Session可用
@@ -334,7 +334,7 @@ func TestRefresh(t *testing.T) {
 		{
 			name:  "查询 redis 失败, 返回内部错误,直接拦截",
 			input: refreshStr,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 校验刷新令牌成功
 				stubVerifyTokenSuccess(tokenMakerMock)
 				// 查询 redis 失败

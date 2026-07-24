@@ -7,7 +7,7 @@ import (
 	"github.com/hibiken/asynq"
 )
 
-func (p *redisTaskProcessor) HandleDeleteSessionsTask(ctx context.Context, t *asynq.Task) error {
+func (p *taskProcessor) HandleDeleteSessionsTask(ctx context.Context, t *asynq.Task) error {
 	var payload DeleteSessionsPayload
 	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
 		return err
@@ -15,7 +15,7 @@ func (p *redisTaskProcessor) HandleDeleteSessionsTask(ctx context.Context, t *as
 
 	// log.Println("获取新任务, 荷载为: ", payload)
 
-	if err := p.sessionCache.BatchDelete(ctx, payload.JTIs); err != nil {
+	if err := p.cache.BatchDelete(ctx, payload.JTIs); err != nil {
 		return err
 	}
 

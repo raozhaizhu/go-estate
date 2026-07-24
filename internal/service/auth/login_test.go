@@ -122,7 +122,7 @@ func TestLogin(t *testing.T) {
 				return nil
 			}).Times(1)
 	}
-	stubAddNewSessionSuccess := func(cacheMock *mock_db.MockSessionCache) {
+	stubAddNewSessionSuccess := func(cacheMock *mock_db.MockCache) {
 		cacheMock.EXPECT().AddNewSession(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, params cache.AddNewSessionParams) error {
 			require.NotEmpty(t, params.JTI)
 			require.Equal(t, username, params.Username)
@@ -135,7 +135,7 @@ func TestLogin(t *testing.T) {
 		{
 			name:  "用户不存在",
 			input: wrongUsernameInput,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 先获取用户,但用户不存在
 				storeMock.EXPECT().
 					GetUser(gomock.Any(), wrongUsername).
@@ -149,7 +149,7 @@ func TestLogin(t *testing.T) {
 		{
 			name:  "用户存在但密码错误",
 			input: wrongPasswordInput,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 先获取用户,用户存在,但密码错误
 				stubGetUserSuccess(storeMock)
 			},
@@ -160,7 +160,7 @@ func TestLogin(t *testing.T) {
 		{
 			name:  "获取用户活跃 Sessions 时失败",
 			input: correctLoginInput,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 先获取用户,用户存在
 				stubGetUserSuccess(storeMock)
 				// 但获取是否有活跃 Sessions 时失败
@@ -174,7 +174,7 @@ func TestLogin(t *testing.T) {
 		{
 			name:  "清除用户活跃 Sessions 时失败",
 			input: correctLoginInput,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 先获取用户,用户存在
 				stubGetUserSuccess(storeMock)
 				// 成功获取用户活跃 Sessions
@@ -190,7 +190,7 @@ func TestLogin(t *testing.T) {
 		{
 			name:  "调用 worker 异步清理 redis失败",
 			input: correctLoginInput,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 先获取用户,用户存在
 				stubGetUserSuccess(storeMock)
 				// 成功获取用户活跃 Sessions
@@ -208,7 +208,7 @@ func TestLogin(t *testing.T) {
 		{
 			name:  "铸造 Token 时失败",
 			input: correctLoginInput,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 先获取用户,用户存在
 				stubGetUserSuccess(storeMock)
 				// 成功获取用户活跃 Sessions
@@ -232,7 +232,7 @@ func TestLogin(t *testing.T) {
 		{
 			name:  "制造 Session 时失败",
 			input: correctLoginInput,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 先获取用户,用户存在
 				stubGetUserSuccess(storeMock)
 				// 成功获取用户活跃 Sessions
@@ -258,7 +258,7 @@ func TestLogin(t *testing.T) {
 		{
 			name:  "尽力而为存入 Redis 时失败, 但不影响整体逻辑成功",
 			input: correctLoginInput,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 先获取用户,用户存在
 				stubGetUserSuccess(storeMock)
 				// 成功获取用户活跃 Sessions
@@ -285,7 +285,7 @@ func TestLogin(t *testing.T) {
 		{
 			name:  "用户已有活跃 Sessions(之前登录过), 重新登录成功",
 			input: correctLoginInput,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 先获取用户,用户存在
 				stubGetUserSuccess(storeMock)
 				// 成功获取用户活跃 Sessions
@@ -307,7 +307,7 @@ func TestLogin(t *testing.T) {
 		{
 			name:  "用户没有活跃 Sessions(之前没登录), 崭新登录成功",
 			input: correctLoginInput,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 先获取用户,用户存在
 				stubGetUserSuccess(storeMock)
 				// 无法获取到用户活跃 Sessions (不存在)

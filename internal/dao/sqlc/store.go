@@ -4,12 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
+	"time"
 )
 
 type Store interface {
 	Querier
 	ExecTx(ctx context.Context, fn func(q Querier) error) error
+	Close() error
 }
 
 type SQLStore struct {
@@ -24,21 +25,24 @@ func NewStore(db *sql.DB) Store {
 	}
 }
 
-func InitStore(dbSource string) Store {
+func InitStore(dbSource string) (Store, error) {
 	conn, err := sql.Open("mysql", dbSource)
 	if err != nil {
-		log.Fatal("无法连接到数据库", err)
+		return nil, fmt.Errorf("无法打开数据库连接: %w", err)
 	}
 
-	if err = conn.Ping(); err != nil {
-		log.Fatal("无法 ping 通数据库", err)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	if err = conn.PingContext(ctx); err != nil {
+		return nil, fmt.Errorf("无法 ping 通数据库: %w", err)
 	}
 
-	return NewStore(conn)
+	return NewStore(conn), nil
 }
 
 /** ====================================================================================
- * 🏁 TX
+ * 🏁 Methods
  * =====================================================================================
  */
 
@@ -62,4 +66,11 @@ func (s *SQLStore) ExecTx(ctx context.Context, fn func(q Querier) error) error {
 
 	// 返回结果
 	return tx.Commit()
+}
+
+func (s *SQLStore) Close() error {
+	if s.db != nil {
+		return s.db.Close()
+	}
+	return nil
 }

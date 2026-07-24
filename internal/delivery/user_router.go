@@ -1,10 +1,14 @@
 package delivery
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
 	user "github.com/raozhaizhu/go-estate/internal/controller/user"
+	"github.com/raozhaizhu/go-estate/internal/dao/cache"
 	userDomain "github.com/raozhaizhu/go-estate/internal/domain/user"
 	"github.com/raozhaizhu/go-estate/internal/middleware"
+	"github.com/raozhaizhu/go-estate/internal/util"
 	response "github.com/raozhaizhu/go-estate/pkg/api"
 )
 
@@ -13,27 +17,25 @@ const (
 )
 
 // RegisterUser
-func RegisterUser(metaGroup *gin.RouterGroup, authGroup *gin.RouterGroup, service user.Service) {
+func RegisterUser(metaGroup *gin.RouterGroup, authGroup *gin.RouterGroup, service user.Service, config util.Config, redisCache cache.Cache) {
 	if service == nil {
 		return
 	}
 
 	controller := user.New(service)
 
-	// 调用路由注册函数
-	RegisterUserRoutes(metaGroup, authGroup, controller)
-}
-
-// RegisterUserRoutes
-func RegisterUserRoutes(publicGroup *gin.RouterGroup, protectedGroup *gin.RouterGroup, controller *user.Controller) {
-	// 创建普通用户可公开访问
-	userPublicGroup := publicGroup.Group("/user")
+	// 定义公共路由
+	userPublicGroup := metaGroup.Group("/user")
+	// 公共路由视环境挂载限流
+	if config.IsProduction() {
+		userPublicGroup.Use(middleware.RateLimiter(redisCache, 5, time.Minute))
+	}
 	{
 		userPublicGroup.POST("", response.Wrapper(controller.CreateNormalUser))
 	}
 
-	// 创建 vip 用户, 查询/更新用户信息, 需要身份验证
-	userProtectedGroup := protectedGroup.Group("/user")
+	// 定义保护路由
+	userProtectedGroup := authGroup.Group("/user")
 	{
 		userProtectedGroup.POST("/vip", middleware.RequireRoles(userDomain.RoleAtLeastAdmin), response.Wrapper(controller.CreateVip))
 		userProtectedGroup.GET("/:username", response.Wrapper(controller.GetUser))

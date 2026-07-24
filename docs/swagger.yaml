@@ -219,7 +219,7 @@ definitions:
     required:
     - username
     type: object
-host: localhost:8080
+host: localhost
 info:
   contact: {}
   description: 房地产项目的后端 API 接口文档

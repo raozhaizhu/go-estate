@@ -6,18 +6,11 @@ clients:
   - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
-  - job_name: gin-logs
-    static_configs:
-      - targets:
-          - localhost
-        labels:
-          job: go-estate-service
-          __path__: /var/log/gin/*.log
-
-  - job_name: nginx-logs
-    static_configs:
-      - targets:
-          - localhost
-        labels:
-          job: nginx
-          __path__: /var/log/nginx/*.log
+  - job_name: docker_containers
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/(.*)"
+        target_label: "container"
