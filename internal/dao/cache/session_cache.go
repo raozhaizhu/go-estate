@@ -165,3 +165,28 @@ func (r *redisCache) BatchDelete(ctx context.Context, jtis []string) error {
 
 	return nil
 }
+
+/** ====================================================================================
+ * 🏁 IncrIPCnt
+ * =====================================================================================
+ */
+
+const InvalidCnt = -1
+
+func (r *redisCache) IncrIPCnt(ctx context.Context, ip string, duration time.Duration) (int64, error) {
+	key := "ratelimit" + ip
+	// 搭建管道
+	pipe := r.client.Pipeline()
+	// 增加计数
+	incr := pipe.Incr(ctx, key)
+	pipe.Expire(ctx, key, duration)
+	_, err := pipe.Exec(ctx)
+
+	if err != nil {
+		return InvalidCnt, nil
+	}
+
+	currCnt := incr.Val()
+
+	return currCnt, nil
+}

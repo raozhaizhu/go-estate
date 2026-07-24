@@ -116,7 +116,7 @@ func TestUpdateUser(t *testing.T) {
 		{
 			name:  "密码邮箱为空,用户什么都没更新",
 			input: emptyUserInput,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				storeMock.EXPECT().UpdateUser(gomock.Any(), gomock.Any()).Times(0)
 			},
 			action:        defaultAction,
@@ -126,7 +126,7 @@ func TestUpdateUser(t *testing.T) {
 		{
 			name:  "没有携带 payload",
 			input: correctUserInput,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				storeMock.EXPECT().UpdateUser(gomock.Any(), gomock.Any()).Times(0)
 			},
 			action:        defaultAction,
@@ -136,7 +136,7 @@ func TestUpdateUser(t *testing.T) {
 		{
 			name:  "用户没有携带自己的 payload",
 			input: correctUserInput,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				storeMock.EXPECT().UpdateUser(gomock.Any(), gomock.Any()).Times(0)
 			},
 			action:        defaultAction,
@@ -147,7 +147,7 @@ func TestUpdateUser(t *testing.T) {
 		{
 			name:  "更新用户时发生内部错误",
 			input: correctUserInput,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				stubExecTxSuccess(storeMock)
 				storeMock.EXPECT().UpdateUser(gomock.Any(), gomock.Any()).
 					Return(nil, appError.ErrServerErr.WithErr(fmt.Errorf("更新用户时发生内部错误"))).Times(1)
@@ -160,7 +160,7 @@ func TestUpdateUser(t *testing.T) {
 		{
 			name:  "更新用户时发现用户不存在",
 			input: correctUserInput,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				stubExecTxSuccess(storeMock)
 				storeMock.EXPECT().UpdateUser(gomock.Any(), gomock.Any()).
 					Return(mockResult{rowsAffected: 0}, nil).Times(1)
@@ -173,7 +173,7 @@ func TestUpdateUser(t *testing.T) {
 		{
 			name:  "获取用户活跃会话时发生内部错误",
 			input: correctUserInput,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				stubExecTxSuccess(storeMock)
 				stubUpdateUserSuccess(storeMock)
 				storeMock.EXPECT().GetSessionIDsByUsernameForUpdate(gomock.Any(), username).
@@ -187,7 +187,7 @@ func TestUpdateUser(t *testing.T) {
 		{
 			name:  "封禁用户活跃会话时发生内部错误",
 			input: correctUserInput,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				stubExecTxSuccess(storeMock)
 				stubUpdateUserSuccess(storeMock)
 				stubGetSessionIDsByUsernameForUpdateSuccess(storeMock)
@@ -202,7 +202,7 @@ func TestUpdateUser(t *testing.T) {
 		{
 			name:  "派发任务时发生错误",
 			input: correctUserInput,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				stubExecTxSuccess(storeMock)
 				stubUpdateUserSuccess(storeMock)
 				stubGetSessionIDsByUsernameForUpdateSuccess(storeMock)
@@ -218,7 +218,7 @@ func TestUpdateUser(t *testing.T) {
 		{
 			name:  "更新成功后, 返回用户时发现用户不存在(事务执行后立刻删除了用户)",
 			input: correctUserInput,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				stubExecTxSuccess(storeMock)
 				stubUpdateUserSuccess(storeMock)
 				stubGetSessionIDsByUsernameForUpdateSuccess(storeMock)
@@ -235,7 +235,7 @@ func TestUpdateUser(t *testing.T) {
 		{
 			name:  "更新成功后, 返回用户时出现内部错误",
 			input: correctUserInput,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				stubExecTxSuccess(storeMock)
 				stubUpdateUserSuccess(storeMock)
 				stubGetSessionIDsByUsernameForUpdateSuccess(storeMock)
@@ -252,7 +252,7 @@ func TestUpdateUser(t *testing.T) {
 		{
 			name:  "更新成功后, 返回用户成功",
 			input: correctUserInput,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				stubExecTxSuccess(storeMock)
 				stubUpdateUserSuccess(storeMock)
 				stubGetSessionIDsByUsernameForUpdateSuccess(storeMock)

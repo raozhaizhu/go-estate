@@ -57,7 +57,7 @@
           },
           "direction": "backward",
           "editorMode": "code",
-          "expr": "{job=\"go-estate-service\", filename=\"/var/log/gin/error.log\"}",
+          "expr": "{container=~\".*api.*\"} |= \"ERROR\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -199,7 +199,7 @@
           },
           "direction": "backward",
           "editorMode": "code",
-          "expr": "{job=\"nginx\", filename=\"/var/log/nginx/error.log\"}",
+          "expr": "{container=~\".*nginx.*\"} |= \"[error]\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -1224,5 +1224,5 @@
   "timezone": "",
   "title": "Go Runtime Exporter Quickstart and Dashboardby Grafana Labs",
   "uid": "CgCw8jKZz3",
-  "version": 2
+  "version": 1
 }

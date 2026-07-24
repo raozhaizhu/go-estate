@@ -39,7 +39,7 @@ type testCase struct {
 	name  string
 	input interface{}
 	// db,cache埋桩
-	buildStubs func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockSessionCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker)
+	buildStubs func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker)
 	// 注入上下文
 	buildCtx func() context.Context
 	// action 执行动作
@@ -58,7 +58,7 @@ func runTC(t *testing.T, testCases []testCase) {
 			defer ctrl.Finish()
 			// 初始化 store, svc, distributor
 			storeMock := mock_db.NewMockStore(ctrl)
-			cacheMock := mock_db.NewMockSessionCache(ctrl)
+			cacheMock := mock_db.NewMockCache(ctrl)
 			distributorMock := mock_worker.NewMockTaskDistributor(ctrl)
 			tokenMakerMock := mock_token.NewMockMaker(ctrl)
 			asyncGo := func(ctx context.Context, logger *slog.Logger, name string, timeout time.Duration, fn func(ctx context.Context)) {

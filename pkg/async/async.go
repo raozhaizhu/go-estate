@@ -46,8 +46,8 @@ func LogAsyncError(ctx context.Context, logger *slog.Logger, path string, taskMs
 	logArgs := make([]any, 0, 4+len(extraArgs))
 	logArgs = append(logArgs,
 		slog.Int("status", 500),
-		slog.Int("biz_code", appError.CodeServerErr), // 使用当前包内的 50000 错误码
-		slog.String("path", path),                    // 标记异步通路
+		slog.Int("biz_code", appError.CodeServerErr),
+		slog.String("path", path),
 		slog.String("errors", err.Error()),
 	)
 
@@ -56,6 +56,5 @@ func LogAsyncError(ctx context.Context, logger *slog.Logger, path string, taskMs
 		logArgs = append(logArgs, extraArgs...)
 	}
 
-	// 统一加上 "ASYNC_ERROR" 前缀，方便在日志平台一眼识别
 	logger.ErrorContext(ctx, "ASYNC_ERROR: "+taskMsg, logArgs...)
 }

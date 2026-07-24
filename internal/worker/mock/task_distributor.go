@@ -12,31 +12,31 @@ import (
 	asynq "github.com/hibiken/asynq"
 )
 
-// MockRedisTaskProcessor is a mock of RedisTaskProcessor interface.
-type MockRedisTaskProcessor struct {
+// MockTaskProcessor is a mock of TaskProcessor interface.
+type MockTaskProcessor struct {
 	ctrl     *gomock.Controller
-	recorder *MockRedisTaskProcessorMockRecorder
+	recorder *MockTaskProcessorMockRecorder
 }
 
-// MockRedisTaskProcessorMockRecorder is the mock recorder for MockRedisTaskProcessor.
-type MockRedisTaskProcessorMockRecorder struct {
-	mock *MockRedisTaskProcessor
+// MockTaskProcessorMockRecorder is the mock recorder for MockTaskProcessor.
+type MockTaskProcessorMockRecorder struct {
+	mock *MockTaskProcessor
 }
 
-// NewMockRedisTaskProcessor creates a new mock instance.
-func NewMockRedisTaskProcessor(ctrl *gomock.Controller) *MockRedisTaskProcessor {
-	mock := &MockRedisTaskProcessor{ctrl: ctrl}
-	mock.recorder = &MockRedisTaskProcessorMockRecorder{mock}
+// NewMockTaskProcessor creates a new mock instance.
+func NewMockTaskProcessor(ctrl *gomock.Controller) *MockTaskProcessor {
+	mock := &MockTaskProcessor{ctrl: ctrl}
+	mock.recorder = &MockTaskProcessorMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockRedisTaskProcessor) EXPECT() *MockRedisTaskProcessorMockRecorder {
+func (m *MockTaskProcessor) EXPECT() *MockTaskProcessorMockRecorder {
 	return m.recorder
 }
 
 // HandleDeleteSessionsTask mocks base method.
-func (m *MockRedisTaskProcessor) HandleDeleteSessionsTask(ctx context.Context, t *asynq.Task) error {
+func (m *MockTaskProcessor) HandleDeleteSessionsTask(ctx context.Context, t *asynq.Task) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "HandleDeleteSessionsTask", ctx, t)
 	ret0, _ := ret[0].(error)
@@ -44,9 +44,35 @@ func (m *MockRedisTaskProcessor) HandleDeleteSessionsTask(ctx context.Context, t
 }
 
 // HandleDeleteSessionsTask indicates an expected call of HandleDeleteSessionsTask.
-func (mr *MockRedisTaskProcessorMockRecorder) HandleDeleteSessionsTask(ctx, t interface{}) *gomock.Call {
+func (mr *MockTaskProcessorMockRecorder) HandleDeleteSessionsTask(ctx, t interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleDeleteSessionsTask", reflect.TypeOf((*MockRedisTaskProcessor)(nil).HandleDeleteSessionsTask), ctx, t)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleDeleteSessionsTask", reflect.TypeOf((*MockTaskProcessor)(nil).HandleDeleteSessionsTask), ctx, t)
+}
+
+// Start mocks base method.
+func (m *MockTaskProcessor) Start() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Start")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Start indicates an expected call of Start.
+func (mr *MockTaskProcessorMockRecorder) Start() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockTaskProcessor)(nil).Start))
+}
+
+// Stop mocks base method.
+func (m *MockTaskProcessor) Stop() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Stop")
+}
+
+// Stop indicates an expected call of Stop.
+func (mr *MockTaskProcessorMockRecorder) Stop() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockTaskProcessor)(nil).Stop))
 }
 
 // MockTaskDistributor is a mock of TaskDistributor interface.

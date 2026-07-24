@@ -16,7 +16,7 @@ var config util.Config
 
 func TestMain(m *testing.M) {
 	config = util.InitConfig("../../..")
-	testStore = db.InitStore(config.DBSource)
+	testStore, _ = db.InitStore(config.DBSource)
 
 	os.Exit(m.Run())
 }

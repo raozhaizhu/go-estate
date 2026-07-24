@@ -266,7 +266,7 @@ func runCreateUserTC(t *testing.T, testCases []createUserTC) {
 			defer ctrl.Finish()
 			// 初始化 store, svc
 			storeMock := mock_db.NewMockStore(ctrl)
-			cacheMock := mock_db.NewMockSessionCache(ctrl)
+			cacheMock := mock_db.NewMockCache(ctrl)
 			distributorMock := mock_worker.NewMockTaskDistributor(ctrl)
 			deps := app.Deps{
 				Store:       storeMock,

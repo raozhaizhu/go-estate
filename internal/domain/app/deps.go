@@ -12,11 +12,12 @@ import (
 )
 
 type Deps struct {
-	Config      util.Config
-	Store       db.Store
-	Cache       cache.Cache
-	TokenMaker  token.Maker
-	Distributor worker.TaskDistributor
-	Logger      *slog.Logger
-	AsyncRunner async.AsyncRunner
+	Config        util.Config
+	Store         db.Store
+	Cache         cache.Cache
+	TokenMaker    token.Maker
+	Distributor   worker.TaskDistributor
+	TaskProcessor worker.TaskProcessor
+	Logger        *slog.Logger
+	AsyncRunner   async.AsyncRunner
 }
