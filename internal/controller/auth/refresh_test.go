@@ -14,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	mock_controller "github.com/raozhaizhu/go-estate/internal/controller/auth/mock"
+	mock_db "github.com/raozhaizhu/go-estate/internal/dao/mock"
 	"github.com/raozhaizhu/go-estate/internal/delivery"
 	userDomain "github.com/raozhaizhu/go-estate/internal/domain/user"
 	authSvc "github.com/raozhaizhu/go-estate/internal/service/auth"
@@ -111,12 +112,19 @@ func TestRefresh(t *testing.T) {
 		assert.Equal(t, expSlice, actSlice)
 	}
 
+	// 成功桩函数
+	stubIncrIPCntSuccess := func(cacheMock *mock_db.MockCache) {
+		cacheMock.EXPECT().IncrIPCnt(gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(int64(1), nil).Times(1)
+	}
+
 	testCases := []testCase{
 		{
 			name:       "携带正确 cookie, 登录成功",
 			reqUrl:     refreshUrl,
 			customData: correctHeaderCookie,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
+				stubIncrIPCntSuccess(cacheMock)
 				svcMock.EXPECT().Refresh(gomock.Any(), refreshStr).
 					Return(correctDto, nil).Times(1)
 			},
@@ -130,7 +138,8 @@ func TestRefresh(t *testing.T) {
 			name:       "未携带 cookie, 登录失败",
 			reqUrl:     refreshUrl,
 			customData: correctHeaderNoCookie,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
+				stubIncrIPCntSuccess(cacheMock)
 				svcMock.EXPECT().Refresh(gomock.Any(), gomock.Any()).Times(0)
 			},
 			action:           defaultAction,
@@ -143,7 +152,8 @@ func TestRefresh(t *testing.T) {
 			name:       "携带错误 cookie, 登录失败",
 			reqUrl:     refreshUrl,
 			customData: correctHeaderWrongCookie,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
+				stubIncrIPCntSuccess(cacheMock)
 				svcMock.EXPECT().Refresh(gomock.Any(), wrongStr).
 					Return(nil, appError.ErrInvalidToken).Times(1)
 			},
@@ -157,7 +167,8 @@ func TestRefresh(t *testing.T) {
 			name:       "携带正确 cookie, svc 抛出底层错误, ctrl 兜底处理且不暴露内部信息",
 			reqUrl:     refreshUrl,
 			customData: correctHeaderCookie,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
+				stubIncrIPCntSuccess(cacheMock)
 				svcMock.EXPECT().Refresh(gomock.Any(), refreshStr).
 					Return(nil, fmt.Errorf("从数据库获取 Session 失败: %w", sql.ErrNoRows)).
 					Times(1)

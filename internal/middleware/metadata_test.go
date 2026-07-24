@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
+	mock_db "github.com/raozhaizhu/go-estate/internal/dao/mock"
 	"github.com/raozhaizhu/go-estate/internal/middleware"
 	testUtil "github.com/raozhaizhu/go-estate/internal/test_util"
 	response "github.com/raozhaizhu/go-estate/pkg/api"
@@ -41,7 +42,7 @@ func TestMetadata(t *testing.T) {
 	// 	TokenType: token.TokenTypeAccessToken,
 	// }
 	// 默认执行逻辑
-	defaultAction := func(t *testing.T, reqUrl string, body interface{}, router *gin.Engine, writer *httptest.ResponseRecorder, customData map[string]any, tokenMakerMock *mock_token.MockMaker, ctx *gin.Context) {
+	defaultAction := func(t *testing.T, reqUrl string, body interface{}, router *gin.Engine, writer *httptest.ResponseRecorder, customData map[string]any, tokenMakerMock *mock_token.MockMaker, ctx *gin.Context, cacheMock *mock_db.MockCache) {
 		req, err := http.NewRequest(http.MethodGet, reqUrl, nil)
 		require.NoError(t, err)
 
@@ -102,7 +103,7 @@ func TestMetadata(t *testing.T) {
 			name:       "device_id不存在",
 			reqUrl:     testUrl,
 			customData: noDeviceIDHeader,
-			buildStubs: func(tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 				tokenMakerMock.EXPECT().VerifyToken(gomock.Any(), gomock.Any()).Times(0)
 			},
 			action:           defaultAction,
@@ -115,7 +116,7 @@ func TestMetadata(t *testing.T) {
 			name:       "user_agent不存在",
 			reqUrl:     testUrl,
 			customData: noUserAgentHeader,
-			buildStubs: func(tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 				tokenMakerMock.EXPECT().VerifyToken(gomock.Any(), gomock.Any()).Times(0)
 			},
 			action:           defaultAction,
@@ -128,7 +129,7 @@ func TestMetadata(t *testing.T) {
 			name:       "元信息齐全, KV 写入上下文成功",
 			reqUrl:     testUrl,
 			customData: correctHeader,
-			buildStubs: func(tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 				tokenMakerMock.EXPECT().VerifyToken(gomock.Any(), gomock.Any()).Times(0)
 			},
 			action:           defaultAction,

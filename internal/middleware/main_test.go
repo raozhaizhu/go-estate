@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
+	mock_db "github.com/raozhaizhu/go-estate/internal/dao/mock"
 	"github.com/raozhaizhu/go-estate/internal/util"
 	mock_token "github.com/raozhaizhu/go-estate/pkg/token/mock"
 	"github.com/raozhaizhu/go-estate/pkg/validator"
@@ -38,9 +39,9 @@ type testCase struct {
 	body       interface{}
 	customData map[string]any
 	// svc埋桩
-	buildStubs func(tokenMakerMock *mock_token.MockMaker)
+	buildStubs func(tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache)
 	// 执行服务
-	action func(t *testing.T, reqUrl string, body interface{}, router *gin.Engine, writer *httptest.ResponseRecorder, customData map[string]any, tokenMakerMock *mock_token.MockMaker, ctx *gin.Context)
+	action func(t *testing.T, reqUrl string, body interface{}, router *gin.Engine, writer *httptest.ResponseRecorder, customData map[string]any, tokenMakerMock *mock_token.MockMaker, ctx *gin.Context, cacheMock *mock_db.MockCache)
 	// 校验数据
 	checkResponse func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string, ctx *gin.Context)
 	// expectedHTTPCode
@@ -63,10 +64,11 @@ func runTC(t *testing.T, testCases []testCase) {
 
 			// 模拟请求
 			tokenMakerMock := mock_token.NewMockMaker(ctrl)
-			tc.buildStubs(tokenMakerMock)
+			cacheMock := mock_db.NewMockCache(ctrl)
+			tc.buildStubs(tokenMakerMock, cacheMock)
 
 			// 执行行动
-			tc.action(t, tc.reqUrl, tc.body, router, writer, tc.customData, tokenMakerMock, ctx)
+			tc.action(t, tc.reqUrl, tc.body, router, writer, tc.customData, tokenMakerMock, ctx, cacheMock)
 
 			// 校验结果
 			tc.checkResponse(t, writer, tc.expectedHTTPCode, tc.expectedBizCode, tc.expectedMsg, ctx)

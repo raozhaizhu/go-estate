@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	mock_controller "github.com/raozhaizhu/go-estate/internal/controller/auth/mock"
+	mock_db "github.com/raozhaizhu/go-estate/internal/dao/mock"
 	"github.com/raozhaizhu/go-estate/internal/delivery"
 	"github.com/raozhaizhu/go-estate/internal/domain/app"
 	"github.com/raozhaizhu/go-estate/internal/util"
@@ -41,7 +42,7 @@ type testCase struct {
 	body       interface{}
 	customData map[string]any
 	// svc埋桩
-	buildStubs func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker)
+	buildStubs func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache)
 	// 执行服务
 	action func(t *testing.T, reqUrl string, body interface{}, router *gin.Engine, writer *httptest.ResponseRecorder, customData map[string]any)
 	// 校验数据
@@ -62,8 +63,9 @@ func runTC(t *testing.T, testCases []testCase) {
 			// 构建 svc, tokenMaker
 			svcMock := mock_controller.NewMockService(ctrl)
 			tokenMakerMock := mock_token.NewMockMaker(ctrl)
+			cacheMock := mock_db.NewMockCache(ctrl)
 			//  svc打桩
-			tc.buildStubs(svcMock, tokenMakerMock)
+			tc.buildStubs(svcMock, tokenMakerMock, cacheMock)
 
 			//  初始化 recorder,router,ctx
 			writer := httptest.NewRecorder()
@@ -74,6 +76,7 @@ func runTC(t *testing.T, testCases []testCase) {
 				Config:     testConfig,
 				TokenMaker: tokenMakerMock,
 				Logger:     testLogger,
+				Cache:      cacheMock,
 			}
 			router := delivery.SetupRouter(svcs, deps)
 

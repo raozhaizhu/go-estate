@@ -13,7 +13,7 @@ import (
 func RateLimiter(redisCache cache.Cache, limit int, duration time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 获取 IP
-		ip := c.GetString(CtxKeyClientIP)
+		ip := c.ClientIP()
 		ctx := context.Background()
 
 		// 得到当前访问次数

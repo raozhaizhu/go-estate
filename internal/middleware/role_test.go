@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
+	mock_db "github.com/raozhaizhu/go-estate/internal/dao/mock"
 	role "github.com/raozhaizhu/go-estate/internal/domain/user"
 	userDomain "github.com/raozhaizhu/go-estate/internal/domain/user"
 	"github.com/raozhaizhu/go-estate/internal/middleware"
@@ -29,7 +30,7 @@ func TestRole(t *testing.T) {
 	}
 
 	// 默认执行逻辑
-	noPayloadAction := func(t *testing.T, reqUrl string, body interface{}, router *gin.Engine, writer *httptest.ResponseRecorder, customData map[string]any, tokenMakerMock *mock_token.MockMaker, ctx *gin.Context) {
+	noPayloadAction := func(t *testing.T, reqUrl string, body interface{}, router *gin.Engine, writer *httptest.ResponseRecorder, customData map[string]any, tokenMakerMock *mock_token.MockMaker, ctx *gin.Context, cacheMock *mock_db.MockCache) {
 		req, err := http.NewRequest(http.MethodGet, reqUrl, nil)
 		require.NoError(t, err)
 
@@ -45,7 +46,7 @@ func TestRole(t *testing.T) {
 		router.ServeHTTP(writer, req)
 
 	}
-	stoppedUserAction := func(t *testing.T, reqUrl string, body interface{}, router *gin.Engine, writer *httptest.ResponseRecorder, customData map[string]any, tokenMakerMock *mock_token.MockMaker, ctx *gin.Context) {
+	stoppedUserAction := func(t *testing.T, reqUrl string, body interface{}, router *gin.Engine, writer *httptest.ResponseRecorder, customData map[string]any, tokenMakerMock *mock_token.MockMaker, ctx *gin.Context, cacheMock *mock_db.MockCache) {
 		req, err := http.NewRequest(http.MethodGet, reqUrl, nil)
 		require.NoError(t, err)
 
@@ -66,7 +67,7 @@ func TestRole(t *testing.T) {
 		router.ServeHTTP(writer, req)
 
 	}
-	passedUserAction := func(t *testing.T, reqUrl string, body interface{}, router *gin.Engine, writer *httptest.ResponseRecorder, customData map[string]any, tokenMakerMock *mock_token.MockMaker, ctx *gin.Context) {
+	passedUserAction := func(t *testing.T, reqUrl string, body interface{}, router *gin.Engine, writer *httptest.ResponseRecorder, customData map[string]any, tokenMakerMock *mock_token.MockMaker, ctx *gin.Context, cacheMock *mock_db.MockCache) {
 		req, err := http.NewRequest(http.MethodGet, reqUrl, nil)
 		require.NoError(t, err)
 
@@ -115,7 +116,7 @@ func TestRole(t *testing.T) {
 		{
 			name:   "无法从上下文获取 payload, 被拒绝",
 			reqUrl: testUrl,
-			buildStubs: func(tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 				tokenMakerMock.EXPECT().VerifyToken(gomock.Any(), gomock.Any()).Times(0)
 			},
 			action:           noPayloadAction,
@@ -127,7 +128,7 @@ func TestRole(t *testing.T) {
 		{
 			name:   "User 访问 VIP/ADMIN 用户组, 被拒绝",
 			reqUrl: testUrl,
-			buildStubs: func(tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 				tokenMakerMock.EXPECT().VerifyToken(gomock.Any(), gomock.Any()).Times(0)
 			},
 			action:           stoppedUserAction,
@@ -139,7 +140,7 @@ func TestRole(t *testing.T) {
 		{
 			name:   "User 访问 USER/VIP/ADMIN 用户组, 成功",
 			reqUrl: testUrl,
-			buildStubs: func(tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 				tokenMakerMock.EXPECT().VerifyToken(gomock.Any(), gomock.Any()).Times(0)
 			},
 			action:           passedUserAction,
