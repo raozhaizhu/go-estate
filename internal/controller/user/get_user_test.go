@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	mock_controller "github.com/raozhaizhu/go-estate/internal/controller/user/mock"
+	mock_db "github.com/raozhaizhu/go-estate/internal/dao/mock"
 	"github.com/raozhaizhu/go-estate/internal/delivery"
 	userDomain "github.com/raozhaizhu/go-estate/internal/domain/user"
 	"github.com/raozhaizhu/go-estate/internal/service/user"
@@ -107,7 +108,7 @@ func TestGetUser(t *testing.T) {
 			name:       "带 User 请求头获取自身信息成功",
 			reqUrl:     correctRequest,
 			customData: correctHeaderCookie,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 				stubVerifyTokenSuccess(tokenMakerMock)
 				svcMock.EXPECT().GetUser(gomock.Any(), correctInput).
 					Return(correctUserDto, nil).Times(1)
@@ -122,7 +123,7 @@ func TestGetUser(t *testing.T) {
 			name:       "参数不存在",
 			reqUrl:     emptyRequest,
 			customData: correctHeaderCookie,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 				stubVerifyTokenSuccess(tokenMakerMock)
 				svcMock.EXPECT().GetUser(gomock.Any(), correctInput).Times(0)
 			},
@@ -136,7 +137,7 @@ func TestGetUser(t *testing.T) {
 			name:       "参数正确, svc 抛出底层错误, ctrl 兜底处理且不暴露内部信息",
 			reqUrl:     correctRequest,
 			customData: correctHeaderCookie,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 				stubVerifyTokenSuccess(tokenMakerMock)
 				svcMock.EXPECT().GetUser(gomock.Any(), correctInput).
 					Return(nil, fmt.Errorf("从数据库获取 Session 失败: %w", sql.ErrNoRows)).Times(1)

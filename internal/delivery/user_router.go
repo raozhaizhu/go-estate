@@ -26,10 +26,9 @@ func RegisterUser(metaGroup *gin.RouterGroup, authGroup *gin.RouterGroup, servic
 
 	// 定义公共路由
 	userPublicGroup := metaGroup.Group("/user")
-	// 公共路由视环境挂载限流
-	if config.IsProduction() {
-		userPublicGroup.Use(middleware.RateLimiter(redisCache, 5, time.Minute))
-	}
+	// 挂载限流中间件
+	userPublicGroup.Use(middleware.RateLimiter(redisCache, 5, time.Minute))
+
 	{
 		userPublicGroup.POST("", response.Wrapper(controller.CreateNormalUser))
 	}

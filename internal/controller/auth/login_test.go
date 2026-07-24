@@ -15,6 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	mock_controller "github.com/raozhaizhu/go-estate/internal/controller/auth/mock"
+	mock_db "github.com/raozhaizhu/go-estate/internal/dao/mock"
 	"github.com/raozhaizhu/go-estate/internal/delivery"
 	userDomain "github.com/raozhaizhu/go-estate/internal/domain/user"
 	"github.com/raozhaizhu/go-estate/internal/service/auth"
@@ -139,6 +140,11 @@ func TestLogin(t *testing.T) {
 		sort.Strings(actSlice)
 		assert.Equal(t, expSlice, actSlice)
 	}
+	// 成功桩函数
+	stubIncrIPCntSuccess := func(cacheMock *mock_db.MockCache) {
+		cacheMock.EXPECT().IncrIPCnt(gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(int64(1), nil).Times(1)
+	}
 
 	testCases := []testCase{
 		{
@@ -146,7 +152,8 @@ func TestLogin(t *testing.T) {
 			reqUrl:     loginUrl,
 			body:       correctBody,
 			customData: correctHeader,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
+				stubIncrIPCntSuccess(cacheMock)
 				svcMock.EXPECT().Login(gomock.Any(), correctInput).
 					Return(correctDto, refreshStr, nil).Times(1)
 			},
@@ -161,7 +168,8 @@ func TestLogin(t *testing.T) {
 			reqUrl:     loginUrl,
 			body:       emptyBody,
 			customData: correctHeader,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
+				stubIncrIPCntSuccess(cacheMock)
 				svcMock.EXPECT().Login(gomock.Any(), gomock.Any()).Times(0)
 			},
 			action:           defaultAction,
@@ -175,7 +183,8 @@ func TestLogin(t *testing.T) {
 			reqUrl:     loginUrl,
 			body:       brokenBody,
 			customData: correctHeader,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
+				stubIncrIPCntSuccess(cacheMock)
 				svcMock.EXPECT().Login(gomock.Any(), gomock.Any()).Times(0)
 			},
 			action:           defaultAction,
@@ -189,7 +198,8 @@ func TestLogin(t *testing.T) {
 			reqUrl:     loginUrl,
 			body:       wrongBody,
 			customData: correctHeader,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
+				stubIncrIPCntSuccess(cacheMock)
 				svcMock.EXPECT().Login(gomock.Any(), gomock.Any()).Times(0)
 			},
 			action:           defaultAction,
@@ -203,7 +213,8 @@ func TestLogin(t *testing.T) {
 			reqUrl:     loginUrl,
 			body:       shortBody,
 			customData: correctHeader,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
+				stubIncrIPCntSuccess(cacheMock)
 				svcMock.EXPECT().Login(gomock.Any(), gomock.Any()).Times(0)
 			},
 			action:           defaultAction,
@@ -217,7 +228,8 @@ func TestLogin(t *testing.T) {
 			reqUrl:     loginUrl,
 			body:       longBody,
 			customData: correctHeader,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
+				stubIncrIPCntSuccess(cacheMock)
 				svcMock.EXPECT().Login(gomock.Any(), gomock.Any()).Times(0)
 			},
 			action:           defaultAction,
@@ -231,7 +243,8 @@ func TestLogin(t *testing.T) {
 			reqUrl:     loginUrl,
 			body:       correctBody,
 			customData: correctHeader,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
+				stubIncrIPCntSuccess(cacheMock)
 				svcMock.EXPECT().Login(gomock.Any(), correctInput).
 					Return(nil, "", appError.ErrWrongUsernamePassword).Times(1)
 			},
@@ -246,7 +259,8 @@ func TestLogin(t *testing.T) {
 			reqUrl:     loginUrl,
 			body:       correctBody,
 			customData: correctHeader,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
+				stubIncrIPCntSuccess(cacheMock)
 				svcMock.EXPECT().Login(gomock.Any(), correctInput).
 					Return(nil, "", fmt.Errorf("从数据库获取 Session 失败: %w", sql.ErrNoRows)).Times(1)
 			},

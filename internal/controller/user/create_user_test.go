@@ -14,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	mock_controller "github.com/raozhaizhu/go-estate/internal/controller/user/mock"
+	mock_db "github.com/raozhaizhu/go-estate/internal/dao/mock"
 	"github.com/raozhaizhu/go-estate/internal/delivery"
 	userDomain "github.com/raozhaizhu/go-estate/internal/domain/user"
 	"github.com/raozhaizhu/go-estate/internal/service/user"
@@ -151,6 +152,10 @@ func TestCreateUser(t *testing.T) {
 				return accessAdminPayload, nil
 			}).Times(1)
 	}
+	stubIncrIPCntSuccess := func(cacheMock *mock_db.MockCache) {
+		cacheMock.EXPECT().IncrIPCnt(gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(int64(1), nil).Times(1)
+	}
 
 	testCases := []testCase{
 		{
@@ -158,7 +163,8 @@ func TestCreateUser(t *testing.T) {
 			reqUrl:     createUserUrl,
 			body:       correctBody,
 			customData: correctHeaderNoCookie,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
+				stubIncrIPCntSuccess(cacheMock)
 				svcMock.EXPECT().CreateUser(gomock.Any(), correctInput, userDomain.RoleUser).
 					Return(correctUserDto, nil).Times(1)
 			},
@@ -173,7 +179,7 @@ func TestCreateUser(t *testing.T) {
 			reqUrl:     createVipUrl,
 			body:       correctBody,
 			customData: correctHeaderCookie,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 				stubVerifyTokenSuccess(tokenMakerMock)
 				svcMock.EXPECT().CreateUser(gomock.Any(), correctInput, userDomain.RoleVip).
 					Return(correctVipDto, nil).Times(1)
@@ -189,7 +195,8 @@ func TestCreateUser(t *testing.T) {
 			reqUrl:     createUserUrl,
 			body:       emptyBody,
 			customData: correctHeaderNoCookie,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
+				stubIncrIPCntSuccess(cacheMock)
 				svcMock.EXPECT().CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 			},
 			action:           defaultAction,
@@ -203,7 +210,8 @@ func TestCreateUser(t *testing.T) {
 			reqUrl:     createUserUrl,
 			body:       brokenBody,
 			customData: correctHeaderNoCookie,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
+				stubIncrIPCntSuccess(cacheMock)
 				svcMock.EXPECT().CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 			},
 			action:           defaultAction,
@@ -217,8 +225,10 @@ func TestCreateUser(t *testing.T) {
 			reqUrl:     createUserUrl,
 			body:       wrongBody,
 			customData: correctHeaderNoCookie,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
+				stubIncrIPCntSuccess(cacheMock)
 				svcMock.EXPECT().CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+
 			},
 			action:           defaultAction,
 			checkResponse:    failCheckResponse,
@@ -231,7 +241,8 @@ func TestCreateUser(t *testing.T) {
 			reqUrl:     createUserUrl,
 			body:       shortBody,
 			customData: correctHeaderNoCookie,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
+				stubIncrIPCntSuccess(cacheMock)
 				svcMock.EXPECT().CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 			},
 			action:           defaultAction,
@@ -245,7 +256,8 @@ func TestCreateUser(t *testing.T) {
 			reqUrl:     createUserUrl,
 			body:       longBody,
 			customData: correctHeaderNoCookie,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
+				stubIncrIPCntSuccess(cacheMock)
 				svcMock.EXPECT().CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 			},
 			action:           defaultAction,
@@ -259,7 +271,8 @@ func TestCreateUser(t *testing.T) {
 			reqUrl:     createUserUrl,
 			body:       badEmailBody,
 			customData: correctHeaderNoCookie,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
+				stubIncrIPCntSuccess(cacheMock)
 				svcMock.EXPECT().CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 			},
 			action:           defaultAction,
@@ -273,7 +286,8 @@ func TestCreateUser(t *testing.T) {
 			reqUrl:     createUserUrl,
 			body:       correctBody,
 			customData: correctHeaderNoCookie,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
+				stubIncrIPCntSuccess(cacheMock)
 				svcMock.EXPECT().CreateUser(gomock.Any(), correctInput, userDomain.RoleUser).
 					Return(nil, fmt.Errorf("从数据库获取 Session 失败: %w", sql.ErrNoRows)).Times(1)
 			},

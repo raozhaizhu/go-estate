@@ -13,6 +13,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 	"github.com/golang/mock/gomock"
 	mock_controller "github.com/raozhaizhu/go-estate/internal/controller/auth/mock"
+	mock_db "github.com/raozhaizhu/go-estate/internal/dao/mock"
 	"github.com/raozhaizhu/go-estate/internal/delivery"
 	userDomain "github.com/raozhaizhu/go-estate/internal/domain/user"
 	"github.com/raozhaizhu/go-estate/internal/service/auth"
@@ -105,7 +106,7 @@ func TestLogout(t *testing.T) {
 			name:       "携带正确认证信息, 登出成功",
 			reqUrl:     logoutUrl,
 			customData: correctHeader,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 				stubVerifyTokenSuccess(tokenMakerMock)
 				svcMock.EXPECT().Logout(gomock.Any(), correctInput).
 					Return(nil).Times(1)
@@ -120,7 +121,7 @@ func TestLogout(t *testing.T) {
 			name:       "获取 payload 成功, svc抛出底层错误, ctrl 兜底处理且不暴露内部信息",
 			reqUrl:     logoutUrl,
 			customData: correctHeader,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 				stubVerifyTokenSuccess(tokenMakerMock)
 				dbErr := &mysql.MySQLError{Number: 1205, Message: "Lock wait timeout exceeded"}
 				svcMock.EXPECT().Logout(gomock.Any(), correctInput).

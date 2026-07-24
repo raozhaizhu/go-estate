@@ -14,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	mock_controller "github.com/raozhaizhu/go-estate/internal/controller/user/mock"
+	mock_db "github.com/raozhaizhu/go-estate/internal/dao/mock"
 	"github.com/raozhaizhu/go-estate/internal/delivery"
 	userDomain "github.com/raozhaizhu/go-estate/internal/domain/user"
 	"github.com/raozhaizhu/go-estate/internal/service/user"
@@ -142,7 +143,7 @@ func TestPatchUser(t *testing.T) {
 			reqUrl:     correctRequest,
 			body:       correctBody,
 			customData: correctHeaderCookie,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 				stubVerifyTokenSuccess(tokenMakerMock)
 				svcMock.EXPECT().UpdateUser(gomock.Any(), correctInput).
 					Return(correctUserDto, nil).Times(1)
@@ -158,7 +159,7 @@ func TestPatchUser(t *testing.T) {
 			reqUrl:     shortRequest,
 			body:       correctBody,
 			customData: correctHeaderCookie,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 				stubVerifyTokenSuccess(tokenMakerMock)
 				svcMock.EXPECT().UpdateUser(gomock.Any(), gomock.Any()).Times(0)
 			},
@@ -173,7 +174,7 @@ func TestPatchUser(t *testing.T) {
 			reqUrl:     longRequest,
 			body:       correctBody,
 			customData: correctHeaderCookie,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 				stubVerifyTokenSuccess(tokenMakerMock)
 				svcMock.EXPECT().UpdateUser(gomock.Any(), gomock.Any()).Times(0)
 			},
@@ -188,7 +189,7 @@ func TestPatchUser(t *testing.T) {
 			reqUrl:     correctRequest,
 			body:       brokenBody,
 			customData: correctHeaderCookie,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 				stubVerifyTokenSuccess(tokenMakerMock)
 				svcMock.EXPECT().UpdateUser(gomock.Any(), gomock.Any()).Times(0)
 			},
@@ -203,7 +204,7 @@ func TestPatchUser(t *testing.T) {
 			reqUrl:     correctRequest,
 			body:       shortBody,
 			customData: correctHeaderCookie,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 				stubVerifyTokenSuccess(tokenMakerMock)
 				svcMock.EXPECT().UpdateUser(gomock.Any(), gomock.Any()).Times(0)
 			},
@@ -218,7 +219,7 @@ func TestPatchUser(t *testing.T) {
 			reqUrl:     correctRequest,
 			body:       longBody,
 			customData: correctHeaderCookie,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 				stubVerifyTokenSuccess(tokenMakerMock)
 				svcMock.EXPECT().UpdateUser(gomock.Any(), gomock.Any()).Times(0)
 			},
@@ -233,7 +234,7 @@ func TestPatchUser(t *testing.T) {
 			reqUrl:     correctRequest,
 			body:       badEmailBody,
 			customData: correctHeaderCookie,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 				stubVerifyTokenSuccess(tokenMakerMock)
 				svcMock.EXPECT().UpdateUser(gomock.Any(), gomock.Any()).Times(0)
 			},
@@ -248,7 +249,7 @@ func TestPatchUser(t *testing.T) {
 			reqUrl:     correctRequest,
 			body:       correctBody,
 			customData: correctHeaderCookie,
-			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 				stubVerifyTokenSuccess(tokenMakerMock)
 				svcMock.EXPECT().UpdateUser(gomock.Any(), correctInput).
 					Return(nil, fmt.Errorf("从数据库获取 Session 失败: %w", sql.ErrNoRows)).Times(1)

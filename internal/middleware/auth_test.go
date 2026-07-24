@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
+	mock_db "github.com/raozhaizhu/go-estate/internal/dao/mock"
 	userDomain "github.com/raozhaizhu/go-estate/internal/domain/user"
 	"github.com/raozhaizhu/go-estate/internal/middleware"
 	testUtil "github.com/raozhaizhu/go-estate/internal/test_util"
@@ -33,7 +34,7 @@ func TestAuth(t *testing.T) {
 		TokenType: token.TokenTypeAccessToken,
 	}
 	// 默认执行逻辑
-	defaultAction := func(t *testing.T, reqUrl string, body interface{}, router *gin.Engine, writer *httptest.ResponseRecorder, customData map[string]any, tokenMakerMock *mock_token.MockMaker, ctx *gin.Context) {
+	defaultAction := func(t *testing.T, reqUrl string, body interface{}, router *gin.Engine, writer *httptest.ResponseRecorder, customData map[string]any, tokenMakerMock *mock_token.MockMaker, ctx *gin.Context, cacheMock *mock_db.MockCache) {
 		req, err := http.NewRequest(http.MethodGet, reqUrl, nil)
 		require.NoError(t, err)
 
@@ -84,7 +85,7 @@ func TestAuth(t *testing.T) {
 		assert.Equal(t, accessPayload, payload)
 	}
 	// 成功桩函数
-	stubVerifyTokenSuccess := func(tokenMakerMock *mock_token.MockMaker) {
+	stubVerifyTokenSuccess := func(tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 		tokenMakerMock.EXPECT().VerifyToken(gomock.Any(), gomock.Any()).
 			DoAndReturn(func(tokenStr string, tokenType token.TokenType) (*token.Payload, error) {
 				require.Equal(t, tokenType, token.TokenType(token.TokenTypeAccessToken))
@@ -97,7 +98,7 @@ func TestAuth(t *testing.T) {
 			name:       "认证头不存在 ",
 			reqUrl:     testUrl,
 			customData: emptyHeader,
-			buildStubs: func(tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 				tokenMakerMock.EXPECT().VerifyToken(gomock.Any(), gomock.Any()).Times(0)
 			},
 			action:           defaultAction,
@@ -110,7 +111,7 @@ func TestAuth(t *testing.T) {
 			name:       "认证头格式错误: 不带 bearer",
 			reqUrl:     testUrl,
 			customData: noBearerHeader,
-			buildStubs: func(tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 				tokenMakerMock.EXPECT().VerifyToken(gomock.Any(), gomock.Any()).Times(0)
 			},
 			action:           defaultAction,
@@ -123,7 +124,7 @@ func TestAuth(t *testing.T) {
 			name:       "认证头格式错误: 只有 bearer",
 			reqUrl:     testUrl,
 			customData: onlyBearerHeader,
-			buildStubs: func(tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 				tokenMakerMock.EXPECT().VerifyToken(gomock.Any(), gomock.Any()).Times(0)
 			},
 			action:           defaultAction,
@@ -136,7 +137,7 @@ func TestAuth(t *testing.T) {
 			name:       "认证头格式正确, 验证失败返回内部错误, 中间件正确处理不暴露内部信息",
 			reqUrl:     testUrl,
 			customData: correctHeader,
-			buildStubs: func(tokenMakerMock *mock_token.MockMaker) {
+			buildStubs: func(tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 				tokenMakerMock.EXPECT().VerifyToken(accessStr, token.TokenType(token.TokenTypeAccessToken)).
 					Return(nil, appError.ErrServerErr).Times(1)
 			},
@@ -150,8 +151,8 @@ func TestAuth(t *testing.T) {
 			name:       "认证头格式正确, 验证成功",
 			reqUrl:     testUrl,
 			customData: correctHeader,
-			buildStubs: func(tokenMakerMock *mock_token.MockMaker) {
-				stubVerifyTokenSuccess(tokenMakerMock)
+			buildStubs: func(tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
+				stubVerifyTokenSuccess(tokenMakerMock, cacheMock)
 			},
 			action:           defaultAction,
 			checkResponse:    successCheckResponse,
