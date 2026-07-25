@@ -66,3 +66,7 @@ func CheckPassword(password string, hashedPassword string) error {
 func (c *Config) IsProduction() bool {
 	return strings.ToLower(c.Environment) == "production"
 }
+
+func (c *Config) IsLoadTest() bool {
+	return strings.ToLower(c.Environment) == "loadtest"
+}

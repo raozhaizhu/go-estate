@@ -19,9 +19,10 @@ func RegisterAuth(metaGroup *gin.RouterGroup, authGroup *gin.RouterGroup, servic
 
 	// 定义公共路由
 	authPublicGroup := metaGroup.Group("/auth")
-	// 挂载限流中间件
-	authPublicGroup.Use(middleware.RateLimiter(redisCache, 5, time.Minute))
-
+	// 挂载限流中间件(非压测环境下)
+	if !config.IsLoadTest() {
+		authPublicGroup.Use(middleware.RateLimiter(redisCache, 5, time.Minute))
+	}
 	{
 		authPublicGroup.POST("/login", response.Wrapper(ctrl.Login))
 		authPublicGroup.POST("/refresh", response.Wrapper(ctrl.Refresh))

@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gin-contrib/pprof"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/raozhaizhu/go-estate/internal/controller/auth"
@@ -39,6 +41,11 @@ func SetupRouter(services Services, deps app.Deps) *gin.Engine {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
+
+	// 压测环境下开启 pprof
+	if deps.Config.IsLoadTest() {
+		pprof.Register(router, "dev/pprof")
+	}
 
 	// 实例化 Prometheus
 	p := ginprometheus.NewPrometheus("gin")

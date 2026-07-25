@@ -52,6 +52,21 @@ test-integration:
 swag:
 	swag init -g cmd/api/main.go --parseDependency --parseInternal
 
+wrk-login:
+	wrk -t4 -c100 -d30s -s login.lua http://localhost/api/v1/auth/login
+wrk-ping:
+	wrk -t8 -c500 -d30s http://localhost:8080/ping
+
+pprof-cpu:
+	go tool pprof -http=:8081 http://localhost:8080/dev/pprof/profile?seconds=20
+pprof-heap:
+	go tool pprof -http=:8082 http://localhost:8080/dev/pprof/heap?seconds=20
+pprof-mutex:
+	go tool pprof -http=:8083 http://localhost:8080/dev/pprof/mutex?seconds=20
+pprof-block:
+	go tool pprof -http=:8084 http://localhost:8080/dev/pprof/block?seconds=20
+
 .PHONY: migrate_create migrate_up migrate_up_1 migrate_down migrate_down_1
 .PHONY: docker_down docker_up q docker_rebuild
-.PHONY: sqlc_gen mock test test-integration swag act
+.PHONY: sqlc_gen mock test test-integration swag act 
+.PHONY: wrk-login wrk-ping pprof-cpu pprof-heap pprof-mutex pprof-block
