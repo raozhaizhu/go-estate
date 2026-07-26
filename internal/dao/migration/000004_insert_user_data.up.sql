@@ -3,25 +3,29 @@ INSERT INTO
                 username,
                 hashed_password,
                 email,
+                avatar_key,
                 role
         )
 VALUES
         (
                 'Bob',
-                -- 密码:123456
+                -- 密码:12345678
                 '$2a$10$.FSgaTYBmJlxmiJAvy3haOPbYN3lExDljBm.SgoE8agZbLBicjx1m',
                 'bob@example.com',
+                'avatars/default_avatar.png',
                 1
         ),
         (
-                'Alice',
+                'Vip',
                 '$2a$10$.FSgaTYBmJlxmiJAvy3haOPbYN3lExDljBm.SgoE8agZbLBicjx1m',
                 'alice@example.com',
+                'avatars/default_avatar.png',
                 2
         ),
         (
                 'Admin',
                 '$2a$10$.FSgaTYBmJlxmiJAvy3haOPbYN3lExDljBm.SgoE8agZbLBicjx1m',
                 'admin@example.com',
+                'avatars/default_avatar.png',
                 3
         );

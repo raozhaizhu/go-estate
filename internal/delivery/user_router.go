@@ -16,7 +16,7 @@ const (
 	UserApi = "/api/v1/user"
 )
 
-// RegisterUser
+// RegisterUser 注册用户模块路由
 func RegisterUser(metaGroup *gin.RouterGroup, authGroup *gin.RouterGroup, service user.Service, config util.Config, redisCache cache.Cache) {
 	if service == nil {
 		return
@@ -33,6 +33,7 @@ func RegisterUser(metaGroup *gin.RouterGroup, authGroup *gin.RouterGroup, servic
 
 	{
 		userPublicGroup.POST("", response.Wrapper(controller.CreateNormalUser))
+		userPublicGroup.GET("/avatar/upload-url", response.Wrapper(controller.GetAvatarUploadUrl))
 	}
 
 	// 定义保护路由

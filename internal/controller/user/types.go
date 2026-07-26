@@ -22,6 +22,7 @@ type Service interface {
 	CreateUser(ctx context.Context, p user.CreateUserInput, role role.Role) (*user.DTO, error)
 	GetUser(ctx context.Context, p user.GetUserInput) (*user.DTO, error)
 	UpdateUser(ctx context.Context, p user.UpdateUserInput) (*user.DTO, error)
+	GenerateAvatarPresignUrl(ctx context.Context, input service.GenerateAvatarPresignUrlInput) (string, map[string]string, string, error)
 }
 
 func New(svc Service) *Controller {
@@ -48,17 +49,21 @@ func (r *GetUserRequest) toSvcInput() service.GetUserInput {
  * =====================================================================================
  */
 
+// CreateUserRequest 创建用户请求
 type CreateUserRequest struct {
 	Username string `json:"username" binding:"required,min=3,max=32" example:"Bob"`
 	Password string `json:"password" binding:"required,min=8,max=16" example:"12345678"`
 	Email    string `json:"email" binding:"required,email" example:"Bob@test.com"`
+	Avatar   string `json:"avatar" example:"avatars/default_avatar.png"`
 }
 
+// toSvcInput 将CreateUserRequest转化为CreateUserInput
 func (r *CreateUserRequest) toSvcInput() service.CreateUserInput {
 	return service.CreateUserInput{
-		Username: r.Username,
-		Password: r.Password,
-		Email:    r.Email,
+		Username:  r.Username,
+		Password:  r.Password,
+		Email:     r.Email,
+		AvatarKey: r.Avatar,
 	}
 }
 
@@ -67,16 +72,54 @@ func (r *CreateUserRequest) toSvcInput() service.CreateUserInput {
  * =====================================================================================
  */
 
+// UpdateUserRequest 更新用户请求
 type UpdateUserRequest struct {
 	Username string  `uri:"username" binding:"required,min=3,max=32" example:"Bob"`
 	Password *string `json:"password" binding:"omitempty,min=8,max=16" example:"12345678"`
 	Email    *string `json:"email" binding:"omitempty,email" example:"Bob@test.com"`
 }
 
+// toSvcInput 将UpdateUserRequest转化为UpdateUserInput
 func (r *UpdateUserRequest) toSvcInput() service.UpdateUserInput {
 	return service.UpdateUserInput{
 		Username: r.Username,
 		Password: r.Password,
 		Email:    r.Email,
+	}
+}
+
+/** ====================================================================================
+ * 🏁 Get: GetAvatarUploadUrl
+ * =====================================================================================
+ */
+
+// GetAvatarUploadUrlRequest 上传文件请求
+type GetAvatarUploadUrlRequest struct {
+	Extension string `form:"extension" binding:"omitempty,oneof=png jpg jpeg webp" example:"png"`
+}
+
+// AvatarUploadData 所上传头像的数据结构, 返回给前端
+type AvatarUploadData struct {
+	PostUrl   string            `json:"post_url"`
+	FormData  map[string]string `json:"form_data"`
+	ObjectKey string            `json:"object_key"`
+}
+
+func (r *GetAvatarUploadUrlRequest) toSvcInput() service.GenerateAvatarPresignUrlInput {
+	var ext, contentType string
+	switch r.Extension {
+	case "webp":
+		ext = ".webp"
+		contentType = "image/webp"
+	case "jpg", "jpeg":
+		ext = ".jpg"
+		contentType = "image/jpeg"
+	default:
+		ext = ".png"
+		contentType = "image/png"
+	}
+	return service.GenerateAvatarPresignUrlInput{
+		Extension:   ext,
+		ContentType: contentType,
 	}
 }

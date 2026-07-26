@@ -390,6 +390,66 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/user/avatar/upload-url": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "DeviceIDAuth": []
+                    },
+                    {
+                        "UserAgentAuth": []
+                    }
+                ],
+                "description": "获取用于直接上传头像到对象存储的预签名凭证及表单参数。（安全策略：仅限已登录用户操作）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User (用户管理)"
+                ],
+                "summary": "获取头像预上传凭证",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "文件后缀名 (支持 png, jpg, jpeg, webp，默认 png)",
+                        "name": "ext",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_raozhaizhu_go-estate_pkg_api.SuccessResult-internal_controller_user_AvatarUploadData"
+                        }
+                    },
+                    "400": {
+                        "description": "参数解析错误或格式不支持 (HTTP 返回 200, code: 400xx)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_raozhaizhu_go-estate_pkg_api.ClientErrorResult"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或鉴权失败 (HTTP 返回 200, code: 401xx)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_raozhaizhu_go-estate_pkg_api.AuthErrorResult"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误 (HTTP 返回 500, code: 500xx)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_raozhaizhu_go-estate_pkg_api.ServerErrorResult"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/user/vip": {
             "post": {
                 "security": [
@@ -624,6 +684,10 @@ const docTemplate = `{
         "github_com_raozhaizhu_go-estate_internal_service_auth.UserInfo": {
             "type": "object",
             "properties": {
+                "avatar_key": {
+                    "type": "string",
+                    "example": "avatars/default_avatar.png"
+                },
                 "role": {
                     "allOf": [
                         {
@@ -641,6 +705,10 @@ const docTemplate = `{
         "github_com_raozhaizhu_go-estate_internal_service_user.DTO": {
             "type": "object",
             "properties": {
+                "avatar_key": {
+                    "type": "string",
+                    "example": "avatars/default_avatar.png"
+                },
                 "email": {
                     "type": "string",
                     "example": "Bob@test.com"
@@ -793,6 +861,22 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_raozhaizhu_go-estate_pkg_api.SuccessResult-internal_controller_user_AvatarUploadData": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 200
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_controller_user.AvatarUploadData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "操作成功"
+                }
+            }
+        },
         "internal_controller_auth.LoginRequest": {
             "type": "object",
             "required": [
@@ -854,6 +938,23 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_controller_user.AvatarUploadData": {
+            "type": "object",
+            "properties": {
+                "form_data": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "object_key": {
+                    "type": "string"
+                },
+                "post_url": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_controller_user.CreateUserRequest": {
             "type": "object",
             "required": [
@@ -862,6 +963,10 @@ const docTemplate = `{
                 "username"
             ],
             "properties": {
+                "avatar": {
+                    "type": "string",
+                    "example": "avatars/default_avatar.png"
+                },
                 "email": {
                     "type": "string",
                     "example": "Bob@test.com"

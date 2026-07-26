@@ -19,6 +19,10 @@ type Config struct {
 	TokenSymmetricKey    string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
 	AccessTokenDuration  time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
 	RefreshTokenDuration time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
+	OSSDomain            string        `mapstructure:"OSS_DOMAIN"`
+	MinioEndpoint        string        `mapstructure:"MINIO_ENDPOINT"`
+	MinioAccessKeyID     string        `mapstructure:"MINIO_ACCESS_KEY_ID"`
+	MinioSecretAccessKey string        `mapstructure:"MINIO_SECRET_ACCESS_KEY"`
 }
 
 func LoadConfig(path string) (config Config, err error) {

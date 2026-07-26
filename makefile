@@ -51,7 +51,7 @@ test-integration:
 	gotestsum --format dots --no-summary=output -- -tags=integration ./...
 swag:
 	swag init -g cmd/api/main.go --parseDependency --parseInternal
-
+# wrk & pprof --> 先将 env 内的 ENVIRONMENT 设为 loadtest 再进行
 wrk-login:
 	wrk -t4 -c100 -d30s -s login.lua http://localhost/api/v1/auth/login
 wrk-ping:

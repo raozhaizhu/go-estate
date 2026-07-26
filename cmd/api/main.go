@@ -13,6 +13,7 @@ import (
 	"github.com/raozhaizhu/go-estate/internal/util"
 	"github.com/raozhaizhu/go-estate/internal/worker"
 	"github.com/raozhaizhu/go-estate/pkg/async"
+	objectStore "github.com/raozhaizhu/go-estate/pkg/object_store"
 	"github.com/raozhaizhu/go-estate/pkg/token"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -76,6 +77,12 @@ func prepareDeps() app.Deps {
 		lifecycleLogger.Error("Redis 缓存初始化失败", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
+	// 初始化 minIO 客户端
+	minioStorage, err := objectStore.SetupMinIO(config.MinioEndpoint, config.MinioAccessKeyID, config.MinioSecretAccessKey)
+	if err != nil {
+		lifecycleLogger.Error("MinioClient 初始化失败", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
 	// 启动后台工作服务器
 	opt := asynq.RedisClientOpt{Addr: config.RedisAddress, Password: config.RedisPassword, DB: 0}
 	distributor := worker.NewRedisTaskDistributor(opt)
@@ -92,6 +99,7 @@ func prepareDeps() app.Deps {
 		Config:        config,
 		Store:         store,
 		Cache:         redisCache,
+		ObjectStore:   minioStorage,
 		TokenMaker:    tokenMaker,
 		Distributor:   distributor,
 		TaskProcessor: taskProcessor,
@@ -101,17 +109,3 @@ func prepareDeps() app.Deps {
 
 	return deps
 }
-
-// tryMigrateExit 执行数据库版本升级
-// func tryMigrateExit(migrationURL string, dbSource string) {
-// 	migration, err := migrate.New(migrationURL, dbSource)
-// 	if err != nil {
-// 		log.Fatalf("无法创建migration示例")
-// 	}
-
-// 	if err = migration.Up(); err != nil && err != migrate.ErrNoChange {
-// 		log.Fatalf("数据库版本合并失败")
-// 	}
-
-// 	log.Println("数据库版本合并成功")
-// }

@@ -22,6 +22,9 @@ definitions:
     type: object
   github_com_raozhaizhu_go-estate_internal_service_auth.UserInfo:
     properties:
+      avatar_key:
+        example: avatars/default_avatar.png
+        type: string
       role:
         allOf:
         - $ref: '#/definitions/github_com_raozhaizhu_go-estate_internal_domain_user.Role'
@@ -32,6 +35,9 @@ definitions:
     type: object
   github_com_raozhaizhu_go-estate_internal_service_user.DTO:
     properties:
+      avatar_key:
+        example: avatars/default_avatar.png
+        type: string
       email:
         example: Bob@test.com
         type: string
@@ -136,6 +142,17 @@ definitions:
         example: 操作成功
         type: string
     type: object
+  github_com_raozhaizhu_go-estate_pkg_api.SuccessResult-internal_controller_user_AvatarUploadData:
+    properties:
+      code:
+        example: 200
+        type: integer
+      data:
+        $ref: '#/definitions/internal_controller_user.AvatarUploadData'
+      msg:
+        example: 操作成功
+        type: string
+    type: object
   internal_controller_auth.LoginRequest:
     properties:
       password:
@@ -181,8 +198,22 @@ definitions:
         example: 1
         type: integer
     type: object
+  internal_controller_user.AvatarUploadData:
+    properties:
+      form_data:
+        additionalProperties:
+          type: string
+        type: object
+      object_key:
+        type: string
+      post_url:
+        type: string
+    type: object
   internal_controller_user.CreateUserRequest:
     properties:
+      avatar:
+        example: avatars/default_avatar.png
+        type: string
       email:
         example: Bob@test.com
         type: string
@@ -533,6 +564,42 @@ paths:
       - DeviceIDAuth: []
       - UserAgentAuth: []
       summary: 修改指定用户信息
+      tags:
+      - User (用户管理)
+  /api/v1/user/avatar/upload-url:
+    get:
+      consumes:
+      - application/json
+      description: 获取用于直接上传头像到对象存储的预签名凭证及表单参数。（安全策略：仅限已登录用户操作）
+      parameters:
+      - description: 文件后缀名 (支持 png, jpg, jpeg, webp，默认 png)
+        in: query
+        name: ext
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.SuccessResult-internal_controller_user_AvatarUploadData'
+        "400":
+          description: '参数解析错误或格式不支持 (HTTP 返回 200, code: 400xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.ClientErrorResult'
+        "401":
+          description: '未登录或鉴权失败 (HTTP 返回 200, code: 401xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.AuthErrorResult'
+        "500":
+          description: '服务器内部错误 (HTTP 返回 500, code: 500xx)'
+          schema:
+            $ref: '#/definitions/github_com_raozhaizhu_go-estate_pkg_api.ServerErrorResult'
+      security:
+      - BearerAuth: []
+      - DeviceIDAuth: []
+      - UserAgentAuth: []
+      summary: 获取头像预上传凭证
       tags:
       - User (用户管理)
   /api/v1/user/vip:

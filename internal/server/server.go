@@ -31,6 +31,7 @@ type Server struct {
 	taskProcessor worker.TaskProcessor
 }
 
+// NewServer 创建服务器
 func NewServer(deps app.Deps) (*Server, error) {
 	// 初始化服务
 	authSvc := auth.New(deps)
@@ -60,6 +61,7 @@ func NewServer(deps app.Deps) (*Server, error) {
 	return server, nil
 }
 
+// Start 启动服务器, 并监听退出信号以实现优雅退出
 func (srv *Server) Start(address string) error {
 	lifecycleLogger := srv.logger.With(slog.String("category", "lifecycle"))
 	// 构造 server
