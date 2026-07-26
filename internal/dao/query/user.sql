@@ -4,10 +4,11 @@ INSERT INTO
                 username,
                 hashed_password,
                 email,
+                avatar_key,
                 role
         )
 VALUES
-        (?, ?, ?, COALESCE(sqlc.narg(role), 1));
+        (?, ?, ?, ?, COALESCE(sqlc.narg(role), 1));
 
 -- name: GetUser :one
 SELECT
@@ -26,6 +27,7 @@ SET
                 sqlc.narg(password_changed_at),
                 password_changed_at
         ),
-        email = COALESCE(sqlc.narg(email), email)
+        email = COALESCE(sqlc.narg(email), email),
+        avatar_key = COALESCE(sqlc.narg(avatar_key), avatar_key)
 WHERE
         username = sqlc.arg(username);

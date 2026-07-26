@@ -2,12 +2,15 @@ package user
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
 	role "github.com/raozhaizhu/go-estate/internal/domain/user"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
+	objectStore "github.com/raozhaizhu/go-estate/pkg/object_store"
 	"github.com/raozhaizhu/go-estate/pkg/token"
 )
 
@@ -18,15 +21,23 @@ import (
 
 // CreateUser 创建用户, 返回 UserDTO
 func (svc *service) CreateUser(ctx context.Context, input CreateUserInput, roleToCreate role.Role) (*DTO, error) {
-	// 初始化参数
-	params, err := input.toDBParams(roleToCreate)
-	if err != nil {
+	// 校验权限
+	err := svc.authorizeCreate(ctx, roleToCreate)
+	if err != nil { // 无权创建, 直接返空
 		return nil, err
 	}
 
-	// 校验权限
-	err = svc.authorizeCreate(ctx, roleToCreate)
-	if err != nil { // 无权创建, 直接返空
+	// 校验头像是否存在
+	if input.AvatarKey != "" {
+		err := svc.objectStore.EnsureFileExists(ctx, objectStore.AvatarBucketName, input.AvatarKey)
+		if err != nil { //文件不存在或内部错误
+			return nil, err
+		}
+	}
+
+	// 初始化参数
+	params, err := input.toDBParams(roleToCreate)
+	if err != nil {
 		return nil, err
 	}
 
@@ -35,6 +46,7 @@ func (svc *service) CreateUser(ctx context.Context, input CreateUserInput, roleT
 	if err != nil {
 		return nil, svc.mapDBError(err)
 	}
+
 	// -> db 返回用户
 	return svc.getUserDTO(ctx, params.Username)
 }
@@ -67,6 +79,15 @@ func (svc *service) UpdateUser(ctx context.Context, input UpdateUserInput) (*DTO
 	params, err := input.ToDBParams()
 	if err != nil {
 		return nil, err
+	}
+
+	// 校验头像
+	if input.AvatarKey != nil {
+		err = svc.objectStore.EnsureFileExists(ctx, objectStore.AvatarBucketName, *input.AvatarKey)
+		if err != nil {
+			return nil, err
+		}
+		params.AvatarKey = sql.NullString{String: *input.AvatarKey, Valid: true}
 	}
 
 	// 校验权限
@@ -127,6 +148,36 @@ func (svc *service) UpdateUser(ctx context.Context, input UpdateUserInput) (*DTO
 }
 
 /** ====================================================================================
+ * 🏁 GenerateAvatarPresignUrl
+ * =====================================================================================
+ */
+
+// GenerateAvatarPresignUrl 生成头像预签名链接
+func (svc *service) GenerateAvatarPresignUrl(ctx context.Context, input GenerateAvatarPresignUrlInput) (string, map[string]string, string, error) {
+	// 生成唯一 key
+	objectKey := fmt.Sprintf("%s%s", uuid.New().String(), input.Extension)
+	// 定义文件大小, 1kb-5mb
+	var minSize, maxSize int64 = 1024, 5 * 1024 * 1024
+
+	// 调用存储层生成 Policy
+	postUrl, formData, err := svc.objectStore.GetPostPolicy(
+		ctx,
+		objectStore.AvatarBucketName,
+		objectKey,
+		objectStore.ExpireDuration,
+		minSize,
+		maxSize,
+		input.ContentType,
+	)
+	if err != nil {
+		return "", nil, "", err
+	}
+
+	return postUrl, formData, objectKey, nil
+
+}
+
+/** ====================================================================================
  * 🏁 Helper
  * =====================================================================================
  */
@@ -159,10 +210,11 @@ func (svc *service) getUserDTO(ctx context.Context, username string) (*DTO, erro
 
 	// -> db 返回用户
 	return &DTO{
-		ID:       user.ID,
-		Username: user.Username,
-		Email:    user.Email,
-		Role:     role.Role(user.Role),
+		ID:        user.ID,
+		Username:  user.Username,
+		Email:     user.Email,
+		Role:      role.Role(user.Role),
+		AvatarKey: user.AvatarKey,
 	}, nil
 }
 

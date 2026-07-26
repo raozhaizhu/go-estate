@@ -29,6 +29,7 @@ type Services struct {
 	DailyDataSvc dailyData.Service
 }
 
+// SetupRouter 启动路由
 func SetupRouter(services Services, deps app.Deps) *gin.Engine {
 	// 初始化路由引擎
 	router := gin.New()

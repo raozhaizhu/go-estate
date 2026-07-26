@@ -152,3 +152,43 @@ func (c *Controller) UpdateUser(ctx *gin.Context) (interface{}, error) {
 
 	return data, nil
 }
+
+/** ====================================================================================
+ * 🏁 GetUploadUrl
+ * =====================================================================================
+ */
+
+// GetAvatarUploadUrl 获取头像预上传凭证
+// @Summary      获取头像预上传凭证
+// @Description  获取用于直接上传头像到对象存储的预签名凭证及表单参数。（安全策略：仅限已登录用户操作）
+// @Tags         User (用户管理)
+// @Security     BearerAuth
+// @Security     DeviceIDAuth
+// @Security     UserAgentAuth
+// @Accept       json
+// @Produce      json
+// @Param        ext      query    string           false "文件后缀名 (支持 png, jpg, jpeg, webp，默认 png)"
+// @Success      200      {object}  response.SuccessResult[AvatarUploadData] "获取成功"
+// @Failure      400      {object}  response.ClientErrorResult       "参数解析错误或格式不支持 (HTTP 返回 200, code: 400xx)"
+// @Failure      401      {object}  response.AuthErrorResult         "未登录或鉴权失败 (HTTP 返回 200, code: 401xx)"
+// @Failure      500      {object}  response.ServerErrorResult       "服务器内部错误 (HTTP 返回 500, code: 500xx)"
+// @Router       /api/v1/user/avatar/upload-url [get]
+func (c *Controller) GetAvatarUploadUrl(ctx *gin.Context) (interface{}, error) {
+	var req GetAvatarUploadUrlRequest
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		return nil, response.MarkBindError(err)
+	}
+
+	input := req.toSvcInput()
+
+	postUrl, formData, objectKey, err := c.service.GenerateAvatarPresignUrl(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+	dto := AvatarUploadData{
+		PostUrl:   postUrl,
+		FormData:  formData,
+		ObjectKey: objectKey,
+	}
+	return dto, nil
+}

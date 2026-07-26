@@ -132,6 +132,40 @@ services:
     networks:
       - app-network
 
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "9000:9000" # API 端口
+      - "9001:9001" # WEB 控制台端口
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY_ID}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_ACCESS_KEY}
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+    networks:
+      - app-network
+
+  minio-init:
+    image: minio/mc
+    container_name: minio-init
+    environment:
+      - MINIO_ACCESS_KEY_ID
+      - MINIO_SECRET_ACCESS_KEY
+    depends_on:
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./assets/minio_init_files:/assets
+      - ./cmd/scripts/minio_init.sh:/minio_init.sh
+    entrypoint: ["bin/sh", "/minio_init.sh"]
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge

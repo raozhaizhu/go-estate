@@ -57,6 +57,7 @@ const (
 	// 404 资源不存在
 	CodePathNotFound = CodeGroupNotFound + iota // 路径不存在
 	CodeUserNotFound
+	CodeFileNotFound
 )
 
 const (
@@ -79,15 +80,18 @@ const (
 type BizError struct {
 	Code int    `json:"code"`
 	Msg  string `json:"msg"`
-	Err  error  `json:"-"`
+	err  error
 }
 
 func (e *BizError) Error() string {
-	return fmt.Sprintf("code:% d, msg: %s", e.Code, e.Msg)
+	if e.err != nil { // 有底层错误
+		return fmt.Sprintf("[%d] %s: %v", e.Code, e.Msg, e.err)
+	}
+	return fmt.Sprintf("[%d] %s", e.Code, e.Msg)
 }
 
 func (e *BizError) Unwrap() error {
-	return e.Err
+	return e.err
 }
 func (e *BizError) Is(targetErr error) bool {
 	t, ok := targetErr.(*BizError)
@@ -101,7 +105,7 @@ func (e *BizError) WithErr(err error) *BizError {
 	return &BizError{
 		Code: e.Code,
 		Msg:  e.Msg,
-		Err:  err,
+		err:  err,
 	}
 }
 
@@ -138,6 +142,7 @@ var (
 	// 404 资源不存在
 	ErrPathNotFound = New(CodePathNotFound, "请求路径不存在")
 	ErrUserNotFound = New(CodeUserNotFound, "用户不存在")
+	ErrFileNotFound = New(CodeFileNotFound, "资源不存在")
 
 	// 409 值冲突
 	ErrUserAlreadyExits  = New(CodeUserAlreadyExits, "该用户已经存在")
@@ -151,4 +156,8 @@ var (
 
 func NewInvalidKeySizeError(actual, minSize int) error {
 	return New(CodeWrongSizeKey, fmt.Sprintf("invalid key size: current is %d, must be at least %d characters", actual, minSize))
+}
+
+func NewSrvErr(err error) *BizError {
+	return ErrServerErr.WithErr(err)
 }

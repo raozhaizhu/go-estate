@@ -51,6 +51,23 @@ func (mr *MockServiceMockRecorder) CreateUser(arg0, arg1, arg2 interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockService)(nil).CreateUser), arg0, arg1, arg2)
 }
 
+// GenerateAvatarPresignUrl mocks base method.
+func (m *MockService) GenerateAvatarPresignUrl(arg0 context.Context, arg1 user.GenerateAvatarPresignUrlInput) (string, map[string]string, string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GenerateAvatarPresignUrl", arg0, arg1)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(map[string]string)
+	ret2, _ := ret[2].(string)
+	ret3, _ := ret[3].(error)
+	return ret0, ret1, ret2, ret3
+}
+
+// GenerateAvatarPresignUrl indicates an expected call of GenerateAvatarPresignUrl.
+func (mr *MockServiceMockRecorder) GenerateAvatarPresignUrl(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateAvatarPresignUrl", reflect.TypeOf((*MockService)(nil).GenerateAvatarPresignUrl), arg0, arg1)
+}
+
 // GetUser mocks base method.
 func (m *MockService) GetUser(arg0 context.Context, arg1 user.GetUserInput) (*user.DTO, error) {
 	m.ctrl.T.Helper()

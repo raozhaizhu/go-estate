@@ -16,16 +16,18 @@ INSERT INTO
                 username,
                 hashed_password,
                 email,
+                avatar_key,
                 role
         )
 VALUES
-        (?, ?, ?, COALESCE(?, 1))
+        (?, ?, ?, ?, COALESCE(?, 1))
 `
 
 type CreateUserParams struct {
 	Username       string      `json:"username"`
 	HashedPassword string      `json:"hashed_password"`
 	Email          string      `json:"email"`
+	AvatarKey      string      `json:"avatar_key"`
 	Role           interface{} `json:"role"`
 }
 
@@ -34,13 +36,14 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (sql.Res
 		arg.Username,
 		arg.HashedPassword,
 		arg.Email,
+		arg.AvatarKey,
 		arg.Role,
 	)
 }
 
 const getUser = `-- name: GetUser :one
 SELECT
-        id, username, hashed_password, email, role, password_changed_at, created_at
+        id, username, hashed_password, email, avatar_key, role, password_changed_at, created_at
 FROM
         users
 WHERE
@@ -55,6 +58,7 @@ func (q *Queries) GetUser(ctx context.Context, username string) (User, error) {
 		&i.Username,
 		&i.HashedPassword,
 		&i.Email,
+		&i.AvatarKey,
 		&i.Role,
 		&i.PasswordChangedAt,
 		&i.CreatedAt,
@@ -71,7 +75,8 @@ SET
                 ?,
                 password_changed_at
         ),
-        email = COALESCE(?, email)
+        email = COALESCE(?, email),
+        avatar_key = COALESCE(?, avatar_key)
 WHERE
         username = ?
 `
@@ -80,6 +85,7 @@ type UpdateUserParams struct {
 	HashedPassword    sql.NullString `json:"hashed_password"`
 	PasswordChangedAt sql.NullTime   `json:"password_changed_at"`
 	Email             sql.NullString `json:"email"`
+	AvatarKey         sql.NullString `json:"avatar_key"`
 	Username          string         `json:"username"`
 }
 
@@ -88,6 +94,7 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (sql.Res
 		arg.HashedPassword,
 		arg.PasswordChangedAt,
 		arg.Email,
+		arg.AvatarKey,
 		arg.Username,
 	)
 }

@@ -55,8 +55,9 @@ func (svc *service) Login(ctx context.Context, input LoginInput) (*DTO, string, 
 		AccessToken:          accessToken,
 		AccessTokenExpiredAt: accessPayload.ExpiredAt,
 		UserInfo: UserInfo{
-			Username: user.Username,
-			Role:     role.Role(user.Role),
+			Username:  user.Username,
+			Role:      role.Role(user.Role),
+			AvatarKey: user.AvatarKey,
 		},
 	}, refreshToken, nil
 }

@@ -30,7 +30,11 @@ func SlogMiddleware(logger *slog.Logger) gin.HandlerFunc {
 		// 获取 bizCode 报错编号
 		bizCode := c.GetInt(response.BizCodeKey)
 		// 获取挂载的原始 error 信息
-		errs := c.Errors.ByType(gin.ErrorTypePrivate).String()
+		var rawErrMsgs []string
+		for _, e := range c.Errors.ByType(gin.ErrorTypePrivate) {
+			rawErrMsgs = append(rawErrMsgs, e.Err.Error())
+		}
+		errs := strings.Join(rawErrMsgs, "; ")
 
 		// 判断报错级别
 		var logFn func(string, ...any)
@@ -44,7 +48,7 @@ func SlogMiddleware(logger *slog.Logger) gin.HandlerFunc {
 		}
 
 		// 使用 slog 输出结构化日志
-		logFn("HTTP 请求已处理",
+		logAttrs := []any{
 			slog.Int("status", httpStatus),
 			slog.Int("biz_code", bizCode),
 			slog.String("method", c.Request.Method),
@@ -52,7 +56,11 @@ func SlogMiddleware(logger *slog.Logger) gin.HandlerFunc {
 			slog.String("query", query),
 			slog.String("ip", c.ClientIP()),
 			slog.String("cost", cost.String()),
-			slog.String("errors", errs),
-		)
+		}
+		if errs != "" {
+			logAttrs = append(logAttrs, slog.String("errors", errs))
+		}
+
+		logFn("HTTP 请求已处理", logAttrs...)
 	}
 }
