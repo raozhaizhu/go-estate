@@ -15,6 +15,8 @@ import (
 
 // TestCreateGetSession_Success 测试成功创建并获取会话
 func TestCreateGetSession_Success(t *testing.T) {
+	defer testStore.CleanTestStore(t)
+
 	user := testUtil.CreateRandomUser(t, testStore)
 	deviceID := testUtil.DeviceID
 	createThenGetSessionByUser(t, user, deviceID)
@@ -58,6 +60,8 @@ func createThenGetSessionByUser(t *testing.T, user db.User, deviceID string) db.
 
 // TestGetActiveSessionIDsByUserDevice_Success 测试成功获取会话ids
 func TestGetActiveSessionIDsByUserDevice_Success(t *testing.T) {
+	defer testStore.CleanTestStore(t)
+
 	// arrange
 	user := testUtil.CreateRandomUser(t, testStore)
 	deviceID := testUtil.DeviceID
@@ -76,6 +80,8 @@ func TestGetActiveSessionIDsByUserDevice_Success(t *testing.T) {
 
 // TestBlockSessionsByIDs_Success 测试使用 ids封锁相应会话
 func TestBlockSessionsByIDs_Success(t *testing.T) {
+	defer testStore.CleanTestStore(t)
+
 	// arrange
 	user1 := testUtil.CreateRandomUser(t, testStore)
 	user2 := testUtil.CreateRandomUser(t, testStore)

@@ -3,9 +3,11 @@ package cache
 import (
 	"context"
 	"fmt"
+	"testing"
 	"time"
 
 	"github.com/go-redis/redis/v8"
+	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 )
 
 /** ====================================================================================
@@ -19,6 +21,9 @@ type Cache interface {
 	GetSession(ctx context.Context, jti string) (*Session, error)
 	BatchDelete(ctx context.Context, jtis []string) error
 	IncrIPCnt(ctx context.Context, ip string, duration time.Duration) (int64, error)
+
+	Close() error
+	CleanTestCache(t *testing.T)
 }
 
 // SessionCache 用于管理 session
@@ -47,4 +52,38 @@ func NewCache(addr, password string) (Cache, error) {
 
 type redisCache struct {
 	client *redis.Client
+}
+
+type AddNewSessionParams struct {
+	JTI string
+	Session
+}
+
+type Session struct {
+	Username  string
+	IsBlocked bool
+	ExpiresAt time.Time
+}
+
+func (p *AddNewSessionParams) toValue() map[string]interface{} {
+	value := map[string]interface{}{
+		"username":   p.Username,
+		"is_blocked": p.IsBlocked,
+		"expires_at": p.ExpiresAt.Unix(),
+	}
+
+	return value
+}
+
+func (s *Session) IsValid() error {
+	// 校验阻断
+	if s.IsBlocked {
+		return appError.ErrBlockedSession
+	}
+	// 校验过期
+	if time.Now().After(s.ExpiresAt) {
+		return appError.ErrExpiredToken
+	}
+
+	return nil
 }

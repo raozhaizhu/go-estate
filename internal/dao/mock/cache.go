@@ -7,6 +7,7 @@ package mock_db
 import (
 	context "context"
 	reflect "reflect"
+	testing "testing"
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
@@ -62,6 +63,32 @@ func (m *MockCache) BatchDelete(arg0 context.Context, arg1 []string) error {
 func (mr *MockCacheMockRecorder) BatchDelete(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchDelete", reflect.TypeOf((*MockCache)(nil).BatchDelete), arg0, arg1)
+}
+
+// CleanTestCache mocks base method.
+func (m *MockCache) CleanTestCache(arg0 *testing.T) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "CleanTestCache", arg0)
+}
+
+// CleanTestCache indicates an expected call of CleanTestCache.
+func (mr *MockCacheMockRecorder) CleanTestCache(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CleanTestCache", reflect.TypeOf((*MockCache)(nil).CleanTestCache), arg0)
+}
+
+// Close mocks base method.
+func (m *MockCache) Close() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Close")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Close indicates an expected call of Close.
+func (mr *MockCacheMockRecorder) Close() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockCache)(nil).Close))
 }
 
 // GetSession mocks base method.

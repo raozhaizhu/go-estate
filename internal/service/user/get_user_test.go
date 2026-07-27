@@ -174,7 +174,7 @@ func runGetUserTC(t *testing.T, testCases []getUserTC) {
 			storeMock := mock_db.NewMockStore(ctrl)
 			cacheMock := mock_db.NewMockCache(ctrl)
 			distributorMock := mock_worker.NewMockTaskDistributor(ctrl)
-			deps := app.Deps{
+			deps := &app.Deps{
 				Store:       storeMock,
 				Cache:       cacheMock,
 				Distributor: distributorMock,

@@ -19,7 +19,7 @@ type service struct {
 	store db.DailyDataStore
 }
 
-func New(deps app.Deps) *service {
+func New(deps *app.Deps) *service {
 	return &service{store: deps.Store}
 }
 

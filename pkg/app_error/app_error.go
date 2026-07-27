@@ -154,9 +154,9 @@ var (
 	ErrServerErr = New(CodeServerErr, "服务器开小差了")
 )
 
-func NewInvalidKeySizeError(actual, minSize int) error {
-	return New(CodeWrongSizeKey, fmt.Sprintf("invalid key size: current is %d, must be at least %d characters", actual, minSize))
-}
+// func NewInvalidKeySizeError(actual, minSize int) error {
+// 	return New(CodeWrongSizeKey, fmt.Sprintf("invalid key size: current is %d, must be at least %d characters", actual, minSize))
+// }
 
 func NewSrvErr(err error) *BizError {
 	return ErrServerErr.WithErr(err)

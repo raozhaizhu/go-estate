@@ -131,6 +131,6 @@ func TestWrongSizeKeyJWTToken(t *testing.T) {
 	wrongSize := 31
 	maker, err := NewJwtMaker(util.RandomString(wrongSize))
 	require.Error(t, err)
-	require.EqualError(t, err, appError.NewInvalidKeySizeError(wrongSize, MinSecretSize).Error())
+	require.ErrorIs(t, err, appError.ErrServerErr)
 	require.Nil(t, maker)
 }

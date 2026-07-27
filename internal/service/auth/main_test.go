@@ -24,7 +24,7 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	testConfig = util.InitConfig("../../..")
+	testConfig = util.InitTestConfig()
 	testLogger = slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	os.Exit(m.Run())
@@ -64,7 +64,7 @@ func runTC(t *testing.T, testCases []testCase) {
 			asyncGo := func(ctx context.Context, logger *slog.Logger, name string, timeout time.Duration, fn func(ctx context.Context)) {
 				fn(ctx)
 			}
-			deps := app.Deps{
+			deps := &app.Deps{
 				Store:       storeMock,
 				Cache:       cacheMock,
 				Config:      testConfig,

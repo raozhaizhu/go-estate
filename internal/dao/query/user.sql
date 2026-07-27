@@ -8,7 +8,13 @@ INSERT INTO
                 role
         )
 VALUES
-        (?, ?, ?, ?, COALESCE(sqlc.narg(role), 1));
+        (
+                ?,
+                ?,
+                ?,
+                COALESCE(sqlc.narg(avatar_key), 1),
+                COALESCE(sqlc.narg(role), 1)
+        );
 
 -- name: GetUser :one
 SELECT

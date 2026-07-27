@@ -23,7 +23,7 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	testConfig = util.InitConfig("../../..")
+	testConfig = util.InitTestConfig()
 	testLogger = slog.New(slog.NewTextHandler(io.Discard, nil))
 	validator.InitTrans()
 
@@ -71,7 +71,7 @@ func runTC(t *testing.T, testCases []testCase) {
 			svcs := delivery.Services{
 				DailyDataSvc: svcMock,
 			}
-			deps := app.Deps{
+			deps := &app.Deps{
 				Config:     testConfig,
 				TokenMaker: tokenMakerMock,
 				Logger:     testLogger,

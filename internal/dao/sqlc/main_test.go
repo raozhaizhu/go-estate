@@ -15,7 +15,10 @@ var testStore db.Store
 var config util.Config
 
 func TestMain(m *testing.M) {
-	config = util.InitConfig("../../..")
+	config = util.InitTestConfig()
+	if config.IsProduction() {
+		return
+	}
 	testStore, _ = db.InitStore(config.DBSource)
 
 	os.Exit(m.Run())

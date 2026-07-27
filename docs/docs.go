@@ -686,7 +686,7 @@ const docTemplate = `{
             "properties": {
                 "avatar_key": {
                     "type": "string",
-                    "example": "avatars/default_avatar.png"
+                    "example": "default_avatar.png"
                 },
                 "role": {
                     "allOf": [
@@ -707,7 +707,7 @@ const docTemplate = `{
             "properties": {
                 "avatar_key": {
                     "type": "string",
-                    "example": "avatars/default_avatar.png"
+                    "example": "default_avatar.png"
                 },
                 "email": {
                     "type": "string",
@@ -963,9 +963,9 @@ const docTemplate = `{
                 "username"
             ],
             "properties": {
-                "avatar": {
+                "avatar_key": {
                     "type": "string",
-                    "example": "avatars/default_avatar.png"
+                    "example": "default_avatar.png"
                 },
                 "email": {
                     "type": "string",

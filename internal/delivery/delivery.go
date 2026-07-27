@@ -21,7 +21,12 @@ import (
 )
 
 // 定义全局版本路由
-const CurrAPI = "/api/v1"
+const (
+	CurrAPI      = "/api/v1"
+	AuthAPI      = CurrAPI + "/auth"
+	UserAPI      = CurrAPI + "/user"
+	DailyDataAPI = CurrAPI + "/daily_data"
+)
 
 type Services struct {
 	UserSvc      userController.Service
@@ -30,15 +35,15 @@ type Services struct {
 }
 
 // SetupRouter 启动路由
-func SetupRouter(services Services, deps app.Deps) *gin.Engine {
+func SetupRouter(services Services, deps *app.Deps) *gin.Engine {
 	// 初始化路由引擎
 	router := gin.New()
 
 	// 挂载 CORS 中间件
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "User-Agent", "Device-ID"},
+		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "User-Agent", "X-Device-ID", "Accept"},
+		AllowAllOrigins:  true,
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
@@ -61,7 +66,7 @@ func SetupRouter(services Services, deps app.Deps) *gin.Engine {
 		c.JSON(200, gin.H{"message": "pong"})
 	})
 	// 挂载 Swagger UI 路由
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.PersistAuthorization(true)))
 
 	// 处理路径错误, 当用户访问不存在的 api 资源时, 返回自定义的错误格式(而不是直接 404, 不带 Code)
 	router.NoRoute(func(c *gin.Context) {

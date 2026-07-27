@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/raozhaizhu/go-estate/internal/dao/cache"
 	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
 	"github.com/raozhaizhu/go-estate/internal/delivery"
 	"github.com/raozhaizhu/go-estate/internal/domain/app"
@@ -26,13 +27,14 @@ import (
 type Server struct {
 	config        util.Config
 	store         db.Store
+	cache         cache.Cache
 	router        *gin.Engine
 	logger        *slog.Logger
 	taskProcessor worker.TaskProcessor
 }
 
 // NewServer 创建服务器
-func NewServer(deps app.Deps) (*Server, error) {
+func NewServer(deps *app.Deps) (*Server, error) {
 	// 初始化服务
 	authSvc := auth.New(deps)
 	userSvc := user.New(deps)
@@ -53,6 +55,7 @@ func NewServer(deps app.Deps) (*Server, error) {
 	server := &Server{
 		config:        deps.Config,
 		store:         deps.Store,
+		cache:         deps.Cache,
 		router:        router,
 		logger:        deps.Logger,
 		taskProcessor: deps.TaskProcessor,
@@ -107,7 +110,7 @@ func (srv *Server) Start(address string) error {
 		lifecycleLogger.Info("Asynq Worker 服务器已安全退出")
 	}
 
-	// 关闭数据库
+	// 关闭数据库连接
 	lifecycleLogger.Info("正在关闭数据库连接...")
 	if err := srv.store.Close(); err != nil {
 		lifecycleLogger.Error("关闭数据库连接失败", slog.String("error", err.Error()))
@@ -115,7 +118,20 @@ func (srv *Server) Start(address string) error {
 		lifecycleLogger.Info("关闭数据库连接成功")
 	}
 
+	// 关闭缓存连接
+	lifecycleLogger.Info("正在关闭缓存连接...")
+	if err := srv.cache.Close(); err != nil {
+		lifecycleLogger.Error("关闭缓存连接失败", slog.String("error", err.Error()))
+	} else {
+		lifecycleLogger.Info("关闭缓存连接成功")
+	}
+
 	// 安全退出
 	lifecycleLogger.Info("HTTP服务器已安全退出")
 	return nil
+}
+
+// ServeHTTP 用于集成测试
+func (srv *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	srv.router.ServeHTTP(w, req)
 }

@@ -25,14 +25,6 @@ import (
  * 🏁 TestCreateUser
  * =====================================================================================
  */
-type createUserTC struct {
-	name          string
-	input         CreateUserInput
-	roleToCreate  role.Role
-	buildCtx      func() context.Context
-	buildStubs    func(store *mock_db.MockStore)
-	checkResponse func(t *testing.T, res *DTO, err error)
-}
 
 // TestCreateUser_Duplicate 用重复username email 创建冲突账号
 // 会进入 DB 查询
@@ -259,6 +251,20 @@ func EqCreateUserParams(arg db.CreateUserParams, password string) gomock.Matcher
 	return eqCreateUserParamsMatcher{arg, password}
 }
 
+type createUserTC struct {
+	name          string
+	input         CreateUserInput
+	roleToCreate  role.Role
+	buildCtx      func() context.Context
+	buildStubs    func(store *mock_db.MockStore)
+	checkResponse func(t *testing.T, res *DTO, err error)
+}
+
+/** ====================================================================================
+ * 🏁 Types
+ * =====================================================================================
+ */
+
 func runCreateUserTC(t *testing.T, testCases []createUserTC) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -268,7 +274,7 @@ func runCreateUserTC(t *testing.T, testCases []createUserTC) {
 			storeMock := mock_db.NewMockStore(ctrl)
 			cacheMock := mock_db.NewMockCache(ctrl)
 			distributorMock := mock_worker.NewMockTaskDistributor(ctrl)
-			deps := app.Deps{
+			deps := &app.Deps{
 				Store:       storeMock,
 				Cache:       cacheMock,
 				Distributor: distributorMock,

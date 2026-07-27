@@ -15,7 +15,9 @@ import (
 	"github.com/raozhaizhu/go-estate/internal/service/user"
 	"github.com/raozhaizhu/go-estate/internal/util"
 	mock_worker "github.com/raozhaizhu/go-estate/internal/worker/mock"
+	objectStore "github.com/raozhaizhu/go-estate/pkg/object_store"
 	mock_token "github.com/raozhaizhu/go-estate/pkg/token/mock"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -24,7 +26,7 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	testConfig = util.InitConfig("../../..")
+	testConfig = util.InitTestConfig()
 	testLogger = slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	os.Exit(m.Run())
@@ -61,12 +63,15 @@ func runTC(t *testing.T, testCases []testCase) {
 			cacheMock := mock_db.NewMockCache(ctrl)
 			distributorMock := mock_worker.NewMockTaskDistributor(ctrl)
 			tokenMakerMock := mock_token.NewMockMaker(ctrl)
+			objectStore, err := objectStore.SetupMinIO(testConfig.MinioEndpoint, testConfig.MinioAccessKeyID, testConfig.MinioSecretAccessKey)
+			require.NoError(t, err)
 			asyncGo := func(ctx context.Context, logger *slog.Logger, name string, timeout time.Duration, fn func(ctx context.Context)) {
 				fn(ctx)
 			}
-			deps := app.Deps{
+			deps := &app.Deps{
 				Store:       storeMock,
 				Cache:       cacheMock,
+				ObjectStore: objectStore,
 				Config:      testConfig,
 				TokenMaker:  tokenMakerMock,
 				Distributor: distributorMock,

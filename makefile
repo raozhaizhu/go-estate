@@ -28,6 +28,7 @@ docker_rebuild:
 # 	sleep 10
 # 	$(MAKE) migrate_up	
 
+
 # docker-mysql
 q:
 	cat cmd/db_cmd/q.sql | docker exec -i $(DB_CONTAINER) mysql -u$(DB_USER) -p$(DB_PASSWORD) $(DB_NAME) -t $(CHARSET)

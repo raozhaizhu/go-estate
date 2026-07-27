@@ -2,6 +2,7 @@ package objectStore
 
 import (
 	"context"
+	"testing"
 	"time"
 
 	"github.com/minio/minio-go/v7"
@@ -26,6 +27,8 @@ type StorageService interface {
 	GetDownloadUrl(ctx context.Context, bucketName, objectKey string, expires time.Duration) (string, error)
 
 	EnsureFileExists(ctx context.Context, bucketName, objectKey string) error
+
+	CleanTestObjectStore(t *testing.T)
 }
 
 // MinioStorage Minio对象存储
@@ -40,6 +43,7 @@ type MinioStorage struct {
 
 const (
 	AvatarBucketName = "avatars"
-	DefaultAvatarUrl = "avatars/default_avatar.png"
+	DefaultAvatarKey = "default_avatar.png"
+	DefaultAvatarUrl = AvatarBucketName + "/" + DefaultAvatarKey
 	ExpireDuration   = 5 * time.Minute
 )
