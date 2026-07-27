@@ -1,3 +1,5 @@
+//go:build integration
+
 package dailyData_test
 
 import (
