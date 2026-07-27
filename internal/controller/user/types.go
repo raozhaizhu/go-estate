@@ -51,19 +51,23 @@ func (r *GetUserRequest) toSvcInput() service.GetUserInput {
 
 // CreateUserRequest 创建用户请求
 type CreateUserRequest struct {
-	Username string `json:"username" binding:"required,min=3,max=32" example:"Bob"`
-	Password string `json:"password" binding:"required,min=8,max=16" example:"12345678"`
-	Email    string `json:"email" binding:"required,email" example:"Bob@test.com"`
-	Avatar   string `json:"avatar" example:"avatars/default_avatar.png"`
+	Username  string  `json:"username" binding:"required,min=3,max=32" example:"Bob"`
+	Password  string  `json:"password" binding:"required,min=8,max=16" example:"12345678"`
+	Email     string  `json:"email" binding:"required,email" example:"Bob@test.com"`
+	AvatarKey *string `json:"avatar_key" binding:"omitempty" example:"default_avatar.png"`
 }
 
 // toSvcInput 将CreateUserRequest转化为CreateUserInput
 func (r *CreateUserRequest) toSvcInput() service.CreateUserInput {
+	avatarKey := ""
+	if r.AvatarKey != nil {
+		avatarKey = *r.AvatarKey
+	}
 	return service.CreateUserInput{
 		Username:  r.Username,
 		Password:  r.Password,
 		Email:     r.Email,
-		AvatarKey: r.Avatar,
+		AvatarKey: avatarKey,
 	}
 }
 

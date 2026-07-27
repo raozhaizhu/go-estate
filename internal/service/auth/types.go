@@ -31,7 +31,7 @@ type service struct {
 }
 
 // New 返回用户服务指针
-func New(deps app.Deps) *service {
+func New(deps *app.Deps) *service {
 	return &service{store: deps.Store, sessionCache: deps.Cache, config: deps.Config, tokenMaker: deps.TokenMaker, distributor: deps.Distributor, logger: deps.Logger, asyncRunner: deps.AsyncRunner}
 }
 
@@ -57,7 +57,7 @@ type DTO struct {
 type UserInfo struct {
 	Username  string    `json:"username" example:"Bob"`
 	Role      role.Role `json:"role" example:"1"`
-	AvatarKey string    `json:"avatar_key" example:"avatars/default_avatar.png"`
+	AvatarKey string    `json:"avatar_key" example:"default_avatar.png"`
 }
 
 /** ====================================================================================

@@ -29,7 +29,7 @@ type service struct {
 }
 
 // New 返回用户服务指针
-func New(deps app.Deps) *service {
+func New(deps *app.Deps) *service {
 	return &service{store: deps.Store, txRunner: deps.Store, sessionCache: deps.Cache, distributor: deps.Distributor, objectStore: deps.ObjectStore}
 }
 
@@ -39,7 +39,7 @@ type DTO struct {
 	Username  string    `json:"username" example:"Bob"`
 	Email     string    `json:"email" example:"Bob@test.com"`
 	Role      role.Role `json:"role" example:"1"`
-	AvatarKey string    `json:"avatar_key" example:"avatars/default_avatar.png"`
+	AvatarKey string    `json:"avatar_key" example:"default_avatar.png"`
 }
 
 /** ====================================================================================
@@ -68,9 +68,9 @@ func (input *CreateUserInput) toDBParams(role role.Role) (db.CreateUserParams, e
 		return db.CreateUserParams{}, err
 	}
 
-	// 设置头像
-	if input.AvatarKey != "" {
-		input.AvatarKey = objectStore.DefaultAvatarUrl
+	// 用户没上传头像, 使用默认头像
+	if input.AvatarKey == "" {
+		input.AvatarKey = objectStore.DefaultAvatarKey
 	}
 
 	// 创建用户

@@ -3,47 +3,23 @@ package cache
 import (
 	"context"
 	"strconv"
+	"testing"
 	"time"
 
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
+	"github.com/stretchr/testify/require"
 )
 
 /** ====================================================================================
- * 🏁 Types
+ * 🏁 Close
  * =====================================================================================
  */
 
-type AddNewSessionParams struct {
-	JTI string
-	Session
-}
-
-type Session struct {
-	Username  string
-	IsBlocked bool
-	ExpiresAt time.Time
-}
-
-func (p *AddNewSessionParams) toValue() map[string]interface{} {
-	value := map[string]interface{}{
-		"username":   p.Username,
-		"is_blocked": p.IsBlocked,
-		"expires_at": p.ExpiresAt.Unix(),
+// Close 关闭缓存
+func (r *redisCache) Close() error {
+	if r.client != nil {
+		return r.client.Close()
 	}
-
-	return value
-}
-
-func (s *Session) IsValid() error {
-	// 校验阻断
-	if s.IsBlocked {
-		return appError.ErrBlockedSession
-	}
-	// 校验过期
-	if time.Now().After(s.ExpiresAt) {
-		return appError.ErrExpiredToken
-	}
-
 	return nil
 }
 
@@ -173,6 +149,7 @@ func (r *redisCache) BatchDelete(ctx context.Context, jtis []string) error {
 
 const InvalidCnt = -1
 
+// IncrIPCnt 增加 IP 访问计数并返回当前计数
 func (r *redisCache) IncrIPCnt(ctx context.Context, ip string, duration time.Duration) (int64, error) {
 	key := "ratelimit" + ip
 	// 搭建管道
@@ -189,4 +166,14 @@ func (r *redisCache) IncrIPCnt(ctx context.Context, ip string, duration time.Dur
 	currCnt := incr.Val()
 
 	return currCnt, nil
+}
+
+/** ====================================================================================
+ * 🏁 CleanTestCache
+ * =====================================================================================
+ */
+
+func (r *redisCache) CleanTestCache(t *testing.T) {
+	err := r.client.FlushDB(context.Background()).Err()
+	require.NoError(t, err, "清理 Redis 测试缓存失败")
 }

@@ -8,6 +8,7 @@ import (
 	context "context"
 	sql "database/sql"
 	reflect "reflect"
+	testing "testing"
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
@@ -49,6 +50,18 @@ func (m *MockStore) BlockSessionsByIDs(arg0 context.Context, arg1 []string) erro
 func (mr *MockStoreMockRecorder) BlockSessionsByIDs(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BlockSessionsByIDs", reflect.TypeOf((*MockStore)(nil).BlockSessionsByIDs), arg0, arg1)
+}
+
+// CleanTestStore mocks base method.
+func (m *MockStore) CleanTestStore(arg0 *testing.T) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "CleanTestStore", arg0)
+}
+
+// CleanTestStore indicates an expected call of CleanTestStore.
+func (mr *MockStoreMockRecorder) CleanTestStore(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CleanTestStore", reflect.TypeOf((*MockStore)(nil).CleanTestStore), arg0)
 }
 
 // Close mocks base method.

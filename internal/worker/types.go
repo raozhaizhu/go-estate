@@ -79,7 +79,7 @@ const TaskDeleteSessions = "cache:delete_sessions"
  * =====================================================================================
  */
 
-// 4. 实现接口方法
+// DistributeTaskDeleteSessions 分配删除会话任务
 func (distributor *redisTaskDistributor) DistributeTaskDeleteSessions(ctx context.Context, jtis []string) error {
 	// 如果传入切片为空，直接返回
 	if len(jtis) == 0 {

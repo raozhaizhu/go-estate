@@ -680,7 +680,7 @@
             "properties": {
                 "avatar_key": {
                     "type": "string",
-                    "example": "avatars/default_avatar.png"
+                    "example": "default_avatar.png"
                 },
                 "role": {
                     "allOf": [
@@ -701,7 +701,7 @@
             "properties": {
                 "avatar_key": {
                     "type": "string",
-                    "example": "avatars/default_avatar.png"
+                    "example": "default_avatar.png"
                 },
                 "email": {
                     "type": "string",
@@ -957,9 +957,9 @@
                 "username"
             ],
             "properties": {
-                "avatar": {
+                "avatar_key": {
                     "type": "string",
-                    "example": "avatars/default_avatar.png"
+                    "example": "default_avatar.png"
                 },
                 "email": {
                     "type": "string",

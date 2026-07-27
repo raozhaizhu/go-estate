@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS `users`(
         `username` VARCHAR(50) UNIQUE NOT NULL,
         `hashed_password` VARCHAR(255) NOT NULL,
         `email` VARCHAR(100) UNIQUE NOT NULL,
-        `avatar_key` VARCHAR(255) NOT NULL DEFAULT "avatars/default_avatar.png",
+        `avatar_key` VARCHAR(255) NOT NULL DEFAULT "default_avatar.png",
         -- 身份类型: 1.(注册用户,User, 默认); 2.(Vip, 会员); 3.( Admin, 管理员)
         `role` SMALLINT NOT NULL DEFAULT 1,
         -- 2. 时间字段

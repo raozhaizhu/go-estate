@@ -23,7 +23,7 @@ definitions:
   github_com_raozhaizhu_go-estate_internal_service_auth.UserInfo:
     properties:
       avatar_key:
-        example: avatars/default_avatar.png
+        example: default_avatar.png
         type: string
       role:
         allOf:
@@ -36,7 +36,7 @@ definitions:
   github_com_raozhaizhu_go-estate_internal_service_user.DTO:
     properties:
       avatar_key:
-        example: avatars/default_avatar.png
+        example: default_avatar.png
         type: string
       email:
         example: Bob@test.com
@@ -211,8 +211,8 @@ definitions:
     type: object
   internal_controller_user.CreateUserRequest:
     properties:
-      avatar:
-        example: avatars/default_avatar.png
+      avatar_key:
+        example: default_avatar.png
         type: string
       email:
         example: Bob@test.com

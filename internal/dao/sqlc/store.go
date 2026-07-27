@@ -4,13 +4,17 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 type Store interface {
 	Querier
 	ExecTx(ctx context.Context, fn func(q Querier) error) error
 	Close() error
+	CleanTestStore(t *testing.T)
 }
 
 type SQLStore struct {
@@ -73,4 +77,24 @@ func (s *SQLStore) Close() error {
 		return s.db.Close()
 	}
 	return nil
+}
+
+// CleanTestStore 清理测试数据库
+func (srv *SQLStore) CleanTestStore(t *testing.T) {
+	dbConn := srv.db
+
+	// 1. 关闭外键检查
+	_, err := dbConn.Exec("SET FOREIGN_KEY_CHECKS = 0;")
+	require.NoError(t, err, "关闭外键检查失败")
+
+	// 2. 清空相关表
+	_, err = dbConn.Exec("TRUNCATE TABLE users;")
+	require.NoError(t, err, "清空 users 表失败")
+
+	_, err = dbConn.Exec("TRUNCATE TABLE sessions;")
+	require.NoError(t, err, "清空 sessions 表失败")
+
+	// 3. 恢复外键检查
+	_, err = dbConn.Exec("SET FOREIGN_KEY_CHECKS = 1;")
+	require.NoError(t, err, "恢复外键检查失败")
 }

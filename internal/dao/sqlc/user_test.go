@@ -21,10 +21,14 @@ import (
 
 // TestCreateUser 测试CreateUser/GetUser, 能正常创建用户, 且用户信息和预期一致
 func TestCreateGetUser(t *testing.T) {
+	defer testStore.CleanTestStore(t)
+
 	testUtil.CreateRandomUser(t, testStore)
 }
 
 func TestUpdateUser(t *testing.T) {
+	defer testStore.CleanTestStore(t)
+
 	// 初始化更新信息
 	originUser := testUtil.CreateRandomUser(t, testStore)
 	password := util.RandomPassword()
@@ -69,6 +73,8 @@ func TestUpdateUser(t *testing.T) {
 
 // TestUserNameDuplicate 基于重复用户名创建用户
 func TestUserNameDuplicate(t *testing.T) {
+	defer testStore.CleanTestStore(t)
+
 	// 创建用户
 	username := util.RandomUsername()
 	password := util.RandomPassword()
@@ -85,6 +91,8 @@ func TestUserNameDuplicate(t *testing.T) {
 
 // TestEmailDuplicate 基于重复Email 创建用户
 func TestEmailDuplicate(t *testing.T) {
+	defer testStore.CleanTestStore(t)
+
 	// 创建用户
 	username := util.RandomUsername()
 	password := util.RandomPassword()
@@ -102,6 +110,8 @@ func TestEmailDuplicate(t *testing.T) {
 
 // TestGetNonExistentUser 查询不存在的用户
 func TestGetNonExistentUser(t *testing.T) {
+	defer testStore.CleanTestStore(t)
+
 	username := util.RandomUsername()
 	user, err := testStore.GetUser(context.Background(), username)
 	require.Error(t, err)

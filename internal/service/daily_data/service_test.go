@@ -61,7 +61,7 @@ func TestGetDataByDay(t *testing.T) {
 			defer ctrl.Finish()
 
 			storeMock := mock_db.NewMockStore(ctrl)
-			deps := app.Deps{
+			deps := &app.Deps{
 				Store: storeMock,
 			}
 			svc := New(deps)
@@ -157,7 +157,7 @@ func TestGetDataByPeriod(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockStore := mock_db.NewMockStore(ctrl)
-			deps := app.Deps{
+			deps := &app.Deps{
 				Store: mockStore,
 			}
 			svc := New(deps)
@@ -203,7 +203,7 @@ func TestGGetAllData(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockStore := mock_db.NewMockStore(ctrl)
-			deps := app.Deps{
+			deps := &app.Deps{
 				Store: mockStore,
 			}
 			svc := New(deps)

@@ -2,11 +2,14 @@ package objectStore
 
 import (
 	"context"
+	"slices"
+	"testing"
 	"time"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
+	"github.com/stretchr/testify/require"
 )
 
 /** ====================================================================================
@@ -29,6 +32,31 @@ func SetupMinIO(endpoint, accessKeyID, accessKey string) (StorageService, error)
 	}
 
 	return m, nil
+}
+
+// CleanTestObjectStore 清理面向对象数据库
+func (m *MinioStorage) CleanTestObjectStore(t *testing.T) {
+	// 配置清理桶,保护文件,选项
+	bucketsToClean := []string{AvatarBucketName}
+	keysToProtect := []string{DefaultAvatarKey}
+	opts := minio.ListObjectsOptions{Recursive: true}
+	removeOpts := minio.RemoveObjectOptions{}
+
+	// 遍历所有桶,清理非保护文件
+	for _, bucket := range bucketsToClean {
+		// 获取清理对象频道
+		objectCh := m.client.ListObjects(context.Background(), bucket, opts)
+		// 逐个清理非保护对象
+		for object := range objectCh {
+			require.NoError(t, object.Err, "遍历文件时出现错误,桶名: %s", bucket)
+			objectKey := object.Key
+			if slices.Contains(keysToProtect, objectKey) {
+				continue
+			}
+			err := m.client.RemoveObject(context.Background(), bucket, objectKey, removeOpts)
+			require.NoError(t, err, "删除文件时出现错误,对象名: %s, 桶名: %s", objectKey, bucket)
+		}
+	}
 }
 
 // EnsureFileExists 确认文件是否存在
