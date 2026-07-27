@@ -38,13 +38,15 @@ sqlc_gen:
 	sqlc generate
 # mock
 mock:
+	mkdir -p $(PKG_DIR)/object_store/mock && \
 	mockgen -destination=$(DB_DIR)/mock/store.go -package=mock_db $(PROJECT_INTERNAL_PATH)/dao/sqlc Store && \
 	mockgen -destination=$(DB_DIR)/mock/cache.go -package=mock_db $(PROJECT_INTERNAL_PATH)/dao/cache Cache && \
 	mockgen -destination=$(DAILY_DATA_CONTROLLER_DIR)/mock/controller.go -package=mock_controller $(DAILY_DATA_CONTROLLER_PATH) Service && \
 	mockgen -destination=$(USER_CONTROLLER_DIR)/mock/controller.go -package=mock_controller $(USER_CONTROLLER_PATH) Service && \
 	mockgen -destination=$(AUTH_CONTROLLER_DIR)/mock/controller.go -package=mock_controller $(AUTH_CONTROLLER_PATH) Service && \
 	mockgen -source=internal/worker/types.go -destination=internal/worker/mock/task_distributor.go -package=mock_worker && \
-	mockgen -destination=$(PKG_DIR)/token/mock/maker.go -package=mock_token $(MAKER_PATH) Maker
+	mockgen -destination=$(PKG_DIR)/token/mock/maker.go -package=mock_token $(MAKER_PATH) Maker && \
+	mockgen -destination=$(PKG_DIR)/object_store/mock/storage_service.go -package=mock_object_store $(PROJECT_PATH)/pkg/object_store StorageService
 # test
 test:
 	gotestsum --format dots --no-summary=output

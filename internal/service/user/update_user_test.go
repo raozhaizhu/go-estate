@@ -16,6 +16,8 @@ import (
 	"github.com/raozhaizhu/go-estate/internal/util"
 	mock_worker "github.com/raozhaizhu/go-estate/internal/worker/mock"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
+	objectStore "github.com/raozhaizhu/go-estate/pkg/object_store"
+	mock_object_store "github.com/raozhaizhu/go-estate/pkg/object_store/mock"
 	"github.com/raozhaizhu/go-estate/pkg/token"
 	mock_token "github.com/raozhaizhu/go-estate/pkg/token/mock"
 	"github.com/stretchr/testify/assert"
@@ -34,6 +36,16 @@ func TestUpdateUser(t *testing.T) {
 		Username: username,
 		Password: &password,
 		Email:    &email,
+	}
+	emailOnlyInput := user.UpdateUserInput{
+		Username: username,
+		Email:    &email,
+	}
+	avatarKey := "uploaded-avatar.png"
+	avatarInput := user.UpdateUserInput{
+		Username:  username,
+		Email:     &email,
+		AvatarKey: &avatarKey,
 	}
 	correctDBUser := db.User{
 		Username: username,
@@ -145,12 +157,61 @@ func TestUpdateUser(t *testing.T) {
 			expectedErr:   appError.ErrAuthPermissionDenied,
 		},
 		{
+			name:       "更新不存在的头像",
+			input:      avatarInput,
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+				storeMock.EXPECT().UpdateUser(gomock.Any(), gomock.Any()).Times(0)
+			},
+			buildObjectStoreStubs: func(objectStoreMock *mock_object_store.MockStorageService) {
+				objectStoreMock.EXPECT().EnsureFileExists(gomock.Any(), objectStore.AvatarBucketName, avatarKey).
+					Return(appError.ErrFileNotFound).Times(1)
+			},
+			action:        defaultAction,
+			checkResponse: failCheckResponse,
+			expectedErr:   appError.ErrFileNotFound,
+		},
+		{
+			name:       "只更新邮箱和头像成功",
+			input:      avatarInput,
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+				storeMock.EXPECT().UpdateUser(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(ctx context.Context, arg db.UpdateUserParams) (sql.Result, error) {
+						require.Equal(t, username, arg.Username)
+						require.Equal(t, avatarKey, arg.AvatarKey.String)
+						require.True(t, arg.AvatarKey.Valid)
+						require.False(t, arg.HashedPassword.Valid)
+						return mockResult{rowsAffected: 1}, nil
+					}).Times(1)
+				storeMock.EXPECT().GetUser(gomock.Any(), username).Return(correctDBUser, nil).Times(1)
+			},
+			buildObjectStoreStubs: func(objectStoreMock *mock_object_store.MockStorageService) {
+				objectStoreMock.EXPECT().EnsureFileExists(gomock.Any(), objectStore.AvatarBucketName, avatarKey).
+					Return(nil).Times(1)
+			},
+			action:        defaultAction,
+			buildCtx:      buildCorrectCtx,
+			checkResponse: successCheckResponse,
+		},
+		{
 			name:  "更新用户时发生内部错误",
 			input: correctUserInput,
 			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				stubExecTxSuccess(storeMock)
 				storeMock.EXPECT().UpdateUser(gomock.Any(), gomock.Any()).
 					Return(nil, appError.ErrServerErr.WithErr(fmt.Errorf("更新用户时发生内部错误"))).Times(1)
+			},
+			action:        defaultAction,
+			buildCtx:      buildCorrectCtx,
+			checkResponse: failCheckResponse,
+			expectedErr:   appError.ErrServerErr,
+		},
+		{
+			name:  "读取受影响行数时发生错误",
+			input: correctUserInput,
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+				stubExecTxSuccess(storeMock)
+				storeMock.EXPECT().UpdateUser(gomock.Any(), gomock.Any()).
+					Return(mockResult{rowsAffectedErr: fmt.Errorf("rows affected failed")}, nil).Times(1)
 			},
 			action:        defaultAction,
 			buildCtx:      buildCorrectCtx,
@@ -169,6 +230,18 @@ func TestUpdateUser(t *testing.T) {
 			buildCtx:      buildCorrectCtx,
 			checkResponse: failCheckResponse,
 			expectedErr:   appError.ErrUserNotFound,
+		},
+		{
+			name:  "只更新邮箱时邮箱重复",
+			input: emailOnlyInput,
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+				storeMock.EXPECT().UpdateUser(gomock.Any(), gomock.Any()).
+					Return(nil, db.ErrEmailDuplicate).Times(1)
+			},
+			action:        defaultAction,
+			buildCtx:      buildCorrectCtx,
+			checkResponse: failCheckResponse,
+			expectedErr:   appError.ErrEmailAlreadyExits,
 		},
 		{
 			name:  "获取用户活跃会话时发生内部错误",

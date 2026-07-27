@@ -15,9 +15,8 @@ import (
 	"github.com/raozhaizhu/go-estate/internal/service/user"
 	"github.com/raozhaizhu/go-estate/internal/util"
 	mock_worker "github.com/raozhaizhu/go-estate/internal/worker/mock"
-	objectStore "github.com/raozhaizhu/go-estate/pkg/object_store"
+	mock_object_store "github.com/raozhaizhu/go-estate/pkg/object_store/mock"
 	mock_token "github.com/raozhaizhu/go-estate/pkg/token/mock"
-	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -42,6 +41,8 @@ type testCase struct {
 	input interface{}
 	// db,cache埋桩
 	buildStubs func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker)
+	// 对象存储埋桩
+	buildObjectStoreStubs func(objectStoreMock *mock_object_store.MockStorageService)
 	// 注入上下文
 	buildCtx func() context.Context
 	// action 执行动作
@@ -63,15 +64,14 @@ func runTC(t *testing.T, testCases []testCase) {
 			cacheMock := mock_db.NewMockCache(ctrl)
 			distributorMock := mock_worker.NewMockTaskDistributor(ctrl)
 			tokenMakerMock := mock_token.NewMockMaker(ctrl)
-			objectStore, err := objectStore.SetupMinIO(testConfig.MinioEndpoint, testConfig.MinioAccessKeyID, testConfig.MinioSecretAccessKey)
-			require.NoError(t, err)
+			objectStoreMock := mock_object_store.NewMockStorageService(ctrl)
 			asyncGo := func(ctx context.Context, logger *slog.Logger, name string, timeout time.Duration, fn func(ctx context.Context)) {
 				fn(ctx)
 			}
 			deps := &app.Deps{
 				Store:       storeMock,
 				Cache:       cacheMock,
-				ObjectStore: objectStore,
+				ObjectStore: objectStoreMock,
 				Config:      testConfig,
 				TokenMaker:  tokenMakerMock,
 				Distributor: distributorMock,
@@ -82,6 +82,9 @@ func runTC(t *testing.T, testCases []testCase) {
 			svc := user.New(deps)
 			// 数据库埋桩
 			tc.buildStubs(storeMock, cacheMock, distributorMock, tokenMakerMock)
+			if tc.buildObjectStoreStubs != nil {
+				tc.buildObjectStoreStubs(objectStoreMock)
+			}
 			// 注入上下文
 			ctx := context.Background()
 			if tc.buildCtx != nil {
@@ -96,7 +99,8 @@ func runTC(t *testing.T, testCases []testCase) {
 }
 
 type mockResult struct {
-	rowsAffected int64
+	rowsAffected    int64
+	rowsAffectedErr error
 }
 
 func (m mockResult) LastInsertId() (int64, error) {
@@ -104,5 +108,5 @@ func (m mockResult) LastInsertId() (int64, error) {
 }
 
 func (m mockResult) RowsAffected() (int64, error) {
-	return m.rowsAffected, nil
+	return m.rowsAffected, m.rowsAffectedErr
 }
