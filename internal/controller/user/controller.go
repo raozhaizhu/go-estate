@@ -202,7 +202,7 @@ func (ctrl *Controller) GetAvatarUploadUrl(c *gin.Context) (interface{}, error) 
 	}
 
 	// 生成数据结构
-	dto := AvatarUploadData{
+	dto := &AvatarUploadData{
 		PostUrl:   postUrl,
 		FormData:  formData,
 		ObjectKey: objectKey,

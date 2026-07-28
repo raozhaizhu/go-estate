@@ -135,7 +135,7 @@ func (input *UpdateUserInput) ToDBParams() (db.UpdateUserParams, error) {
 	if input.Email != nil {
 		params.Email = sql.NullString{String: *input.Email, Valid: true}
 	}
-
+	// 更新头像交给 svc
 	return params, nil
 }
 

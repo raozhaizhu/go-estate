@@ -11,6 +11,7 @@ import (
 	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
 	role "github.com/raozhaizhu/go-estate/internal/domain/user"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
+	ctxKey "github.com/raozhaizhu/go-estate/pkg/ctx_key"
 )
 
 /** ====================================================================================
@@ -26,11 +27,6 @@ const (
 	TokenTypeAccessToken = 1
 	// TokenTypeRefreshToken 刷新令牌(长期使用)
 	TokenTypeRefreshToken = 2
-
-	// PayloadKey SetKey, 用于从 Context 中提取 payload
-	PayloadKey = "authorization_payload"
-	// RefreshTokenKey 用于从 Cookie 中提取 refresh_token
-	RefreshTokenKey = "refresh_token"
 )
 
 // Payload 令牌荷载
@@ -148,7 +144,7 @@ func (p *Payload) GetAudience() (jwt.ClaimStrings, error) {
 // GetPayload 从上下文中获取荷载
 func GetPayload(ctx context.Context) (*Payload, error) {
 	// 提取 payload
-	val := ctx.Value(PayloadKey)
+	val := ctx.Value(ctxKey.CtxKeyPayload)
 
 	// 提取失败, 返回错误
 	if val == nil {
@@ -161,5 +157,5 @@ func GetPayload(ctx context.Context) (*Payload, error) {
 }
 
 func WithPayload(ctx context.Context, payload *Payload) context.Context {
-	return context.WithValue(ctx, PayloadKey, payload)
+	return context.WithValue(ctx, ctxKey.CtxKeyPayload, payload)
 }

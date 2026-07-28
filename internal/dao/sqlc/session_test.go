@@ -1,4 +1,4 @@
-//go:build integration
+// go:build integration
 
 package db_test
 
@@ -8,6 +8,7 @@ import (
 	"time"
 
 	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
+	userDomain "github.com/raozhaizhu/go-estate/internal/domain/user"
 	testUtil "github.com/raozhaizhu/go-estate/internal/test_util"
 	"github.com/raozhaizhu/go-estate/internal/util"
 	"github.com/stretchr/testify/require"
@@ -17,7 +18,7 @@ import (
 func TestCreateGetSession_Success(t *testing.T) {
 	defer testStore.CleanTestStore(t)
 
-	user := testUtil.CreateRandomUser(t, testStore)
+	user, _ := testUtil.CreateRandomUser(t, testStore, userDomain.RoleUser, "")
 	deviceID := testUtil.DeviceID
 	createThenGetSessionByUser(t, user, deviceID)
 }
@@ -63,7 +64,7 @@ func TestGetActiveSessionIDsByUserDevice_Success(t *testing.T) {
 	defer testStore.CleanTestStore(t)
 
 	// arrange
-	user := testUtil.CreateRandomUser(t, testStore)
+	user, _ := testUtil.CreateRandomUser(t, testStore, userDomain.RoleUser, "")
 	deviceID := testUtil.DeviceID
 	session1 := createThenGetSessionByUser(t, user, deviceID)
 	session2 := createThenGetSessionByUser(t, user, deviceID)
@@ -83,8 +84,8 @@ func TestBlockSessionsByIDs_Success(t *testing.T) {
 	defer testStore.CleanTestStore(t)
 
 	// arrange
-	user1 := testUtil.CreateRandomUser(t, testStore)
-	user2 := testUtil.CreateRandomUser(t, testStore)
+	user1, _ := testUtil.CreateRandomUser(t, testStore, userDomain.RoleUser, "")
+	user2, _ := testUtil.CreateRandomUser(t, testStore, userDomain.RoleUser, "")
 	deviceID := testUtil.DeviceID
 	session1 := createThenGetSessionByUser(t, user1, deviceID)
 	session2 := createThenGetSessionByUser(t, user2, deviceID)

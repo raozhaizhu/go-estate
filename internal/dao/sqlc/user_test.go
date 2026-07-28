@@ -1,4 +1,4 @@
-//go:build integration
+// go:build integration
 
 package db_test
 
@@ -9,6 +9,7 @@ import (
 	"time"
 
 	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
+	userDomain "github.com/raozhaizhu/go-estate/internal/domain/user"
 	testUtil "github.com/raozhaizhu/go-estate/internal/test_util"
 	"github.com/raozhaizhu/go-estate/internal/util"
 	"github.com/stretchr/testify/require"
@@ -23,14 +24,14 @@ import (
 func TestCreateGetUser(t *testing.T) {
 	defer testStore.CleanTestStore(t)
 
-	testUtil.CreateRandomUser(t, testStore)
+	testUtil.CreateRandomUser(t, testStore, userDomain.RoleUser, "")
 }
 
 func TestUpdateUser(t *testing.T) {
 	defer testStore.CleanTestStore(t)
 
 	// 初始化更新信息
-	originUser := testUtil.CreateRandomUser(t, testStore)
+	originUser, _ := testUtil.CreateRandomUser(t, testStore, userDomain.RoleUser, "")
 	password := util.RandomPassword()
 	hashedPassword, err := util.HashPassword(password)
 	require.NoError(t, err)
@@ -79,8 +80,8 @@ func TestUserNameDuplicate(t *testing.T) {
 	username := util.RandomUsername()
 	password := util.RandomPassword()
 
-	params := testUtil.PrepareCreateUserParams(t, username, password)
-	testUtil.CreateSpecificUser(t, username, password, testStore)
+	params := testUtil.PrepareCreateUserParams(t, username, password, userDomain.RoleUser, "")
+	testUtil.CreateSpecificUser(t, username, password, testStore, userDomain.RoleUser, "")
 
 	// 尝试重复创建用户
 	result, err := testStore.CreateUser(context.Background(), params)
@@ -97,8 +98,8 @@ func TestEmailDuplicate(t *testing.T) {
 	username := util.RandomUsername()
 	password := util.RandomPassword()
 
-	params := testUtil.PrepareCreateUserParams(t, username, password)
-	testUtil.CreateSpecificUser(t, username, password, testStore)
+	params := testUtil.PrepareCreateUserParams(t, username, password, userDomain.RoleUser, "")
+	testUtil.CreateSpecificUser(t, username, password, testStore, userDomain.RoleUser, "")
 
 	// 尝试用相同的 email 创建用户
 	params.Username = util.RandomUsername() // 使用不同的用户名, 保持其他信息不变

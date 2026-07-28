@@ -16,6 +16,7 @@ import (
 	"github.com/raozhaizhu/go-estate/internal/util"
 	mock_worker "github.com/raozhaizhu/go-estate/internal/worker/mock"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
+	ctxKey "github.com/raozhaizhu/go-estate/pkg/ctx_key"
 	objectStore "github.com/raozhaizhu/go-estate/pkg/object_store"
 	mock_object_store "github.com/raozhaizhu/go-estate/pkg/object_store/mock"
 	"github.com/raozhaizhu/go-estate/pkg/token"
@@ -74,10 +75,10 @@ func TestUpdateUser(t *testing.T) {
 		return []interface{}{dto}, err
 	}
 	buildCorrectCtx := func() context.Context {
-		return context.WithValue(context.Background(), token.PayloadKey, correctUserPayload)
+		return context.WithValue(context.Background(), ctxKey.CtxKeyPayload, correctUserPayload)
 	}
 	buildOtherUserCtx := func() context.Context {
-		return context.WithValue(context.Background(), token.PayloadKey, otherUserPayload)
+		return context.WithValue(context.Background(), ctxKey.CtxKeyPayload, otherUserPayload)
 	}
 	failCheckResponse := func(t *testing.T, results []interface{}, actualErr, expectedErr error) {
 		require.Error(t, actualErr)

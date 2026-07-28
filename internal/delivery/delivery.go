@@ -20,14 +20,6 @@ import (
 	ginprometheus "github.com/zsais/go-gin-prometheus"
 )
 
-// 定义全局版本路由
-const (
-	CurrAPI      = "/api/v1"
-	AuthAPI      = CurrAPI + "/auth"
-	UserAPI      = CurrAPI + "/user"
-	DailyDataAPI = CurrAPI + "/daily_data"
-)
-
 type Services struct {
 	UserSvc      userController.Service
 	AuthSvc      auth.Service

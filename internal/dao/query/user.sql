@@ -9,11 +9,14 @@ INSERT INTO
         )
 VALUES
         (
-                ?,
-                ?,
-                ?,
-                COALESCE(sqlc.narg(avatar_key), 1),
-                COALESCE(sqlc.narg(role), 1)
+                sqlc.arg(username),
+                sqlc.arg(hashed_password),
+                sqlc.arg(email),
+                CASE
+                        WHEN sqlc.arg(avatar_key) = '' THEN 'default_avatar.png'
+                        ELSE sqlc.arg(avatar_key)
+                END,
+                COALESCE(sqlc.arg(role), 1)
         );
 
 -- name: GetUser :one

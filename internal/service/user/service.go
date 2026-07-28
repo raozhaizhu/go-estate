@@ -81,7 +81,7 @@ func (svc *service) UpdateUser(ctx context.Context, input UpdateUserInput) (*DTO
 		return nil, err
 	}
 
-	// 校验头像
+	// 校验头像, 若存在则更新
 	if input.AvatarKey != nil {
 		err = svc.objectStore.EnsureFileExists(ctx, objectStore.AvatarBucketName, *input.AvatarKey)
 		if err != nil {

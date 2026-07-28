@@ -991,6 +991,10 @@ const docTemplate = `{
                 "username"
             ],
             "properties": {
+                "avatar_key": {
+                    "type": "string",
+                    "example": "default_avatar.png"
+                },
                 "email": {
                     "type": "string",
                     "example": "Bob@test.com"

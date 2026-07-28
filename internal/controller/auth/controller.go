@@ -8,6 +8,7 @@ import (
 
 	response "github.com/raozhaizhu/go-estate/pkg/api"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
+	ctxKey "github.com/raozhaizhu/go-estate/pkg/ctx_key"
 	"github.com/raozhaizhu/go-estate/pkg/token"
 )
 
@@ -62,7 +63,7 @@ func (ctrl *controller) Login(c *gin.Context) (interface{}, error) {
 // TODO 设置 env 里的 production_mode
 func (ctrl *controller) setRefreshTokenCookie(c *gin.Context, refreshToken string) {
 	c.SetCookie(
-		token.RefreshTokenKey,               // key
+		string(ctxKey.CtxKeyRefreshToken),   // key
 		refreshToken,                        // value
 		int(ctrl.refreshDuration.Seconds()), // maxAge
 		domain.RefreshPath,                  // path 只有在访问这个路径的时候才会发送该 cookie
@@ -90,7 +91,7 @@ func (ctrl *controller) setRefreshTokenCookie(c *gin.Context, refreshToken strin
 // @Router       /api/v1/auth/refresh [post]
 func (ctrl *controller) Refresh(c *gin.Context) (interface{}, error) {
 	// 从 cookie 获取刷新令牌
-	refreshTokenStr, err := c.Cookie(token.RefreshTokenKey)
+	refreshTokenStr, err := c.Cookie(string(ctxKey.CtxKeyRefreshToken))
 	if err != nil { // 刷新令牌不存在, 返错
 		return nil, appError.ErrCookieNoRefreshToken
 	}
@@ -125,15 +126,15 @@ func (ctrl *controller) Refresh(c *gin.Context) (interface{}, error) {
 // @Failure      500  {object}  response.ServerErrorResult          "服务器内部错误 (HTTP 返回 500, code: 500xx)"
 // @Router       /api/v1/auth/logout [post]
 func (ctrl *controller) Logout(c *gin.Context) (interface{}, error) {
-	// 获取荷载
-	payload, err := token.GetPayload(c)
+	// 提取上下文
+	ctx := c.Request.Context()
+	meta, err := middleware.GetCtxClientMeta(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// 提取上下文
-	ctx := c.Request.Context()
-	meta, err := middleware.GetCtxClientMeta(ctx)
+	// 获取荷载
+	payload, err := token.GetPayload(ctx)
 	if err != nil {
 		return nil, err
 	}

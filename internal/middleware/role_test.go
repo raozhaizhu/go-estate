@@ -16,6 +16,7 @@ import (
 	"github.com/raozhaizhu/go-estate/internal/middleware"
 	response "github.com/raozhaizhu/go-estate/pkg/api"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
+	ctxKey "github.com/raozhaizhu/go-estate/pkg/ctx_key"
 	"github.com/raozhaizhu/go-estate/pkg/token"
 	mock_token "github.com/raozhaizhu/go-estate/pkg/token/mock"
 	"github.com/stretchr/testify/assert"
@@ -52,7 +53,7 @@ func TestRole(t *testing.T) {
 
 		// 挂载临时中间件, 往 ctx 注入 payload
 		router.Use(func(c *gin.Context) {
-			c.Set(token.PayloadKey, accessUserPayload)
+			c.Set(ctxKey.CtxKeyPayload, accessUserPayload)
 			c.Next()
 		})
 		//  挂载 Role 中间件
@@ -73,7 +74,7 @@ func TestRole(t *testing.T) {
 
 		// 挂载临时中间件, 往 ctx 注入 payload
 		router.Use(func(c *gin.Context) {
-			c.Set(token.PayloadKey, accessUserPayload)
+			c.Set(ctxKey.CtxKeyPayload, accessUserPayload)
 			c.Next()
 		})
 		//  挂载 Role 中间件

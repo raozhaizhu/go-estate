@@ -16,6 +16,7 @@ import (
 	testUtil "github.com/raozhaizhu/go-estate/internal/test_util"
 	response "github.com/raozhaizhu/go-estate/pkg/api"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
+	ctxKey "github.com/raozhaizhu/go-estate/pkg/ctx_key"
 	"github.com/raozhaizhu/go-estate/pkg/token"
 	mock_token "github.com/raozhaizhu/go-estate/pkg/token/mock"
 	"github.com/stretchr/testify/assert"
@@ -80,7 +81,7 @@ func TestAuth(t *testing.T) {
 		assert.Equal(t, expectedBizCode, results.Code)
 		assert.Equal(t, expectedMsg, results.Msg)
 		// 校验上下文
-		payload, ok := ctx.Get(token.PayloadKey)
+		payload, ok := ctx.Get(ctxKey.CtxKeyPayload)
 		assert.True(t, ok)
 		assert.Equal(t, accessPayload, payload)
 	}
