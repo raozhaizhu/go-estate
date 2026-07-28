@@ -11,7 +11,7 @@ import (
 	"github.com/raozhaizhu/go-estate/internal/domain/app"
 	dailyData "github.com/raozhaizhu/go-estate/internal/domain/daily_data"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetDataByDay(t *testing.T) {
@@ -36,9 +36,9 @@ func TestGetDataByDay(t *testing.T) {
 			inputDate:  invalidDate,
 			buildStubs: func(store *mock_db.MockStore) {}, // 直接拦截, 不触及数据库
 			checkResponse: func(t *testing.T, res []db.DailyDatum, err error) {
-				assert.Error(t, err)
-				assert.ErrorIs(t, err, appError.ErrTimeOutOfRange)
-				assert.Empty(t, res)
+				require.Error(t, err)
+				require.ErrorIs(t, err, appError.ErrTimeOutOfRange)
+				require.Empty(t, res)
 			},
 		},
 		{
@@ -48,9 +48,9 @@ func TestGetDataByDay(t *testing.T) {
 				store.EXPECT().GetDataByDay(gomock.Any(), validDate).Return(dummyData, nil).Times(1)
 			},
 			checkResponse: func(t *testing.T, res []db.DailyDatum, err error) {
-				assert.NoError(t, err)
-				assert.Len(t, res, 1)
-				assert.Equal(t, int32(1), res[0].ID)
+				require.NoError(t, err)
+				require.Len(t, res, 1)
+				require.Equal(t, int32(1), res[0].ID)
 			},
 		},
 	}
@@ -100,9 +100,9 @@ func TestGetDataByPeriod(t *testing.T) {
 			inputDate:  db.GetDataByPeriodParams{StartDate: invalidEndDate, EndDate: validStartDate},
 			buildStubs: func(store *mock_db.MockStore) {}, // 直接拦截, 不触及数据库
 			checkResponse: func(t *testing.T, res []db.DailyDatum, err error) {
-				assert.Error(t, err)
-				assert.ErrorIs(t, err, appError.ErrBadTimerOrder)
-				assert.Empty(t, res)
+				require.Error(t, err)
+				require.ErrorIs(t, err, appError.ErrBadTimerOrder)
+				require.Empty(t, res)
 			},
 		},
 		{
@@ -110,9 +110,9 @@ func TestGetDataByPeriod(t *testing.T) {
 			inputDate:  db.GetDataByPeriodParams{StartDate: validStartDate, EndDate: invalidEndDate},
 			buildStubs: func(store *mock_db.MockStore) {}, // 直接拦截, 不触及数据库
 			checkResponse: func(t *testing.T, res []db.DailyDatum, err error) {
-				assert.Error(t, err)
-				assert.ErrorIs(t, err, appError.ErrTimeOutOfRange)
-				assert.Empty(t, res)
+				require.Error(t, err)
+				require.ErrorIs(t, err, appError.ErrTimeOutOfRange)
+				require.Empty(t, res)
 			},
 		},
 		{
@@ -120,9 +120,9 @@ func TestGetDataByPeriod(t *testing.T) {
 			inputDate:  db.GetDataByPeriodParams{StartDate: invalidStartDate, EndDate: validEndDate},
 			buildStubs: func(store *mock_db.MockStore) {}, // 直接拦截, 不触及数据库
 			checkResponse: func(t *testing.T, res []db.DailyDatum, err error) {
-				assert.Error(t, err)
-				assert.ErrorIs(t, err, appError.ErrTimeOutOfRange)
-				assert.Empty(t, res)
+				require.Error(t, err)
+				require.ErrorIs(t, err, appError.ErrTimeOutOfRange)
+				require.Empty(t, res)
 			},
 		},
 		{
@@ -130,9 +130,9 @@ func TestGetDataByPeriod(t *testing.T) {
 			inputDate:  db.GetDataByPeriodParams{StartDate: invalidStartDate, EndDate: invalidEndDate},
 			buildStubs: func(store *mock_db.MockStore) {}, // 直接拦截, 不触及数据库
 			checkResponse: func(t *testing.T, res []db.DailyDatum, err error) {
-				assert.Error(t, err)
-				assert.ErrorIs(t, err, appError.ErrTimeOutOfRange)
-				assert.Empty(t, res)
+				require.Error(t, err)
+				require.ErrorIs(t, err, appError.ErrTimeOutOfRange)
+				require.Empty(t, res)
 			},
 		},
 		{
@@ -144,9 +144,9 @@ func TestGetDataByPeriod(t *testing.T) {
 					Return(dummyData, nil).Times(1)
 			},
 			checkResponse: func(t *testing.T, res []db.DailyDatum, err error) {
-				assert.NoError(t, err)
-				assert.Len(t, res, 1)
-				assert.Equal(t, int32(1), res[0].ID)
+				require.NoError(t, err)
+				require.Len(t, res, 1)
+				require.Equal(t, int32(1), res[0].ID)
 			},
 		},
 	}
@@ -190,9 +190,9 @@ func TestGGetAllData(t *testing.T) {
 				store.EXPECT().GetAllData(gomock.Any()).Return(dummyData, nil).Times(1)
 			},
 			checkResponse: func(t *testing.T, res []db.DailyDatum, err error) {
-				assert.NoError(t, err)
-				assert.Len(t, res, 1)
-				assert.Equal(t, int32(1), res[0].ID)
+				require.NoError(t, err)
+				require.Len(t, res, 1)
+				require.Equal(t, int32(1), res[0].ID)
 			},
 		},
 	}

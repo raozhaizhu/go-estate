@@ -48,7 +48,7 @@ jobs:
         run: |
           echo "Waiting for DB migration to finish..."
           MIG_STATUS=$(docker wait go-estate-migration)
-          if [ "$MIG_STATUS" -ne 0]; then
+          if [ "$MIG_STATUS" -ne 0 ]; then
             echo "DB Migration Failed"
             docker logs go-estate-migration
             exit 1
@@ -61,7 +61,7 @@ jobs:
       - name: Run Integration Tests
         env:
           DB_SOURCE: "root:123456@tcp(127.0.0.1:3306)/go_estate?parseTime=true"
-        run: go test -v -tags=integration ./...
+        run: go test -v -p 1 -tags=integration ./...
 
       - name: Clean up
         if: always()

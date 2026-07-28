@@ -12,7 +12,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	dailyDataCtrl "github.com/raozhaizhu/go-estate/internal/controller/daily_data"
@@ -83,23 +82,23 @@ func TestGetDataByDay(t *testing.T) {
 		// 反序列化结果
 		err := json.Unmarshal(writer.Body.Bytes(), &results)
 		require.NoError(t, err)
-		assert.Equal(t, appError.CodeSuccess, writer.Code)
-		assert.Equal(t, expectedBizCode, results.Code)
-		assert.Equal(t, expectedMsg, results.Msg)
+		require.Equal(t, appError.CodeSuccess, writer.Code)
+		require.Equal(t, expectedBizCode, results.Code)
+		require.Equal(t, expectedMsg, results.Msg)
 	}
 	failCheckResponse := func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string) {
 		var results response.Result[dailyDataCtrl.DailyDataList]
 		// 反序列化结果
 		err := json.Unmarshal(writer.Body.Bytes(), &results)
 		require.NoError(t, err)
-		assert.Equal(t, expectedHTTPCode, writer.Code)
-		assert.Equal(t, expectedBizCode, results.Code)
+		require.Equal(t, expectedHTTPCode, writer.Code)
+		require.Equal(t, expectedBizCode, results.Code)
 		// 校验 Msg 是否一致
 		expSlice := strings.Split(expectedMsg, ", ")
 		actSlice := strings.Split(results.Msg, ", ")
 		sort.Strings(expSlice)
 		sort.Strings(actSlice)
-		assert.Equal(t, expSlice, actSlice)
+		require.Equal(t, expSlice, actSlice)
 	}
 
 	// 成功桩函数

@@ -2,6 +2,7 @@ package dailyData
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
@@ -23,10 +24,12 @@ type Service interface {
 
 type Controller struct {
 	service Service
+	logger  *slog.Logger
 }
 
 func NewDailyDataController(svc Service) *Controller {
-	return &Controller{service: svc}
+	logger := slog.Default().With("layer", "controller", "module", "dailyData_controller")
+	return &Controller{service: svc, logger: logger}
 }
 
 type DailyDataList []DailyDatumSchema

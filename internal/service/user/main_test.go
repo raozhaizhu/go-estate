@@ -75,7 +75,6 @@ func runTC(t *testing.T, testCases []testCase) {
 				Config:      testConfig,
 				TokenMaker:  tokenMakerMock,
 				Distributor: distributorMock,
-				Logger:      testLogger,
 				AsyncRunner: asyncGo,
 			}
 			// 初始化 svc

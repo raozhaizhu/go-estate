@@ -12,7 +12,6 @@ import (
 	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
 	dailyData "github.com/raozhaizhu/go-estate/internal/domain/daily_data"
 	"github.com/raozhaizhu/go-estate/internal/util"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -124,7 +123,7 @@ func TestGetAllData_ErrorScenarios(t *testing.T) {
 				// 获取错误, 并识别错误是否符合预期
 				err := f.action()
 				require.Error(t, err)
-				assert.Contains(t, err.Error(), s.expectedError)
+				require.Contains(t, err.Error(), s.expectedError)
 			})
 		}
 	}

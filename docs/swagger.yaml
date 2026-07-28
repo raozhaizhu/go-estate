@@ -234,6 +234,9 @@ definitions:
     type: object
   internal_controller_user.UpdateUserRequest:
     properties:
+      avatar_key:
+        example: default_avatar.png
+        type: string
       email:
         example: Bob@test.com
         type: string

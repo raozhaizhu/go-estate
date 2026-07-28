@@ -24,17 +24,21 @@ import (
 // @Failure      401     {object}  response.AuthErrorResult                "未登录或权限不足 (HTTP 返回 200, code: 401xx)"
 // @Failure      500     {object}  response.ServerErrorResult              "服务器内部错误 (HTTP 返回 500, code: 500xx)"
 // @Router       /api/v1/daily_data/day [get]
-func (c *Controller) GetDataByDay(ctx *gin.Context) (interface{}, error) {
+func (ctrl *Controller) GetDataByDay(c *gin.Context) (interface{}, error) {
 	var req GetDataByDayRequest
 	// 参数错误
-	if err := ctx.ShouldBindQuery(&req); err != nil {
+	if err := c.ShouldBindQuery(&req); err != nil {
 		return nil, response.MarkBindError(err)
 	}
+
+	// 提取上下文
+	ctx := c.Request.Context()
+
 	// 参数转换
 	input := req.toSvcInput()
 
 	// -> svc 获得日成交数据
-	data, err := c.service.GetDataByDay(ctx, input)
+	data, err := ctrl.service.GetDataByDay(ctx, input)
 	if err != nil {
 		return nil, err
 	}
@@ -63,12 +67,16 @@ func (c *Controller) GetDataByDay(ctx *gin.Context) (interface{}, error) {
 // @Failure      401     {object}  response.AuthErrorResult                "未登录或权限不足 (HTTP 返回 200, code: 401xx)"
 // @Failure      500     {object}  response.ServerErrorResult              "服务器内部错误 (HTTP 返回 500, code: 500xx)"
 // @Router       /api/v1/daily_data/period [get]
-func (c *Controller) GetDataByPeriod(ctx *gin.Context) (interface{}, error) {
+func (ctrl *Controller) GetDataByPeriod(c *gin.Context) (interface{}, error) {
 	var req GetDataByPeriodRequest
 	// 参数错误
-	if err := ctx.ShouldBindQuery(&req); err != nil {
+	if err := c.ShouldBindQuery(&req); err != nil {
 		return nil, response.MarkBindError(err)
 	}
+
+	// 提取上下文
+	ctx := c.Request.Context()
+
 	// 参数转换
 	params, err := req.toSvcInput()
 	if err != nil {
@@ -76,7 +84,7 @@ func (c *Controller) GetDataByPeriod(ctx *gin.Context) (interface{}, error) {
 
 	}
 	// -> svc 获得周期成交数据
-	data, err := c.service.GetDataByPeriod(ctx, params)
+	data, err := ctrl.service.GetDataByPeriod(ctx, params)
 	if err != nil {
 		return nil, err
 
@@ -104,9 +112,12 @@ func (c *Controller) GetDataByPeriod(ctx *gin.Context) (interface{}, error) {
 // @Failure      401     {object}  response.AuthErrorResult                "未登录或权限不足 (HTTP 返回 200, code: 401xx)"
 // @Failure      500     {object}  response.ServerErrorResult              "服务器内部错误 (HTTP 返回 500, code: 500xx)"
 // @Router       /api/v1/daily_data/all [get]
-func (c *Controller) GetAllData(ctx *gin.Context) (interface{}, error) {
+func (ctrl *Controller) GetAllData(c *gin.Context) (interface{}, error) {
+	// 提取上下文
+	ctx := c.Request.Context()
+
 	// -> svc 获得所有数据
-	data, err := c.service.GetAllData(ctx)
+	data, err := ctrl.service.GetAllData(ctx)
 	if err != nil {
 		return nil, err
 	}

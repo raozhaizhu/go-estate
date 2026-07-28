@@ -11,6 +11,7 @@ import (
 	"github.com/raozhaizhu/go-estate/internal/util"
 	"github.com/raozhaizhu/go-estate/internal/worker"
 	"github.com/raozhaizhu/go-estate/pkg/async"
+	"github.com/raozhaizhu/go-estate/pkg/logger"
 	objectStore "github.com/raozhaizhu/go-estate/pkg/object_store"
 	"github.com/raozhaizhu/go-estate/pkg/token"
 )
@@ -23,17 +24,13 @@ type Deps struct {
 	TokenMaker    token.Maker
 	Distributor   worker.TaskDistributor
 	TaskProcessor worker.TaskProcessor
-	Logger        *slog.Logger
 	AsyncRunner   async.AsyncRunner
 }
 
 func PrepareDeps(config util.Config) *Deps {
 	// 初始化 Logger
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
-	}))
-	slog.SetDefault(logger)
-	lifecycleLogger := logger.With(slog.String("category", "lifecycle"))
+	logger.InitSlogger()
+	lifecycleLogger := slog.Default().With("layer", "build", "category", "lifecycle")
 	// 初始化数据库
 	store, err := db.InitStore(config.DBSource)
 	if err != nil {
@@ -63,6 +60,7 @@ func PrepareDeps(config util.Config) *Deps {
 		lifecycleLogger.Error("tokenMaker初始化失败", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
+
 	// 准备好所有依赖
 	deps := &Deps{
 		Config:        config,
@@ -72,7 +70,6 @@ func PrepareDeps(config util.Config) *Deps {
 		TokenMaker:    tokenMaker,
 		Distributor:   distributor,
 		TaskProcessor: taskProcessor,
-		Logger:        logger,
 		AsyncRunner:   async.Go,
 	}
 

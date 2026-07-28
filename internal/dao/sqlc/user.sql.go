@@ -20,14 +20,23 @@ INSERT INTO
                 role
         )
 VALUES
-        (?, ?, ?, ?, COALESCE(?, 1))
+        (
+                ?,
+                ?,
+                ?,
+                CASE
+                        WHEN ? = '' THEN 'default_avatar.png'
+                        ELSE ?
+                END,
+                COALESCE(?, 1)
+        )
 `
 
 type CreateUserParams struct {
 	Username       string      `json:"username"`
 	HashedPassword string      `json:"hashed_password"`
 	Email          string      `json:"email"`
-	AvatarKey      string      `json:"avatar_key"`
+	AvatarKey      interface{} `json:"avatar_key"`
 	Role           interface{} `json:"role"`
 }
 
@@ -36,6 +45,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (sql.Res
 		arg.Username,
 		arg.HashedPassword,
 		arg.Email,
+		arg.AvatarKey,
 		arg.AvatarKey,
 		arg.Role,
 	)

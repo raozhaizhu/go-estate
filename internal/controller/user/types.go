@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"log/slog"
 
 	role "github.com/raozhaizhu/go-estate/internal/domain/user"
 	"github.com/raozhaizhu/go-estate/internal/service/user"
@@ -16,6 +17,7 @@ import (
 
 type Controller struct {
 	service Service
+	logger  *slog.Logger
 }
 
 type Service interface {
@@ -26,7 +28,8 @@ type Service interface {
 }
 
 func New(svc Service) *Controller {
-	return &Controller{service: svc}
+	logger := slog.Default().With("layer", "user", "module", "user_controller")
+	return &Controller{service: svc, logger: logger}
 }
 
 /** ====================================================================================
@@ -78,17 +81,19 @@ func (r *CreateUserRequest) toSvcInput() service.CreateUserInput {
 
 // UpdateUserRequest 更新用户请求
 type UpdateUserRequest struct {
-	Username string  `uri:"username" binding:"required,min=3,max=32" example:"Bob"`
-	Password *string `json:"password" binding:"omitempty,min=8,max=16" example:"12345678"`
-	Email    *string `json:"email" binding:"omitempty,email" example:"Bob@test.com"`
+	Username  string  `uri:"username" binding:"required,min=3,max=32" example:"Bob"`
+	Password  *string `json:"password" binding:"omitempty,min=8,max=16" example:"12345678"`
+	Email     *string `json:"email" binding:"omitempty,email" example:"Bob@test.com"`
+	AvatarKey *string `json:"avatar_key" binding:"omitempty" example:"default_avatar.png"`
 }
 
 // toSvcInput 将UpdateUserRequest转化为UpdateUserInput
 func (r *UpdateUserRequest) toSvcInput() service.UpdateUserInput {
 	return service.UpdateUserInput{
-		Username: r.Username,
-		Password: r.Password,
-		Email:    r.Email,
+		Username:  r.Username,
+		Password:  r.Password,
+		Email:     r.Email,
+		AvatarKey: r.AvatarKey,
 	}
 }
 

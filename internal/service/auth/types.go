@@ -32,7 +32,8 @@ type service struct {
 
 // New 返回用户服务指针
 func New(deps *app.Deps) *service {
-	return &service{store: deps.Store, sessionCache: deps.Cache, config: deps.Config, tokenMaker: deps.TokenMaker, distributor: deps.Distributor, logger: deps.Logger, asyncRunner: deps.AsyncRunner}
+	logger := slog.Default().With("layer", "service", "module", "auth_service")
+	return &service{store: deps.Store, sessionCache: deps.Cache, config: deps.Config, tokenMaker: deps.TokenMaker, distributor: deps.Distributor, logger: logger, asyncRunner: deps.AsyncRunner}
 }
 
 /** ====================================================================================

@@ -62,6 +62,9 @@ wrk-ping:
 
 pprof-cpu:
 	go tool pprof -http=:8081 http://localhost:8080/dev/pprof/profile?seconds=20
+# pprof-trace:
+#         curl -o trace.out http://localhost:8080/dev/pprof/trace?seconds=20
+#         go tool trace trace.out
 pprof-heap:
 	go tool pprof -http=:8082 http://localhost:8080/dev/pprof/heap?seconds=20
 pprof-mutex:
@@ -69,7 +72,8 @@ pprof-mutex:
 pprof-block:
 	go tool pprof -http=:8084 http://localhost:8080/dev/pprof/block?seconds=20
 
+
 .PHONY: migrate_create migrate_up migrate_up_1 migrate_down migrate_down_1
 .PHONY: docker_down docker_up q docker_rebuild
 .PHONY: sqlc_gen mock test test-integration swag act 
-.PHONY: wrk-login wrk-ping pprof-cpu pprof-heap pprof-mutex pprof-block
+.PHONY: wrk-login wrk-ping pprof-cpu pprof-trace pprof-heap pprof-mutex pprof-block

@@ -1,6 +1,7 @@
 package dailyData
 
 import (
+	"log/slog"
 	"time"
 
 	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
@@ -16,11 +17,13 @@ import (
  */
 
 type service struct {
-	store db.DailyDataStore
+	store  db.DailyDataStore
+	logger *slog.Logger
 }
 
 func New(deps *app.Deps) *service {
-	return &service{store: deps.Store}
+	logger := slog.Default().With("layer", "service", "module", "dailyData_service")
+	return &service{store: deps.Store, logger: logger}
 }
 
 /** ====================================================================================

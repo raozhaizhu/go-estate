@@ -17,7 +17,6 @@ import (
 	response "github.com/raozhaizhu/go-estate/pkg/api"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 	mock_token "github.com/raozhaizhu/go-estate/pkg/token/mock"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -52,14 +51,14 @@ func TestRateLimiter(t *testing.T) {
 		// 反序列化结果
 		err := json.Unmarshal(writer.Body.Bytes(), &results)
 		require.NoError(t, err)
-		assert.Equal(t, expectedHTTPCode, writer.Code)
-		assert.Equal(t, expectedBizCode, results.Code)
+		require.Equal(t, expectedHTTPCode, writer.Code)
+		require.Equal(t, expectedBizCode, results.Code)
 		// 校验 Msg 是否一致
 		expSlice := strings.Split(expectedMsg, ", ")
 		actSlice := strings.Split(results.Msg, ", ")
 		sort.Strings(expSlice)
 		sort.Strings(actSlice)
-		assert.Equal(t, expSlice, actSlice)
+		require.Equal(t, expSlice, actSlice)
 	}
 
 	testCases := []testCase{

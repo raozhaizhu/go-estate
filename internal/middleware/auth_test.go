@@ -16,9 +16,9 @@ import (
 	testUtil "github.com/raozhaizhu/go-estate/internal/test_util"
 	response "github.com/raozhaizhu/go-estate/pkg/api"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
+	ctxKey "github.com/raozhaizhu/go-estate/pkg/ctx_key"
 	"github.com/raozhaizhu/go-estate/pkg/token"
 	mock_token "github.com/raozhaizhu/go-estate/pkg/token/mock"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -62,27 +62,27 @@ func TestAuth(t *testing.T) {
 		// 反序列化结果
 		err := json.Unmarshal(writer.Body.Bytes(), &results)
 		require.NoError(t, err)
-		assert.Equal(t, expectedHTTPCode, writer.Code)
-		assert.Equal(t, expectedBizCode, results.Code)
+		require.Equal(t, expectedHTTPCode, writer.Code)
+		require.Equal(t, expectedBizCode, results.Code)
 		// 校验 Msg 是否一致
 		expSlice := strings.Split(expectedMsg, ", ")
 		actSlice := strings.Split(results.Msg, ", ")
 		sort.Strings(expSlice)
 		sort.Strings(actSlice)
-		assert.Equal(t, expSlice, actSlice)
+		require.Equal(t, expSlice, actSlice)
 	}
 	successCheckResponse := func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string, ctx *gin.Context) {
 		var results response.Result[string]
 		// 反序列化结果
 		err := json.Unmarshal(writer.Body.Bytes(), &results)
 		require.NoError(t, err)
-		assert.Equal(t, 200, writer.Code)
-		assert.Equal(t, expectedBizCode, results.Code)
-		assert.Equal(t, expectedMsg, results.Msg)
+		require.Equal(t, 200, writer.Code)
+		require.Equal(t, expectedBizCode, results.Code)
+		require.Equal(t, expectedMsg, results.Msg)
 		// 校验上下文
-		payload, ok := ctx.Get(token.PayloadKey)
-		assert.True(t, ok)
-		assert.Equal(t, accessPayload, payload)
+		payload, ok := ctx.Get(ctxKey.CtxKeyPayload)
+		require.True(t, ok)
+		require.Equal(t, accessPayload, payload)
 	}
 	// 成功桩函数
 	stubVerifyTokenSuccess := func(tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {

@@ -75,7 +75,6 @@ func runTC(t *testing.T, testCases []testCase) {
 			deps := &app.Deps{
 				Config:     testConfig,
 				TokenMaker: tokenMakerMock,
-				Logger:     testLogger,
 				Cache:      cacheMock,
 			}
 			router := delivery.SetupRouter(svcs, deps)

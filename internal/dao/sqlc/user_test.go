@@ -9,6 +9,7 @@ import (
 	"time"
 
 	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
+	userDomain "github.com/raozhaizhu/go-estate/internal/domain/user"
 	testUtil "github.com/raozhaizhu/go-estate/internal/test_util"
 	"github.com/raozhaizhu/go-estate/internal/util"
 	"github.com/stretchr/testify/require"
@@ -21,16 +22,12 @@ import (
 
 // TestCreateUser 测试CreateUser/GetUser, 能正常创建用户, 且用户信息和预期一致
 func TestCreateGetUser(t *testing.T) {
-	defer testStore.CleanTestStore(t)
-
-	testUtil.CreateRandomUser(t, testStore)
+	testUtil.CreateRandomUser(t, testStore, userDomain.RoleUser, "")
 }
 
 func TestUpdateUser(t *testing.T) {
-	defer testStore.CleanTestStore(t)
-
 	// 初始化更新信息
-	originUser := testUtil.CreateRandomUser(t, testStore)
+	originUser, _ := testUtil.CreateRandomUser(t, testStore, userDomain.RoleUser, "")
 	password := util.RandomPassword()
 	hashedPassword, err := util.HashPassword(password)
 	require.NoError(t, err)
@@ -73,14 +70,12 @@ func TestUpdateUser(t *testing.T) {
 
 // TestUserNameDuplicate 基于重复用户名创建用户
 func TestUserNameDuplicate(t *testing.T) {
-	defer testStore.CleanTestStore(t)
-
 	// 创建用户
 	username := util.RandomUsername()
 	password := util.RandomPassword()
 
-	params := testUtil.PrepareCreateUserParams(t, username, password)
-	testUtil.CreateSpecificUser(t, username, password, testStore)
+	params := testUtil.PrepareCreateUserParams(t, username, password, userDomain.RoleUser, "")
+	testUtil.CreateSpecificUser(t, username, password, testStore, userDomain.RoleUser, "")
 
 	// 尝试重复创建用户
 	result, err := testStore.CreateUser(context.Background(), params)
@@ -91,14 +86,12 @@ func TestUserNameDuplicate(t *testing.T) {
 
 // TestEmailDuplicate 基于重复Email 创建用户
 func TestEmailDuplicate(t *testing.T) {
-	defer testStore.CleanTestStore(t)
-
 	// 创建用户
 	username := util.RandomUsername()
 	password := util.RandomPassword()
 
-	params := testUtil.PrepareCreateUserParams(t, username, password)
-	testUtil.CreateSpecificUser(t, username, password, testStore)
+	params := testUtil.PrepareCreateUserParams(t, username, password, userDomain.RoleUser, "")
+	testUtil.CreateSpecificUser(t, username, password, testStore, userDomain.RoleUser, "")
 
 	// 尝试用相同的 email 创建用户
 	params.Username = util.RandomUsername() // 使用不同的用户名, 保持其他信息不变
@@ -110,8 +103,6 @@ func TestEmailDuplicate(t *testing.T) {
 
 // TestGetNonExistentUser 查询不存在的用户
 func TestGetNonExistentUser(t *testing.T) {
-	defer testStore.CleanTestStore(t)
-
 	username := util.RandomUsername()
 	user, err := testStore.GetUser(context.Background(), username)
 	require.Error(t, err)

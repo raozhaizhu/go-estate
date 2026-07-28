@@ -2,9 +2,9 @@ package auth
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/raozhaizhu/go-estate/internal/middleware"
 	"github.com/raozhaizhu/go-estate/internal/service/auth"
 )
@@ -18,6 +18,7 @@ type controller struct {
 	service         Service
 	refreshDuration time.Duration
 	isProduction    bool
+	logger          *slog.Logger
 }
 
 type Service interface {
@@ -27,7 +28,8 @@ type Service interface {
 }
 
 func New(service Service, refreshDuration time.Duration, isProduction bool) *controller {
-	return &controller{service: service, refreshDuration: refreshDuration, isProduction: isProduction}
+	logger := slog.Default().With("layer", "controller", "module", "auth_controller")
+	return &controller{service: service, refreshDuration: refreshDuration, isProduction: isProduction, logger: logger}
 }
 
 /** ====================================================================================
@@ -42,12 +44,12 @@ type LoginRequest struct {
 }
 
 // toSvcInput 转换: LoginRequest -> LoginInput
-func (r *LoginRequest) toSvcInput(ctx *gin.Context) auth.LoginInput {
+func (r *LoginRequest) toSvcInput(meta middleware.ClientMeta) auth.LoginInput {
 	return auth.LoginInput{
 		Username:  r.Username,
 		Password:  r.Password,
-		DeviceID:  ctx.GetString(middleware.CtxKeyDeviceID),
-		UserAgent: ctx.GetString(middleware.CtxKeyUserAgent),
-		ClientIp:  ctx.GetString(middleware.CtxKeyClientIP),
+		DeviceID:  meta.DeviceID,
+		UserAgent: meta.UserAgent,
+		ClientIp:  meta.ClientIP,
 	}
 }

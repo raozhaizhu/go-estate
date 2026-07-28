@@ -16,7 +16,6 @@ import (
 	response "github.com/raozhaizhu/go-estate/pkg/api"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 	mock_token "github.com/raozhaizhu/go-estate/pkg/token/mock"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,10 +36,7 @@ func TestMetadata(t *testing.T) {
 		"X-Device-ID":   deviceID,
 		"Authorization": authorization,
 	}
-	// accessPayload := &token.Payload{
-	// 	Role:      userDomain.RoleUser,
-	// 	TokenType: token.TokenTypeAccessToken,
-	// }
+
 	// 默认执行逻辑
 	defaultAction := func(t *testing.T, reqUrl string, body interface{}, router *gin.Engine, writer *httptest.ResponseRecorder, customData map[string]any, tokenMakerMock *mock_token.MockMaker, ctx *gin.Context, cacheMock *mock_db.MockCache) {
 		req, err := http.NewRequest(http.MethodGet, reqUrl, nil)
@@ -50,7 +46,7 @@ func TestMetadata(t *testing.T) {
 		middleware := middleware.RequireMetadata()
 		router.Use(middleware)
 		router.GET(reqUrl, func(c *gin.Context) { // 通过中间件, 默认返回成功
-			ctx.Keys = c.Keys
+			capturedCtx = c.Request.Context()
 			response.Success(c, "success")
 		})
 
@@ -69,33 +65,29 @@ func TestMetadata(t *testing.T) {
 		// 反序列化结果
 		err := json.Unmarshal(writer.Body.Bytes(), &results)
 		require.NoError(t, err)
-		assert.Equal(t, expectedHTTPCode, writer.Code)
-		assert.Equal(t, expectedBizCode, results.Code)
+		require.Equal(t, expectedHTTPCode, writer.Code)
+		require.Equal(t, expectedBizCode, results.Code)
 		// 校验 Msg 是否一致
 		expSlice := strings.Split(expectedMsg, ", ")
 		actSlice := strings.Split(results.Msg, ", ")
 		sort.Strings(expSlice)
 		sort.Strings(actSlice)
-		assert.Equal(t, expSlice, actSlice)
+		require.Equal(t, expSlice, actSlice)
 	}
 	successCheckResponse := func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string, ctx *gin.Context) {
 		var results response.Result[string]
 		// 反序列化结果
 		err := json.Unmarshal(writer.Body.Bytes(), &results)
 		require.NoError(t, err)
-		assert.Equal(t, 200, writer.Code)
-		assert.Equal(t, expectedBizCode, results.Code)
-		assert.Equal(t, expectedMsg, results.Msg)
+		require.Equal(t, 200, writer.Code)
+		require.Equal(t, expectedBizCode, results.Code)
+		require.Equal(t, expectedMsg, results.Msg)
 		// 校验上下文
-		_deviceID, ok := ctx.Get(middleware.CtxKeyDeviceID)
-		assert.True(t, ok)
-		assert.Equal(t, deviceID, _deviceID)
-		_userAgent, ok := ctx.Get(middleware.CtxKeyUserAgent)
-		assert.True(t, ok)
-		assert.Equal(t, userAgent, _userAgent)
-		_clientIP, ok := ctx.Get(middleware.CtxKeyClientIP)
-		assert.True(t, ok)
-		assert.Equal(t, clientIP, _clientIP)
+		meta, err := middleware.GetCtxClientMeta(capturedCtx)
+		require.NoError(t, err)
+		require.Equal(t, deviceID, meta.DeviceID)
+		require.Equal(t, userAgent, meta.UserAgent)
+		require.Equal(t, clientIP, meta.ClientIP)
 	}
 
 	testCases := []testCase{

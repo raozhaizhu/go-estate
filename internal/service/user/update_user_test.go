@@ -16,11 +16,11 @@ import (
 	"github.com/raozhaizhu/go-estate/internal/util"
 	mock_worker "github.com/raozhaizhu/go-estate/internal/worker/mock"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
+	ctxKey "github.com/raozhaizhu/go-estate/pkg/ctx_key"
 	objectStore "github.com/raozhaizhu/go-estate/pkg/object_store"
 	mock_object_store "github.com/raozhaizhu/go-estate/pkg/object_store/mock"
 	"github.com/raozhaizhu/go-estate/pkg/token"
 	mock_token "github.com/raozhaizhu/go-estate/pkg/token/mock"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -74,10 +74,10 @@ func TestUpdateUser(t *testing.T) {
 		return []interface{}{dto}, err
 	}
 	buildCorrectCtx := func() context.Context {
-		return context.WithValue(context.Background(), token.PayloadKey, correctUserPayload)
+		return context.WithValue(context.Background(), ctxKey.CtxKeyPayload, correctUserPayload)
 	}
 	buildOtherUserCtx := func() context.Context {
-		return context.WithValue(context.Background(), token.PayloadKey, otherUserPayload)
+		return context.WithValue(context.Background(), ctxKey.CtxKeyPayload, otherUserPayload)
 	}
 	failCheckResponse := func(t *testing.T, results []interface{}, actualErr, expectedErr error) {
 		require.Error(t, actualErr)
@@ -107,7 +107,7 @@ func TestUpdateUser(t *testing.T) {
 	stubUpdateUserSuccess := func(storeMock *mock_db.MockStore) {
 		storeMock.EXPECT().UpdateUser(gomock.Any(), gomock.Any()).
 			DoAndReturn(func(ctx context.Context, arg db.UpdateUserParams) (sql.Result, error) {
-				assert.Equal(t, username, arg.Username)
+				require.Equal(t, username, arg.Username)
 				return mockResult{rowsAffected: 1}, nil
 			}).Times(1)
 	}

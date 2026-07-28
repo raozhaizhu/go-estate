@@ -1,6 +1,7 @@
 package middleware_test
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"net/http/httptest"
@@ -51,6 +52,8 @@ type testCase struct {
 	// expectedMsg
 	expectedMsg string
 }
+
+var capturedCtx context.Context
 
 func runTC(t *testing.T, testCases []testCase) {
 	for _, tc := range testCases {

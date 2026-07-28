@@ -8,6 +8,7 @@ import (
 
 	response "github.com/raozhaizhu/go-estate/pkg/api"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
+	ctxKey "github.com/raozhaizhu/go-estate/pkg/ctx_key"
 	"github.com/raozhaizhu/go-estate/pkg/token"
 )
 
@@ -31,33 +32,38 @@ import (
 // @Failure      404  {object}  response.NotFoundErrorResult      "账户不存在 (HTTP 返回 200, code: 404xx)"
 // @Failure      500  {object}  response.ServerErrorResult        "服务器内部错误 (HTTP 返回 500, code: 500xx)"
 // @Router       /api/v1/auth/login [post]
-func (ctrl *controller) Login(ctx *gin.Context) (interface{}, error) {
+func (ctrl *controller) Login(c *gin.Context) (interface{}, error) {
 	var req LoginRequest
 	// 参数错误
-	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil { // 解析 Json
+	if err := c.ShouldBindBodyWithJSON(&req); err != nil { // 解析 Json
 		return nil, response.MarkBindError(err)
 	}
-
+	// 提取上下文
+	ctx := c.Request.Context()
+	meta, err := middleware.GetCtxClientMeta(ctx)
+	if err != nil {
+		return nil, err
+	}
 	// 参数转换
-	input := req.toSvcInput(ctx)
+	input := req.toSvcInput(meta)
 
 	// -> svc 获得登录信息
-	data, refreshToken, err := ctrl.service.Login(ctx, input)
+	data, refreshToken, err := ctrl.service.Login(c, input)
 	if err != nil {
 		return nil, err
 	}
 
 	// 将刷新令牌放入 cookie
-	ctrl.setRefreshTokenCookie(ctx, refreshToken)
+	ctrl.setRefreshTokenCookie(c, refreshToken)
 
 	return data, nil
 }
 
 // setRefreshTokenCookie 设置 refreshToken 到 cookie
 // TODO 设置 env 里的 production_mode
-func (ctrl *controller) setRefreshTokenCookie(ctx *gin.Context, refreshToken string) {
-	ctx.SetCookie(
-		token.RefreshTokenKey,               // key
+func (ctrl *controller) setRefreshTokenCookie(c *gin.Context, refreshToken string) {
+	c.SetCookie(
+		string(ctxKey.CtxKeyRefreshToken),   // key
 		refreshToken,                        // value
 		int(ctrl.refreshDuration.Seconds()), // maxAge
 		domain.RefreshPath,                  // path 只有在访问这个路径的时候才会发送该 cookie
@@ -83,12 +89,14 @@ func (ctrl *controller) setRefreshTokenCookie(ctx *gin.Context, refreshToken str
 // @Failure      401  {object}  response.AuthErrorResult          "刷新令牌不存在或已失效 (HTTP 返回 200, code: 401xx)"
 // @Failure      500  {object}  response.ServerErrorResult        "服务器内部错误 (HTTP 返回 500, code: 500xx)"
 // @Router       /api/v1/auth/refresh [post]
-func (ctrl *controller) Refresh(ctx *gin.Context) (interface{}, error) {
+func (ctrl *controller) Refresh(c *gin.Context) (interface{}, error) {
 	// 从 cookie 获取刷新令牌
-	refreshTokenStr, err := ctx.Cookie(token.RefreshTokenKey)
+	refreshTokenStr, err := c.Cookie(string(ctxKey.CtxKeyRefreshToken))
 	if err != nil { // 刷新令牌不存在, 返错
 		return nil, appError.ErrCookieNoRefreshToken
 	}
+	// 提取上下文
+	ctx := c.Request.Context()
 
 	// -> svc 校验刷新令牌合规
 	data, err := ctrl.service.Refresh(ctx, refreshTokenStr)
@@ -117,7 +125,14 @@ func (ctrl *controller) Refresh(ctx *gin.Context) (interface{}, error) {
 // @Failure      401  {object}  response.AuthErrorResult            "未登录或 Token 失效 (HTTP 返回 200, code: 401xx)"
 // @Failure      500  {object}  response.ServerErrorResult          "服务器内部错误 (HTTP 返回 500, code: 500xx)"
 // @Router       /api/v1/auth/logout [post]
-func (ctrl *controller) Logout(ctx *gin.Context) (interface{}, error) {
+func (ctrl *controller) Logout(c *gin.Context) (interface{}, error) {
+	// 提取上下文
+	ctx := c.Request.Context()
+	meta, err := middleware.GetCtxClientMeta(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	// 获取荷载
 	payload, err := token.GetPayload(ctx)
 	if err != nil {
@@ -125,10 +140,10 @@ func (ctrl *controller) Logout(ctx *gin.Context) (interface{}, error) {
 	}
 
 	// 筹备参数
-	input := auth.LogoutInput{Username: payload.Username, DeviceID: ctx.GetString(middleware.CtxKeyDeviceID)}
+	input := auth.LogoutInput{Username: payload.Username, DeviceID: meta.DeviceID}
 
 	// -> svc 退出登录
-	err = ctrl.service.Logout(ctx, input)
+	err = ctrl.service.Logout(c, input)
 	if err != nil {
 		return nil, err
 	}
