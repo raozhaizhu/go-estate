@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"log/slog"
 
 	role "github.com/raozhaizhu/go-estate/internal/domain/user"
 	"github.com/raozhaizhu/go-estate/internal/service/user"
@@ -16,6 +17,7 @@ import (
 
 type Controller struct {
 	service Service
+	logger  *slog.Logger
 }
 
 type Service interface {
@@ -26,7 +28,8 @@ type Service interface {
 }
 
 func New(svc Service) *Controller {
-	return &Controller{service: svc}
+	logger := slog.Default().With("layer", "user", "module", "user_controller")
+	return &Controller{service: svc, logger: logger}
 }
 
 /** ====================================================================================

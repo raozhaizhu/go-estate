@@ -32,7 +32,7 @@ import (
 func main() {
 	config := util.InitConfig(".")
 	deps := app.PrepareDeps(config)
-	lifecycleLogger := deps.Logger.With(slog.String("category", "lifecycle"))
+	lifecycleLogger := slog.Default().With("layer", "main", "category", "lifecycle")
 
 	// 初始化服务器
 	srv, err := server.NewServer(deps)

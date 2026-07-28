@@ -13,6 +13,7 @@ import (
 	"github.com/raozhaizhu/go-estate/internal/middleware"
 	response "github.com/raozhaizhu/go-estate/pkg/api"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
+	"github.com/raozhaizhu/go-estate/pkg/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -20,12 +21,16 @@ import (
 func TestSlogMiddleware(t *testing.T) {
 	// 准备 Buffer 用于捕获日志
 	var buf bytes.Buffer
-	logger := slog.New(slog.NewJSONHandler(&buf, nil))
+	jsonHandler := slog.NewJSONHandler(&buf, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	})
+	ctxHandler := logger.ContextHandler{Handler: jsonHandler}
+	slog.SetDefault(slog.New(ctxHandler))
 
 	// 初始化 Gin 环境
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	router.Use(middleware.SlogMiddleware(logger))
+	router.Use(middleware.SlogMiddleware())
 
 	// 注册测试路由
 	router.GET("/success", func(c *gin.Context) { response.Success(c, "success") })

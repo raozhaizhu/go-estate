@@ -1,17 +1,26 @@
 package middleware
 
 import (
+	"context"
 	"log/slog"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	response "github.com/raozhaizhu/go-estate/pkg/api"
+	ctxKey "github.com/raozhaizhu/go-estate/pkg/ctx_key"
 )
 
 // SlogMiddleware 将 Gin 的 HTTP 访问记录桥接到 slog 中
-func SlogMiddleware(logger *slog.Logger) gin.HandlerFunc {
+func SlogMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// 将 request_id 放入 ctx, 并替换原来的 request
+		logger := slog.Default()
+		reqID := uuid.New().String()
+		ctx := context.WithValue(c.Request.Context(), ctxKey.CtxKeyRequestID, reqID)
+		c.Request = c.Request.WithContext(ctx)
+
 		start := time.Now()
 		path := c.Request.URL.Path
 		query := c.Request.URL.RawQuery
@@ -51,6 +60,7 @@ func SlogMiddleware(logger *slog.Logger) gin.HandlerFunc {
 		logAttrs := []any{
 			slog.Int("status", httpStatus),
 			slog.Int("biz_code", bizCode),
+			slog.String("reqID", reqID),
 			slog.String("method", c.Request.Method),
 			slog.String("path", path),
 			slog.String("query", query),

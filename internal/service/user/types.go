@@ -2,6 +2,7 @@ package user
 
 import (
 	"database/sql"
+	"log/slog"
 	"time"
 
 	"github.com/raozhaizhu/go-estate/internal/dao/cache"
@@ -26,11 +27,14 @@ type service struct {
 	sessionCache cache.SessionCache
 	distributor  worker.TaskDistributor
 	objectStore  objectStore.StorageService
+	logger       *slog.Logger
 }
 
 // New 返回用户服务指针
 func New(deps *app.Deps) *service {
-	return &service{store: deps.Store, txRunner: deps.Store, sessionCache: deps.Cache, distributor: deps.Distributor, objectStore: deps.ObjectStore}
+	logger := slog.Default().With("layer", "service", "module", "user_service")
+
+	return &service{store: deps.Store, txRunner: deps.Store, sessionCache: deps.Cache, distributor: deps.Distributor, objectStore: deps.ObjectStore, logger: logger}
 }
 
 // DTO 返回给 Controller 的 User 数据结构

@@ -28,18 +28,21 @@ var _ userService.DTO
 // @Failure      404      {object}  response.NotFoundErrorResult     "该用户不存在 (HTTP 返回 200, code: 404xx)"
 // @Failure      500      {object}  response.ServerErrorResult       "服务器内部错误 (HTTP 返回 500, code: 500xx)"
 // @Router       /api/v1/user/{username} [get]
-func (c *Controller) GetUser(ctx *gin.Context) (interface{}, error) {
+func (ctrl *Controller) GetUser(c *gin.Context) (interface{}, error) {
 	var req GetUserRequest
 	// 参数错误
-	if err := ctx.ShouldBindUri(&req); err != nil {
+	if err := c.ShouldBindUri(&req); err != nil {
 		return nil, response.MarkBindError(err)
 	}
+
+	// 提取上下文
+	ctx := c.Request.Context()
 
 	// 参数转换
 	params := req.toSvcInput()
 
 	// -> svc 获取用户
-	data, err := c.service.GetUser(ctx, params)
+	data, err := ctrl.service.GetUser(ctx, params)
 	if err != nil {
 		return nil, err
 	}
@@ -66,8 +69,8 @@ func (c *Controller) GetUser(ctx *gin.Context) (interface{}, error) {
 // @Failure      409     {object}  response.ConflictErrorResult     "用户名或邮箱已存在 (HTTP 返回 200, code: 409xx)"
 // @Failure      500     {object}  response.ServerErrorResult       "服务器内部错误 (HTTP 返回 500, code: 500xx)"
 // @Router       /api/v1/user [post]
-func (c *Controller) CreateNormalUser(ctx *gin.Context) (interface{}, error) {
-	return c.createUser(ctx, role.RoleUser)
+func (ctrl *Controller) CreateNormalUser(c *gin.Context) (interface{}, error) {
+	return ctrl.createUser(c, role.RoleUser)
 }
 
 // CreateVip 创建 VIP 用户
@@ -86,22 +89,25 @@ func (c *Controller) CreateNormalUser(ctx *gin.Context) (interface{}, error) {
 // @Failure      409     {object}  response.ConflictErrorResult     "用户名或邮箱已存在 (HTTP 返回 200, code: 409xx)"
 // @Failure      500     {object}  response.ServerErrorResult       "服务器内部错误 (HTTP 返回 500, code: 500xx)"
 // @Router       /api/v1/user/vip [post]
-func (c *Controller) CreateVip(ctx *gin.Context) (interface{}, error) {
-	return c.createUser(ctx, role.RoleVip)
+func (ctrl *Controller) CreateVip(c *gin.Context) (interface{}, error) {
+	return ctrl.createUser(c, role.RoleVip)
 }
 
-func (c *Controller) createUser(ctx *gin.Context, role role.Role) (interface{}, error) {
+func (ctrl *Controller) createUser(c *gin.Context, role role.Role) (interface{}, error) {
 	var req CreateUserRequest
 	// 参数错误
-	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
+	if err := c.ShouldBindBodyWithJSON(&req); err != nil {
 		return nil, response.MarkBindError(err)
 	}
+
+	// 提取上下文
+	ctx := c.Request.Context()
 
 	// 参数转换
 	input := req.toSvcInput()
 
 	// -> svc 创建用户
-	data, err := c.service.CreateUser(ctx, input, role)
+	data, err := ctrl.service.CreateUser(ctx, input, role)
 	if err != nil {
 		return nil, err
 	}
@@ -131,21 +137,24 @@ func (c *Controller) createUser(ctx *gin.Context, role role.Role) (interface{}, 
 // @Failure      404      {object}  response.NotFoundErrorResult     "该用户不存在 (HTTP 返回 200, code: 404xx)"
 // @Failure      500      {object}  response.ServerErrorResult       "服务器内部错误 (HTTP 返回 500, code: 500xx)"
 // @Router       /api/v1/user/{username} [patch]
-func (c *Controller) UpdateUser(ctx *gin.Context) (interface{}, error) {
+func (ctrl *Controller) UpdateUser(c *gin.Context) (interface{}, error) {
 	var req UpdateUserRequest
 	// 参数错误
-	if err := ctx.ShouldBindUri(&req); err != nil { // 解析 Uri
+	if err := c.ShouldBindUri(&req); err != nil { // 解析 Uri
 		return nil, response.MarkBindError(err)
 	}
-	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil { // 解析 Json
+	if err := c.ShouldBindBodyWithJSON(&req); err != nil { // 解析 Json
 		return nil, response.MarkBindError(err)
 	}
+
+	// 提取上下文
+	ctx := c.Request.Context()
 
 	// 参数转换
 	input := req.toSvcInput()
 
 	// -> svc 更新用户
-	data, err := c.service.UpdateUser(ctx, input)
+	data, err := ctrl.service.UpdateUser(ctx, input)
 	if err != nil {
 		return nil, err
 	}
@@ -173,22 +182,31 @@ func (c *Controller) UpdateUser(ctx *gin.Context) (interface{}, error) {
 // @Failure      401      {object}  response.AuthErrorResult         "未登录或鉴权失败 (HTTP 返回 200, code: 401xx)"
 // @Failure      500      {object}  response.ServerErrorResult       "服务器内部错误 (HTTP 返回 500, code: 500xx)"
 // @Router       /api/v1/user/avatar/upload-url [get]
-func (c *Controller) GetAvatarUploadUrl(ctx *gin.Context) (interface{}, error) {
+func (ctrl *Controller) GetAvatarUploadUrl(c *gin.Context) (interface{}, error) {
 	var req GetAvatarUploadUrlRequest
-	if err := ctx.ShouldBindQuery(&req); err != nil {
+	// 参数错误
+	if err := c.ShouldBindQuery(&req); err != nil {
 		return nil, response.MarkBindError(err)
 	}
 
+	// 提取上下文
+	ctx := c.Request.Context()
+
+	// 参数转化
 	input := req.toSvcInput()
 
-	postUrl, formData, objectKey, err := c.service.GenerateAvatarPresignUrl(ctx, input)
+	// -> svc 生成上传连接
+	postUrl, formData, objectKey, err := ctrl.service.GenerateAvatarPresignUrl(ctx, input)
 	if err != nil {
 		return nil, err
 	}
+
+	// 生成数据结构
 	dto := AvatarUploadData{
 		PostUrl:   postUrl,
 		FormData:  formData,
 		ObjectKey: objectKey,
 	}
+
 	return dto, nil
 }

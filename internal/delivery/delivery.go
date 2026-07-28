@@ -58,8 +58,8 @@ func SetupRouter(services Services, deps *app.Deps) *gin.Engine {
 	p.Use(router)
 
 	// 挂载全局中间件
-	router.Use(gin.Recovery())                         // 防崩溃
-	router.Use(middleware.SlogMiddleware(deps.Logger)) // 记录日志
+	router.Use(gin.Recovery())              // 防崩溃
+	router.Use(middleware.SlogMiddleware()) // 记录日志
 
 	// 挂载探针路由
 	router.GET("/ping", func(c *gin.Context) {

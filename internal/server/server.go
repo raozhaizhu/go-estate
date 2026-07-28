@@ -29,7 +29,6 @@ type Server struct {
 	store         db.Store
 	cache         cache.Cache
 	router        *gin.Engine
-	logger        *slog.Logger
 	taskProcessor worker.TaskProcessor
 }
 
@@ -57,7 +56,6 @@ func NewServer(deps *app.Deps) (*Server, error) {
 		store:         deps.Store,
 		cache:         deps.Cache,
 		router:        router,
-		logger:        deps.Logger,
 		taskProcessor: deps.TaskProcessor,
 	}
 
@@ -66,7 +64,7 @@ func NewServer(deps *app.Deps) (*Server, error) {
 
 // Start 启动服务器, 并监听退出信号以实现优雅退出
 func (srv *Server) Start(address string) error {
-	lifecycleLogger := srv.logger.With(slog.String("category", "lifecycle"))
+	lifecycleLogger := slog.Default().With(slog.String("category", "lifecycle"))
 	// 构造 server
 	httpSrv := &http.Server{
 		Addr:    address,
