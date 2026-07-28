@@ -25,7 +25,6 @@ import (
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 	ctxKey "github.com/raozhaizhu/go-estate/pkg/ctx_key"
 	mock_token "github.com/raozhaizhu/go-estate/pkg/token/mock"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -109,10 +108,10 @@ func TestLogin(t *testing.T) {
 		// 反序列化结果
 		err := json.Unmarshal(writer.Body.Bytes(), &results)
 		require.NoError(t, err)
-		assert.Equal(t, expectedHTTPCode, writer.Code)
-		assert.Equal(t, expectedBizCode, results.Code)
-		assert.Equal(t, username, results.Data.UserInfo.Username)
-		assert.Equal(t, results.Msg, expectedMsg)
+		require.Equal(t, expectedHTTPCode, writer.Code)
+		require.Equal(t, expectedBizCode, results.Code)
+		require.Equal(t, username, results.Data.UserInfo.Username)
+		require.Equal(t, results.Msg, expectedMsg)
 		// 校验 cookie 是否设置成功
 		cookies := writer.Header().Values("Set-Cookie")
 		require.NotEmpty(t, cookies)
@@ -120,25 +119,25 @@ func TestLogin(t *testing.T) {
 		for _, cookie := range cookies {
 			if strings.Contains(cookie, string(ctxKey.CtxKeyRefreshToken)+"="+refreshStr) {
 				cookiesFound = true
-				assert.Contains(t, cookie, "HttpOnly")
+				require.Contains(t, cookie, "HttpOnly")
 				break
 			}
 		}
-		assert.True(t, cookiesFound, "Cookie里没有找到对应的 refreshToken")
+		require.True(t, cookiesFound, "Cookie里没有找到对应的 refreshToken")
 	}
 	failCheckResponse := func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string) {
 		var results response.Result[*authSvc.DTO]
 		// 反序列化结果
 		err := json.Unmarshal(writer.Body.Bytes(), &results)
 		require.NoError(t, err)
-		assert.Equal(t, expectedHTTPCode, writer.Code)
-		assert.Equal(t, expectedBizCode, results.Code)
+		require.Equal(t, expectedHTTPCode, writer.Code)
+		require.Equal(t, expectedBizCode, results.Code)
 		// 校验 Msg 是否一致
 		expSlice := strings.Split(expectedMsg, ", ")
 		actSlice := strings.Split(results.Msg, ", ")
 		sort.Strings(expSlice)
 		sort.Strings(actSlice)
-		assert.Equal(t, expSlice, actSlice)
+		require.Equal(t, expSlice, actSlice)
 	}
 	// 成功桩函数
 	stubIncrIPCntSuccess := func(cacheMock *mock_db.MockCache) {

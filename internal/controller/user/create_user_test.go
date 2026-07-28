@@ -24,7 +24,6 @@ import (
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 	"github.com/raozhaizhu/go-estate/pkg/token"
 	mock_token "github.com/raozhaizhu/go-estate/pkg/token/mock"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -108,7 +107,7 @@ func TestCreateUser(t *testing.T) {
 		} else { //不带 body
 			req, err = http.NewRequest(http.MethodPost, reqUrl, nil)
 		}
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		req.RemoteAddr = clientIPWithPort // 设置 IP
 		for k, v := range customData {    // 设置 UserAgent 和 DeviceID
@@ -124,25 +123,25 @@ func TestCreateUser(t *testing.T) {
 		var results response.Result[*user.DTO]
 		// 反序列化结果
 		err := json.Unmarshal(writer.Body.Bytes(), &results)
-		assert.NoError(t, err)
-		assert.Equal(t, 200, writer.Code)
-		assert.Equal(t, expectedBizCode, results.Code)
-		assert.Equal(t, username, results.Data.Username)
-		assert.Equal(t, results.Msg, expectedMsg)
+		require.NoError(t, err)
+		require.Equal(t, 200, writer.Code)
+		require.Equal(t, expectedBizCode, results.Code)
+		require.Equal(t, username, results.Data.Username)
+		require.Equal(t, results.Msg, expectedMsg)
 	}
 	failCheckResponse := func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string) {
 		var results response.Result[*user.DTO]
 		// 反序列化结果
 		err := json.Unmarshal(writer.Body.Bytes(), &results)
 		require.NoError(t, err)
-		assert.Equal(t, expectedHTTPCode, writer.Code)
-		assert.Equal(t, expectedBizCode, results.Code)
+		require.Equal(t, expectedHTTPCode, writer.Code)
+		require.Equal(t, expectedBizCode, results.Code)
 		// 校验 Msg 是否一致
 		expSlice := strings.Split(expectedMsg, ", ")
 		actSlice := strings.Split(results.Msg, ", ")
 		sort.Strings(expSlice)
 		sort.Strings(actSlice)
-		assert.Equal(t, expSlice, actSlice)
+		require.Equal(t, expSlice, actSlice)
 	}
 	// 成功桩函数
 	stubVerifyTokenSuccess := func(tokenMakerMock *mock_token.MockMaker) {

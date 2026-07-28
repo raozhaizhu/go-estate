@@ -14,7 +14,6 @@ import (
 	"github.com/raozhaizhu/go-estate/internal/server"
 	"github.com/raozhaizhu/go-estate/internal/util"
 	objectStore "github.com/raozhaizhu/go-estate/pkg/object_store"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -119,10 +118,10 @@ func RunIntgTC(t *testing.T, testCases []IntgTestCase, client *http.Client) {
 			// 关闭 Body 防止泄露
 			defer resp.Body.Close()
 			// 断言 HTTP 状态码
-			assert.Equal(t, resp.StatusCode, tc.ExpectedHTTPCode)
+			require.Equal(t, resp.StatusCode, tc.ExpectedHTTPCode)
 			// 读取响应体
 			respBytes, err := io.ReadAll(resp.Body)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			// 校验结果
 			tc.CheckResponse(t, respBytes, tc.ExpectedBizCode, tc.ExpectedMsg)

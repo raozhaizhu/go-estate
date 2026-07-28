@@ -1,4 +1,4 @@
-// go:build integration
+//go:build integration
 
 package dailyData_test
 
@@ -18,7 +18,6 @@ import (
 	testUtil "github.com/raozhaizhu/go-estate/internal/test_util"
 	"github.com/raozhaizhu/go-estate/internal/util"
 	response "github.com/raozhaizhu/go-estate/pkg/api"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -109,11 +108,11 @@ func TestDailyDataHappyPathFlow(t *testing.T) {
 		// 序列化结构体
 		var results response.Result[*auth.DTO]
 		err = json.Unmarshal(respBytes, &results)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		// 校验业务代码
-		assert.Equal(t, results.Code, expectedBizCode)
+		require.Equal(t, results.Code, expectedBizCode)
 		// 校验用户信息一致
-		assert.Equal(t, username, results.Data.UserInfo.Username)
+		require.Equal(t, username, results.Data.UserInfo.Username)
 
 		// 设置 accessToken
 		userToken = results.Data.AccessToken
@@ -122,11 +121,11 @@ func TestDailyDataHappyPathFlow(t *testing.T) {
 		// 序列化结构体
 		var results response.Result[*auth.DTO]
 		err = json.Unmarshal(respBytes, &results)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		// 校验业务代码
-		assert.Equal(t, results.Code, expectedBizCode)
+		require.Equal(t, results.Code, expectedBizCode)
 		// 校验用户信息一致
-		assert.Equal(t, vipName, results.Data.UserInfo.Username)
+		require.Equal(t, vipName, results.Data.UserInfo.Username)
 
 		// 设置 accessToken
 		vipToken = results.Data.AccessToken
@@ -135,11 +134,11 @@ func TestDailyDataHappyPathFlow(t *testing.T) {
 		// 序列化结构体
 		var results response.Result[*auth.DTO]
 		err = json.Unmarshal(respBytes, &results)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		// 校验业务代码
-		assert.Equal(t, results.Code, expectedBizCode)
+		require.Equal(t, results.Code, expectedBizCode)
 		// 校验用户信息一致
-		assert.Equal(t, adminName, results.Data.UserInfo.Username)
+		require.Equal(t, adminName, results.Data.UserInfo.Username)
 
 		// 设置 accessToken
 		adminToken = results.Data.AccessToken
@@ -149,11 +148,11 @@ func TestDailyDataHappyPathFlow(t *testing.T) {
 		// 序列化结构体
 		var results response.Result[*[]dailyData.DailyDatumSchema]
 		err = json.Unmarshal(respBytes, &results)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		// 校验业务代码
-		assert.Equal(t, results.Code, expectedBizCode)
+		require.Equal(t, results.Code, expectedBizCode)
 		// 校验数据非空
-		assert.NotEmpty(t, results.Data)
+		require.NotEmpty(t, results.Data)
 	}
 
 	testCases := []testUtil.IntgTestCase{

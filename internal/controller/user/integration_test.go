@@ -1,4 +1,4 @@
-// go:build integration
+//go:build integration
 
 package user_test
 
@@ -18,7 +18,6 @@ import (
 	testUtil "github.com/raozhaizhu/go-estate/internal/test_util"
 	"github.com/raozhaizhu/go-estate/internal/util"
 	response "github.com/raozhaizhu/go-estate/pkg/api"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -114,33 +113,33 @@ func TestUserHappyPathFlow(t *testing.T) {
 		// 序列化结构体
 		var results response.Result[*userService.DTO]
 		err = json.Unmarshal(respBytes, &results)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		// 校验业务代码
-		assert.Equal(t, results.Code, expectedBizCode)
+		require.Equal(t, results.Code, expectedBizCode)
 		// 校验用户信息一致
-		assert.Equal(t, username, results.Data.Username)
+		require.Equal(t, username, results.Data.Username)
 	}
 	getAvatarUploadUrlCheckResponse := func(t *testing.T, respBytes []byte, expectedBizCode int, expectedMsg string) {
 		// 序列化结构体
 		var results response.Result[*userController.AvatarUploadData]
 		err = json.Unmarshal(respBytes, &results)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		// 校验业务代码
-		assert.Equal(t, results.Code, expectedBizCode)
+		require.Equal(t, results.Code, expectedBizCode)
 		// 校验非空
-		assert.NotEmpty(t, results.Data.PostUrl)
-		assert.NotEmpty(t, results.Data.FormData)
-		assert.NotEmpty(t, results.Data.ObjectKey)
+		require.NotEmpty(t, results.Data.PostUrl)
+		require.NotEmpty(t, results.Data.FormData)
+		require.NotEmpty(t, results.Data.ObjectKey)
 	}
 	loginUserCheckResponse := func(t *testing.T, respBytes []byte, expectedBizCode int, expectedMsg string) {
 		// 序列化结构体
 		var results response.Result[*auth.DTO]
 		err = json.Unmarshal(respBytes, &results)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		// 校验业务代码
-		assert.Equal(t, results.Code, expectedBizCode)
+		require.Equal(t, results.Code, expectedBizCode)
 		// 校验用户信息一致
-		assert.Equal(t, username, results.Data.UserInfo.Username)
+		require.Equal(t, username, results.Data.UserInfo.Username)
 
 		// 设置 accessToken
 		userToken = results.Data.AccessToken
@@ -149,11 +148,11 @@ func TestUserHappyPathFlow(t *testing.T) {
 		// 序列化结构体
 		var results response.Result[*auth.DTO]
 		err = json.Unmarshal(respBytes, &results)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		// 校验业务代码
-		assert.Equal(t, results.Code, expectedBizCode)
+		require.Equal(t, results.Code, expectedBizCode)
 		// 校验用户信息一致
-		assert.Equal(t, adminName, results.Data.UserInfo.Username)
+		require.Equal(t, adminName, results.Data.UserInfo.Username)
 
 		// 设置 accessToken
 		adminToken = results.Data.AccessToken
@@ -162,22 +161,22 @@ func TestUserHappyPathFlow(t *testing.T) {
 		// 序列化结构体
 		var results response.Result[*userService.DTO]
 		err = json.Unmarshal(respBytes, &results)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		// 校验业务代码
-		assert.Equal(t, results.Code, expectedBizCode)
+		require.Equal(t, results.Code, expectedBizCode)
 		// 校验用户信息一致
-		assert.Equal(t, vipNameForCreate, results.Data.Username)
-		assert.Equal(t, userDomain.RoleVip, results.Data.Role)
+		require.Equal(t, vipNameForCreate, results.Data.Username)
+		require.Equal(t, userDomain.RoleVip, results.Data.Role)
 	}
 	getUserCheckResponse := func(t *testing.T, respBytes []byte, expectedBizCode int, expectedMsg string) {
 		// 序列化结构体
 		var results response.Result[*userService.DTO]
 		err = json.Unmarshal(respBytes, &results)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		// 校验业务代码
-		assert.Equal(t, results.Code, expectedBizCode)
+		require.Equal(t, results.Code, expectedBizCode)
 		// 校验用户信息一致
-		assert.Equal(t, username, results.Data.Username)
+		require.Equal(t, username, results.Data.Username)
 	}
 
 	testCases := []testUtil.IntgTestCase{

@@ -21,7 +21,6 @@ import (
 	mock_object_store "github.com/raozhaizhu/go-estate/pkg/object_store/mock"
 	"github.com/raozhaizhu/go-estate/pkg/token"
 	mock_token "github.com/raozhaizhu/go-estate/pkg/token/mock"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -108,7 +107,7 @@ func TestUpdateUser(t *testing.T) {
 	stubUpdateUserSuccess := func(storeMock *mock_db.MockStore) {
 		storeMock.EXPECT().UpdateUser(gomock.Any(), gomock.Any()).
 			DoAndReturn(func(ctx context.Context, arg db.UpdateUserParams) (sql.Result, error) {
-				assert.Equal(t, username, arg.Username)
+				require.Equal(t, username, arg.Username)
 				return mockResult{rowsAffected: 1}, nil
 			}).Times(1)
 	}

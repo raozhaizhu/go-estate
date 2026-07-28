@@ -14,7 +14,6 @@ import (
 	response "github.com/raozhaizhu/go-estate/pkg/api"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 	"github.com/raozhaizhu/go-estate/pkg/logger"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -62,9 +61,9 @@ func TestSlogMiddleware(t *testing.T) {
 			require.NoError(t, err)
 
 			// 验证级别/状态/Msg
-			assert.Equal(t, tc.expectedLevel, strings.ToUpper(logEntry["level"].(string)))
-			assert.NotEmpty(t, logEntry["status"])
-			assert.Equal(t, "HTTP 请求已处理", logEntry["msg"])
+			require.Equal(t, tc.expectedLevel, strings.ToUpper(logEntry["level"].(string)))
+			require.NotEmpty(t, logEntry["status"])
+			require.Equal(t, "HTTP 请求已处理", logEntry["msg"])
 		})
 	}
 }
