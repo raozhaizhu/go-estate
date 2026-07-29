@@ -60,6 +60,9 @@ func SetupRouter(services Services, deps *app.Deps) *gin.Engine {
 	// 挂载 Swagger UI 路由
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.PersistAuthorization(true)))
 
+	// 挂载 Websocket
+	router.GET("/ws", middleware.RequireAuth(deps.TokenMaker), middleware.ServeWS(deps.WebsocketManager))
+
 	// 处理路径错误, 当用户访问不存在的 api 资源时, 返回自定义的错误格式(而不是直接 404, 不带 Code)
 	router.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, response.Result[any]{

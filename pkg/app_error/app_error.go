@@ -17,6 +17,7 @@ const (
 	CodeGroupAuthError       = 40100
 	CodeGroupNotFound        = 40400
 	CodeGroupConflict        = 40900
+	CodeUnprocessable        = 42200
 	CodeGroupTooManyRequests = 42900
 	CodeGroupServer          = 50000
 )
@@ -58,12 +59,18 @@ const (
 	CodePathNotFound = CodeGroupNotFound + iota // 路径不存在
 	CodeUserNotFound
 	CodeFileNotFound
+	CodeDailyDataNotFound
 )
 
 const (
 	// 409 值冲突
 	CodeUserAlreadyExits  = CodeGroupConflict + iota // 用户已存在
 	CodeEmailAlreadyExits                            // 邮箱已存在
+)
+
+const (
+	// 422 参数都对, 但业务逻辑校验未通过, 无法执行
+	CodeInsufficientPoints = CodeUnprocessable + iota // 点数不足
 )
 
 const (
@@ -140,14 +147,19 @@ var (
 	ErrBlockedSession = New(CodeBlockedSession, "session 已注销")
 
 	// 404 资源不存在
-	ErrPathNotFound = New(CodePathNotFound, "请求路径不存在")
-	ErrUserNotFound = New(CodeUserNotFound, "用户不存在")
-	ErrFileNotFound = New(CodeFileNotFound, "资源不存在")
+	ErrPathNotFound      = New(CodePathNotFound, "请求路径不存在")
+	ErrUserNotFound      = New(CodeUserNotFound, "用户不存在")
+	ErrFileNotFound      = New(CodeFileNotFound, "资源不存在")
+	ErrDailyDataNotFound = New(CodeDailyDataNotFound, "当日没有成交, 或您查询过早, 数据尚未录入")
 
 	// 409 值冲突
 	ErrUserAlreadyExits  = New(CodeUserAlreadyExits, "该用户已经存在")
 	ErrEmailAlreadyExits = New(CodeEmailAlreadyExits, "该邮箱已经存在")
 
+	// 422 参数都对,但业务逻辑校验未通过, 无法执行
+	ErrInsufficientPoints = New(CodeInsufficientPoints, "用户点数不足")
+
+	// 429 访问次数过高
 	ErrTooManyRequests = New(CodeTooManyRequests, "请求过多,之后再试")
 
 	// 500 服务器内部错误

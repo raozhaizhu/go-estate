@@ -51,9 +51,28 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (sql.Res
 	)
 }
 
+const decreasePoints = `-- name: DecreasePoints :execresult
+UPDATE
+        users
+SET
+        points = points - ?
+WHERE
+        username = ?
+        AND points >= 1
+`
+
+type DecreasePointsParams struct {
+	Amount   uint32 `json:"amount"`
+	Username string `json:"username"`
+}
+
+func (q *Queries) DecreasePoints(ctx context.Context, arg DecreasePointsParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, decreasePoints, arg.Amount, arg.Username)
+}
+
 const getUser = `-- name: GetUser :one
 SELECT
-        id, username, hashed_password, email, avatar_key, role, password_changed_at, created_at
+        id, username, hashed_password, email, avatar_key, role, points, password_changed_at, created_at
 FROM
         users
 WHERE
@@ -70,6 +89,7 @@ func (q *Queries) GetUser(ctx context.Context, username string) (User, error) {
 		&i.Email,
 		&i.AvatarKey,
 		&i.Role,
+		&i.Points,
 		&i.PasswordChangedAt,
 		&i.CreatedAt,
 	)

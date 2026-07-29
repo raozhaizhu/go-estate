@@ -8,6 +8,7 @@ import (
 	"github.com/hibiken/asynq"
 	"github.com/raozhaizhu/go-estate/internal/dao/cache"
 	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
+	"github.com/raozhaizhu/go-estate/internal/myWebsocket"
 	"github.com/raozhaizhu/go-estate/internal/util"
 	"github.com/raozhaizhu/go-estate/internal/worker"
 	"github.com/raozhaizhu/go-estate/pkg/async"
@@ -17,14 +18,15 @@ import (
 )
 
 type Deps struct {
-	Config        util.Config
-	Store         db.Store
-	Cache         cache.Cache
-	ObjectStore   objectStore.StorageService
-	TokenMaker    token.Maker
-	Distributor   worker.TaskDistributor
-	TaskProcessor worker.TaskProcessor
-	AsyncRunner   async.AsyncRunner
+	Config           util.Config
+	Store            db.Store
+	Cache            cache.Cache
+	ObjectStore      objectStore.StorageService
+	TokenMaker       token.Maker
+	Distributor      worker.TaskDistributor
+	TaskProcessor    worker.TaskProcessor
+	AsyncRunner      async.AsyncRunner
+	WebsocketManager *myWebsocket.Manager
 }
 
 func PrepareDeps(config util.Config) *Deps {
@@ -61,16 +63,20 @@ func PrepareDeps(config util.Config) *Deps {
 		os.Exit(1)
 	}
 
+	// 初始化 websocketManager
+	wsManager := myWebsocket.NewManager()
+
 	// 准备好所有依赖
 	deps := &Deps{
-		Config:        config,
-		Store:         store,
-		Cache:         redisCache,
-		ObjectStore:   minioStorage,
-		TokenMaker:    tokenMaker,
-		Distributor:   distributor,
-		TaskProcessor: taskProcessor,
-		AsyncRunner:   async.Go,
+		Config:           config,
+		Store:            store,
+		Cache:            redisCache,
+		ObjectStore:      minioStorage,
+		TokenMaker:       tokenMaker,
+		Distributor:      distributor,
+		TaskProcessor:    taskProcessor,
+		AsyncRunner:      async.Go,
+		WebsocketManager: wsManager,
 	}
 
 	return deps

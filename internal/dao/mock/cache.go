@@ -91,6 +91,21 @@ func (mr *MockCacheMockRecorder) Close() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockCache)(nil).Close))
 }
 
+// GetDailyData mocks base method.
+func (m *MockCache) GetDailyData(arg0 context.Context, arg1, arg2 string, arg3 interface{}) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDailyData", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDailyData indicates an expected call of GetDailyData.
+func (mr *MockCacheMockRecorder) GetDailyData(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDailyData", reflect.TypeOf((*MockCache)(nil).GetDailyData), arg0, arg1, arg2, arg3)
+}
+
 // GetSession mocks base method.
 func (m *MockCache) GetSession(arg0 context.Context, arg1 string) (*cache.Session, error) {
 	m.ctrl.T.Helper()
@@ -119,4 +134,18 @@ func (m *MockCache) IncrIPCnt(arg0 context.Context, arg1 string, arg2 time.Durat
 func (mr *MockCacheMockRecorder) IncrIPCnt(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrIPCnt", reflect.TypeOf((*MockCache)(nil).IncrIPCnt), arg0, arg1, arg2)
+}
+
+// SetDailyData mocks base method.
+func (m *MockCache) SetDailyData(arg0 context.Context, arg1, arg2 string, arg3 interface{}, arg4 time.Duration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetDailyData", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetDailyData indicates an expected call of SetDailyData.
+func (mr *MockCacheMockRecorder) SetDailyData(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetDailyData", reflect.TypeOf((*MockCache)(nil).SetDailyData), arg0, arg1, arg2, arg3, arg4)
 }

@@ -40,3 +40,12 @@ SET
         avatar_key = COALESCE(sqlc.narg(avatar_key), avatar_key)
 WHERE
         username = sqlc.arg(username);
+
+-- name: DecreasePoints :execresult
+UPDATE
+        users
+SET
+        points = points - sqlc.arg(amount)
+WHERE
+        username = sqlc.arg(username)
+        AND points >= 1

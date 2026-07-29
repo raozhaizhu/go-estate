@@ -40,10 +40,12 @@ func RequireAuth(tokenMaker token.Maker) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		// // 将荷载存入上下文
+		// 将荷载, 用户名存入上下文
 		ctx := context.WithValue(c.Request.Context(), ctxKey.CtxKeyPayload, payload)
+		ctx = context.WithValue(ctx, ctxKey.CtxKeyUserName, payload.Username)
 		c.Request = c.Request.WithContext(ctx)
 		c.Set(ctxKey.CtxKeyPayload, payload)
+		c.Set(ctxKey.CtxKeyUserName, payload.Username)
 		c.Next()
 	}
 }
