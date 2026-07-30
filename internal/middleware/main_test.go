@@ -42,9 +42,9 @@ type testCase struct {
 	// svc埋桩
 	buildStubs func(tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache)
 	// 执行服务
-	action func(t *testing.T, reqUrl string, body interface{}, router *gin.Engine, writer *httptest.ResponseRecorder, customData map[string]any, tokenMakerMock *mock_token.MockMaker, ctx *gin.Context, cacheMock *mock_db.MockCache)
+	action func(t *testing.T, reqUrl string, body interface{}, router *gin.Engine, writer *httptest.ResponseRecorder, customData map[string]any, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache)
 	// 校验数据
-	checkResponse func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string, ctx *gin.Context)
+	checkResponse func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string)
 	// expectedHTTPCode
 	expectedHTTPCode int
 	// expectedBizCode
@@ -63,18 +63,22 @@ func runTC(t *testing.T, testCases []testCase) {
 			// 开启测试
 			gin.SetMode(gin.TestMode)
 			writer := httptest.NewRecorder()
-			ctx, router := gin.CreateTestContext(writer)
+			_, router := gin.CreateTestContext(writer)
 
 			// 模拟请求
 			tokenMakerMock := mock_token.NewMockMaker(ctrl)
 			cacheMock := mock_db.NewMockCache(ctrl)
-			tc.buildStubs(tokenMakerMock, cacheMock)
+			if tc.buildStubs != nil {
+				tc.buildStubs(tokenMakerMock, cacheMock)
+			}
 
 			// 执行行动
-			tc.action(t, tc.reqUrl, tc.body, router, writer, tc.customData, tokenMakerMock, ctx, cacheMock)
+			tc.action(t, tc.reqUrl, tc.body, router, writer, tc.customData, tokenMakerMock, cacheMock)
 
 			// 校验结果
-			tc.checkResponse(t, writer, tc.expectedHTTPCode, tc.expectedBizCode, tc.expectedMsg, ctx)
+			if tc.checkResponse != nil {
+				tc.checkResponse(t, writer, tc.expectedHTTPCode, tc.expectedBizCode, tc.expectedMsg)
+			}
 		})
 	}
 }

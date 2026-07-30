@@ -22,15 +22,15 @@ import (
 
 type service struct {
 	store      db.DailyDataStore
-	txRunner   db.TxRunner
 	queryCache cache.QueryCache
-	logger     *slog.Logger
 	wsManager  *myWebsocket.Manager
+
+	logger *slog.Logger
 }
 
 func New(deps *app.Deps) *service {
 	logger := slog.Default().With("layer", "service", "module", "dailyData_service")
-	return &service{store: deps.Store, txRunner: deps.Store, logger: logger, wsManager: deps.WebsocketManager}
+	return &service{store: deps.Store, logger: logger, wsManager: deps.WebsocketManager}
 }
 
 /** ====================================================================================

@@ -26,6 +26,12 @@ func NewManager() *Manager {
 	}
 }
 
+// UserConnecting 该用户是否处在连接状态
+func (m *Manager) UserConnecting(username string) bool {
+	_, ok := m.clients[username]
+	return ok
+}
+
 // AddClient 新增客户连接到管理器
 func (m *Manager) AddClient(username string, client *Client) {
 	m.Lock()

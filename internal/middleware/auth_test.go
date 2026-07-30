@@ -16,7 +16,6 @@ import (
 	testUtil "github.com/raozhaizhu/go-estate/internal/test_util"
 	response "github.com/raozhaizhu/go-estate/pkg/api"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
-	ctxKey "github.com/raozhaizhu/go-estate/pkg/ctx_key"
 	"github.com/raozhaizhu/go-estate/pkg/token"
 	mock_token "github.com/raozhaizhu/go-estate/pkg/token/mock"
 	"github.com/stretchr/testify/require"
@@ -34,7 +33,7 @@ func TestAuth(t *testing.T) {
 		TokenType: token.TokenTypeAccessToken,
 	}
 	// 默认执行逻辑
-	defaultAction := func(t *testing.T, reqUrl string, body interface{}, router *gin.Engine, writer *httptest.ResponseRecorder, customData map[string]any, tokenMakerMock *mock_token.MockMaker, ctx *gin.Context, cacheMock *mock_db.MockCache) {
+	defaultAction := func(t *testing.T, reqUrl string, body interface{}, router *gin.Engine, writer *httptest.ResponseRecorder, customData map[string]any, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 		req, err := http.NewRequest(http.MethodGet, reqUrl, nil)
 		require.NoError(t, err)
 
@@ -43,7 +42,7 @@ func TestAuth(t *testing.T) {
 		router.Use(authMiddleware)
 
 		router.GET(reqUrl, func(c *gin.Context) {
-			ctx.Keys = c.Keys
+			capturedCtx = c
 			response.Success(c, "success")
 		})
 
@@ -57,7 +56,7 @@ func TestAuth(t *testing.T) {
 		router.ServeHTTP(writer, req)
 
 	}
-	failCheckResponse := func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string, ctx *gin.Context) {
+	failCheckResponse := func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string) {
 		var results response.Result[interface{}]
 		// 反序列化结果
 		err := json.Unmarshal(writer.Body.Bytes(), &results)
@@ -71,7 +70,7 @@ func TestAuth(t *testing.T) {
 		sort.Strings(actSlice)
 		require.Equal(t, expSlice, actSlice)
 	}
-	successCheckResponse := func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string, ctx *gin.Context) {
+	successCheckResponse := func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string) {
 		var results response.Result[string]
 		// 反序列化结果
 		err := json.Unmarshal(writer.Body.Bytes(), &results)
@@ -80,8 +79,8 @@ func TestAuth(t *testing.T) {
 		require.Equal(t, expectedBizCode, results.Code)
 		require.Equal(t, expectedMsg, results.Msg)
 		// 校验上下文
-		payload, ok := ctx.Get(ctxKey.CtxKeyPayload)
-		require.True(t, ok)
+		payload, err := token.GetPayload(capturedCtx)
+		require.NoError(t, err)
 		require.Equal(t, accessPayload, payload)
 	}
 	// 成功桩函数

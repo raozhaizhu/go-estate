@@ -36,10 +36,21 @@ func ServeWS(manager *myWebsocket.Manager) gin.HandlerFunc {
 		}
 
 		// 升级协议
-		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+		var upgradeStatus int // 提取升级报错的状态码,
+		u := upgrader         // 初始化升级者
+		u.Error = func(w http.ResponseWriter, r *http.Request, status int, reason error) {
+			upgradeStatus = status
+		}
+		conn, err := u.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
-			response.Fail(c, appError.NewSrvErr(err))
+			if upgradeStatus >= 400 && upgradeStatus < 500 { // 400 参数错误
+				response.Fail(c, appError.ErrBadWSUpgradeHeader.WithErr(err))
+			} else { // 内部错误
+				response.Fail(c, appError.NewSrvErr(err))
+			}
+			c.Abort()
 			logger.ErrorContext(c.Request.Context(), "websocket 升级失败", "error", err)
+			return
 		}
 
 		// 初始化客户端

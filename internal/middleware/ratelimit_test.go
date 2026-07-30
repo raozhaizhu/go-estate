@@ -27,7 +27,7 @@ func TestRateLimiter(t *testing.T) {
 	onceCnt, exceededCnt := int64(1), int64(6)
 
 	// 默认执行逻辑
-	defaultAction := func(t *testing.T, reqUrl string, body interface{}, router *gin.Engine, writer *httptest.ResponseRecorder, customData map[string]any, tokenMakerMock *mock_token.MockMaker, ctx *gin.Context, cacheMock *mock_db.MockCache) {
+	defaultAction := func(t *testing.T, reqUrl string, body interface{}, router *gin.Engine, writer *httptest.ResponseRecorder, customData map[string]any, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 		req, err := http.NewRequest(http.MethodGet, reqUrl, nil)
 		require.NoError(t, err)
 		// 执行中间件
@@ -35,7 +35,7 @@ func TestRateLimiter(t *testing.T) {
 		router.Use(rateLimitMiddleware)
 
 		router.GET(reqUrl, func(c *gin.Context) {
-			ctx.Keys = c.Keys
+			capturedCtx = c
 			response.Success(c, "success")
 		})
 
@@ -46,7 +46,7 @@ func TestRateLimiter(t *testing.T) {
 		router.ServeHTTP(writer, req)
 
 	}
-	failCheckResponse := func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string, ctx *gin.Context) {
+	failCheckResponse := func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string) {
 		var results response.Result[interface{}]
 		// 反序列化结果
 		err := json.Unmarshal(writer.Body.Bytes(), &results)
