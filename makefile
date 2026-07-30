@@ -2,6 +2,11 @@
 include app.env
 export $(shell sed 's/=.*//' app.env)
 
+# git
+commit:
+	@git add .
+	@git commit -m $(msg)
+
 # migrate
 migrate_create:
 	migrate create -ext sql -dir $(DB_DIR)/migration -seq $(name)
@@ -72,7 +77,7 @@ pprof-mutex:
 pprof-block:
 	go tool pprof -http=:8084 http://localhost:8080/dev/pprof/block?seconds=20
 
-
+.PHONY: commit
 .PHONY: migrate_create migrate_up migrate_up_1 migrate_down migrate_down_1
 .PHONY: docker_down docker_up q docker_rebuild
 .PHONY: sqlc_gen mock test test-integration swag act 
