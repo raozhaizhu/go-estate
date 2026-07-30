@@ -21,6 +21,7 @@ const (
 
 // GetDataTxParams 获取成交数据所需参数
 type GetDataTxParams struct {
+	RecordHit bool
 	Username  string
 	QueryType int8
 	StartDate time.Time
@@ -35,46 +36,49 @@ type GetDataTxResult struct {
 }
 
 // GetDataAndDeductPointsTx 执行扣费并获取数据的完整事务
-func (s *SQLStore) GetDataAndDeductPointsTx(ctx context.Context, arg GetDataTxParams) (GetDataTxResult, error) {
+func (s *SQLStore) GetDataAndDeductPointsTx(ctx context.Context, params GetDataTxParams) (GetDataTxResult, error) {
 	var result GetDataTxResult
 
 	err := s.ExecTx(ctx, func(q Querier) error {
-		// 1. 尝试写入查询凭证
-		firstTime, err := TryRecordUserQuery(q, ctx, GetUserQueryRecordParams{
-			Username:  arg.Username,
-			QueryType: arg.QueryType,
-			StartDate: arg.StartDate,
-			EndDate:   arg.EndDate,
-		})
-		if err != nil {
-			return err
-		}
-
-		result.FirstTime = firstTime // 记录到外层返回值中
-
-		// 2. 写入凭证成功，尝试扣费
-		if firstTime {
-			if err = DecreaseUserPoints(q, ctx, DecreasePointsParams{
-				Amount:   uint32(arg.Points),
-				Username: arg.Username,
-			}); err != nil {
+		if !params.RecordHit { // 只有在缓存没命中的情况下, 才需要去查询凭证和尝试扣费
+			// 1. 尝试写入查询凭证
+			firstTime, err := TryRecordUserQuery(q, ctx, GetUserQueryRecordParams{
+				Username:  params.Username,
+				QueryType: params.QueryType,
+				StartDate: params.StartDate,
+				EndDate:   params.EndDate,
+			})
+			if err != nil {
 				return err
+			}
+
+			result.FirstTime = firstTime // 将是否初次查询, 记录到外层返回值中
+
+			// 2. 写入凭证成功，尝试扣费
+			if firstTime {
+				if err = DecreaseUserPoints(q, ctx, DecreasePointsParams{
+					Amount:   uint32(params.Points),
+					Username: params.Username,
+				}); err != nil {
+					return err
+				}
 			}
 		}
 
 		// 3. 获取数据
 		var fetchedData []DailyDatum
-		switch arg.QueryType {
+		var err error
+		switch params.QueryType {
 		case TypeGetDataByDay: // 获取单日数据
-			fetchedData, err = q.GetDataByDay(ctx, arg.StartDate)
+			fetchedData, err = q.GetDataByDay(ctx, params.StartDate)
 			if err != nil {
 				return err
 			}
 
 		case TypeGetDataByPeriod:
 			fetchedData, err = q.GetDataByPeriod(ctx, GetDataByPeriodParams{
-				StartDate: arg.StartDate,
-				EndDate:   arg.EndDate,
+				StartDate: params.StartDate,
+				EndDate:   params.EndDate,
 			})
 			if err != nil {
 				return err
@@ -96,7 +100,7 @@ func (s *SQLStore) GetDataAndDeductPointsTx(ctx context.Context, arg GetDataTxPa
 	return result, err
 }
 
-// DecreaseUserPoints
+// DecreaseUserPoints 扣减用户积分
 func DecreaseUserPoints(q Querier, ctx context.Context, arg DecreasePointsParams) error {
 	result, err := q.DecreasePoints(ctx, arg)
 	if err != nil {

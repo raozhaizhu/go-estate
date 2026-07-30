@@ -8,7 +8,7 @@ import (
 	"github.com/hibiken/asynq"
 	"github.com/raozhaizhu/go-estate/internal/dao/cache"
 	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
-	"github.com/raozhaizhu/go-estate/internal/myWebsocket"
+	myWebsocket "github.com/raozhaizhu/go-estate/internal/my_websocket"
 	"github.com/raozhaizhu/go-estate/internal/util"
 	"github.com/raozhaizhu/go-estate/internal/worker"
 	"github.com/raozhaizhu/go-estate/pkg/async"

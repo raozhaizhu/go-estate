@@ -2,9 +2,11 @@ package dailyData
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
+	dailyDataDomain "github.com/raozhaizhu/go-estate/internal/domain/daily_data"
 )
 
 /** ====================================================================================
@@ -18,20 +20,20 @@ const (
 	GetDataByPeriodPoints = 5
 
 	// 过期时间
-	GetDataExpireDuration = 12 * time.Hour
+	RecordExpireDuration = 12 * time.Hour
+	DataExpireDuration   = 7 * 24 * time.Hour
 )
 
 // GetDataByDay 按日获取楼盘成交数据
-func (svc *service) GetDataByDay(ctx context.Context, input GetDataByDayInput) ([]db.DailyDatum, error) {
+func (svc *service) GetDataByDay(ctx context.Context, input *GetDataByDayInput) ([]db.DailyDatum, error) {
 	// 参数转换
 	txParams, err := input.toDBParams(ctx)
 	if err != nil {
 		return nil, err
 	}
-	cacheKey := input.TargetDate.String()
 
 	// -> db 获取数据
-	return svc.fetchAndDeductData(ctx, cacheKey, txParams)
+	return svc.fetchAndDeductData(ctx, txParams)
 }
 
 /** ====================================================================================
@@ -40,16 +42,15 @@ func (svc *service) GetDataByDay(ctx context.Context, input GetDataByDayInput) (
  */
 
 // GetDataByPeriod 按周期获取楼盘成交数据
-func (svc *service) GetDataByPeriod(ctx context.Context, input GetDataByPeriodInput) ([]db.DailyDatum, error) {
+func (svc *service) GetDataByPeriod(ctx context.Context, input *GetDataByPeriodInput) ([]db.DailyDatum, error) {
 	// 参数转换
 	txParams, err := input.toDBParams(ctx)
 	if err != nil {
 		return nil, err
 	}
-	cacheKey := txParams.StartDate.String() + txParams.EndDate.String()
 
 	// -> db 获取数据
-	return svc.fetchAndDeductData(ctx, cacheKey, txParams)
+	return svc.fetchAndDeductData(ctx, txParams)
 }
 
 /** ====================================================================================
@@ -70,28 +71,39 @@ func (svc *service) GetAllData(ctx context.Context) ([]db.DailyDatum, error) {
  */
 
 // fetchAndDeductData 获取数据并尝试扣减用户积分, 若扣费成功将通知用户
-func (svc *service) fetchAndDeductData(ctx context.Context, cacheKey string, txParams db.GetDataTxParams) ([]db.DailyDatum, error) {
+func (svc *service) fetchAndDeductData(ctx context.Context, txParams db.GetDataTxParams) ([]db.DailyDatum, error) {
+	startDate, endDate := txParams.StartDate.Format(dailyDataDomain.DateFormat), txParams.EndDate.Format(dailyDataDomain.DateFormat)
 	// -> cache 若命中则直接返回数据
-	var cachedData []db.DailyDatum
-	hit, err := svc.queryCache.GetDailyData(ctx, txParams.Username, cacheKey, &cachedData)
+	recordHit, rawData, err := svc.queryCache.GetRecordAndData(ctx, txParams.Username, startDate, endDate)
 	if err != nil { // Redis 出现内部错误
 		svc.logger.ErrorContext(ctx, "redis 查询失败", "err", err.Error())
-	} else if hit { // Redis 没有报错且命中
-		return cachedData, nil
+	} else if recordHit && rawData != nil { // Redis 没有报错, 得到用户记录, 且得到成交数据, 直接返回即可
+		var cachedData []db.DailyDatum
+		err := json.Unmarshal(rawData, &cachedData)
+		if err != nil { // 序列化失败, 继续往下走访问 db 获取数据
+			svc.logger.ErrorContext(ctx, "序列化数据失败", "err", err.Error())
+		} else {
+			return cachedData, nil
+		}
 	}
 
-	// -> db 插入凭证 & 扣费 & 获取数据
+	// 记录 record 是否命中缓存(若命中则仅需获取成交数据即可)
+	txParams.RecordHit = recordHit
+	// -> db 插入凭证(?) & 扣费(?) & 获取数据(必须)
 	txResult, err := svc.store.GetDataAndDeductPointsTx(ctx, txParams)
 	if err != nil {
 		return nil, err
 	}
 
 	// -> cache 写入缓存
-	_ = svc.queryCache.SetDailyData(ctx, txParams.Username, cacheKey, txResult.Data, GetDataExpireDuration)
+	err = svc.queryCache.SetRecordAndData(ctx, txParams.Username, startDate, endDate, txResult.Data, RecordExpireDuration, DataExpireDuration)
+	if err != nil {
+		svc.logger.ErrorContext(ctx, "写入缓存失败", "err", err.Error())
+	}
 
-	// -> ws 扣费成功,通知用户
-	if txResult.FirstTime {
-		svc.wsManager.GoSendPointsMsgToUser(ctx, txParams.Username, GetDataByDayPoints)
+	// -> ws 是初次查询, 因此产生了扣费, 通知用户
+	if !recordHit && txResult.FirstTime { // 缓存没命中, 并且查数据得知这是初次查询
+		svc.wsManager.GoSendPointsMsgToUser(ctx, txParams.Username, txParams.Points)
 	}
 
 	return txResult.Data, err

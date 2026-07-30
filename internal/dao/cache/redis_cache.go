@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"testing"
@@ -182,52 +183,77 @@ func (r *redisCache) IncrIPCnt(ctx context.Context, ip string, duration time.Dur
  * =====================================================================================
  */
 
-// buildQueryKeyByDay 生成统一的 Key, 用于 getDataByDay 查询
-func (r *redisCache) buildQueryKeyByDay(username, targetDate string) string {
-	return fmt.Sprintf("query:daily_data:%s:%s", username, targetDate)
+// buildUserQueryKey 生成统一的 Key, 用于记录用户是否查询过该数据
+func (r *redisCache) buildUserQueryKey(username, startDate, endDate string) string {
+	return fmt.Sprintf("query:user_query_record:%s:%s:%s", username, startDate, endDate)
 }
 
-// GetDailyData 尝试获取已付费的查询缓存
-// 返回(是否命中,错误) 并将数据序列化到 dest
-func (r *redisCache) GetDailyData(ctx context.Context, username, targetDate string, dest any) (bool, error) {
-	// 生成唯一键
-	key := r.buildQueryKeyByDay(username, targetDate)
-
-	// 查询唯一键
-	val, err := r.client.Get(ctx, key).Result()
-	if err == redis.Nil {
-		// 缓存不存在或已过期
-		return false, nil
-	} else if err != nil {
-		// Redis异常
-		r.logger.ErrorContext(ctx, "redis 获取数据失败", "err", err.Error())
-		return false, appError.NewSrvErr(err)
-	}
-
-	// 缓存命中,反序列化回结构体
-	if err := json.Unmarshal([]byte(val), dest); err != nil {
-		// 序列化异常
-		r.logger.ErrorContext(ctx, "redis 序列化数据失败", "err", err.Error())
-		return false, appError.NewSrvErr(err)
-	}
-
-	return true, nil
+// buildDataKey 生成统一的 Key, 用于缓存日成交数据
+func (r *redisCache) buildDataKey(startDate, endDate string) string {
+	return fmt.Sprintf("query:daily_data:%s:%s", startDate, endDate)
 }
 
-// SetDailyData 写入查询缓存, 设置过期时间
-func (r *redisCache) SetDailyData(ctx context.Context, username, targetDate string, data any, ttl time.Duration) error {
-	// 生成唯一键
-	key := r.buildQueryKeyByDay(username, targetDate)
+// GetRecordAndData 获取用户查询记录和成交数据
+func (r *redisCache) GetRecordAndData(ctx context.Context, username, startDate, endDate string) (bool, []byte, error) {
+	// 用户查询键: 记录用户是否查询过该数据
+	recordKey := r.buildUserQueryKey(username, startDate, endDate)
+	// 数据查询键: 获取缓存的成交数据
+	dataKey := r.buildDataKey(startDate, endDate)
 
-	bytes, err := json.Marshal(data)
+	// 开启管道
+	pipe := r.client.Pipeline()
+	recordCmd, dataCmd := pipe.Get(ctx, recordKey), pipe.Get(ctx, dataKey)
+
+	// 执行并获取报错
+	pipe.Exec(ctx) // 忽略总错误处理, 后续会处理分支错误
+	recordErr, dataErr := recordCmd.Err(), dataCmd.Err()
+
+	// 校验用户查询记录
+	hasRecord := true
+	if errors.Is(recordErr, redis.Nil) { // 为空, 说明没有记录
+		hasRecord = false
+	} else if recordErr != nil { // 其他内部错误
+		return false, nil, recordErr
+	}
+
+	// 校验成交数据
+	var rawData []byte
+	var err error
+	if errors.Is(dataErr, redis.Nil) { // 为空, 说明没有数据
+		rawData = nil
+	} else if dataErr != nil { // 其他内部错误
+		return hasRecord, nil, dataErr
+	} else { // 没有错误, 成功拿到数据
+		rawData, err = dataCmd.Bytes()
+		if err != nil {
+			return hasRecord, nil, err
+		}
+	}
+
+	return hasRecord, rawData, nil
+}
+
+// SetRecordAndData 写入用户查询记录和成交数据
+func (r *redisCache) SetRecordAndData(ctx context.Context, username, startDate, endDate string, data any, recordTTL, dataTTL time.Duration) error {
+	// 用户查询键: 记录用户是否查询过该数据
+	recordKey := r.buildUserQueryKey(username, startDate, endDate)
+	// 写入用户查询记录
+	err := r.client.Set(ctx, recordKey, true, recordTTL).Err()
 	if err != nil {
-		r.logger.ErrorContext(ctx, "redis 序列化数据失败", "err", err.Error())
 		return appError.NewSrvErr(err)
 	}
 
-	err = r.client.Set(ctx, key, bytes, ttl).Err()
+	// 序列化数据
+	bytes, err := json.Marshal(data)
 	if err != nil {
-		r.logger.ErrorContext(ctx, "redis 设置键失败", "err", err.Error())
+		return appError.NewSrvErr(err)
+	}
+
+	// 数据查询键: 获取缓存的成交数据
+	dataKey := r.buildDataKey(startDate, endDate)
+	// 写入成交数据
+	err = r.client.Set(ctx, dataKey, bytes, dataTTL).Err()
+	if err != nil {
 		return appError.NewSrvErr(err)
 	}
 

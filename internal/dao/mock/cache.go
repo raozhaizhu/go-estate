@@ -91,19 +91,20 @@ func (mr *MockCacheMockRecorder) Close() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockCache)(nil).Close))
 }
 
-// GetDailyData mocks base method.
-func (m *MockCache) GetDailyData(arg0 context.Context, arg1, arg2 string, arg3 interface{}) (bool, error) {
+// GetRecordAndData mocks base method.
+func (m *MockCache) GetRecordAndData(arg0 context.Context, arg1, arg2, arg3 string) (bool, []byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDailyData", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "GetRecordAndData", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].([]byte)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
-// GetDailyData indicates an expected call of GetDailyData.
-func (mr *MockCacheMockRecorder) GetDailyData(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+// GetRecordAndData indicates an expected call of GetRecordAndData.
+func (mr *MockCacheMockRecorder) GetRecordAndData(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDailyData", reflect.TypeOf((*MockCache)(nil).GetDailyData), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRecordAndData", reflect.TypeOf((*MockCache)(nil).GetRecordAndData), arg0, arg1, arg2, arg3)
 }
 
 // GetSession mocks base method.
@@ -136,16 +137,16 @@ func (mr *MockCacheMockRecorder) IncrIPCnt(arg0, arg1, arg2 interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrIPCnt", reflect.TypeOf((*MockCache)(nil).IncrIPCnt), arg0, arg1, arg2)
 }
 
-// SetDailyData mocks base method.
-func (m *MockCache) SetDailyData(arg0 context.Context, arg1, arg2 string, arg3 interface{}, arg4 time.Duration) error {
+// SetRecordAndData mocks base method.
+func (m *MockCache) SetRecordAndData(arg0 context.Context, arg1, arg2, arg3 string, arg4 interface{}, arg5, arg6 time.Duration) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetDailyData", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "SetRecordAndData", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// SetDailyData indicates an expected call of SetDailyData.
-func (mr *MockCacheMockRecorder) SetDailyData(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+// SetRecordAndData indicates an expected call of SetRecordAndData.
+func (mr *MockCacheMockRecorder) SetRecordAndData(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetDailyData", reflect.TypeOf((*MockCache)(nil).SetDailyData), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRecordAndData", reflect.TypeOf((*MockCache)(nil).SetRecordAndData), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }

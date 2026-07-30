@@ -9,7 +9,7 @@ import (
 	db "github.com/raozhaizhu/go-estate/internal/dao/sqlc"
 	"github.com/raozhaizhu/go-estate/internal/domain/app"
 	dailyData "github.com/raozhaizhu/go-estate/internal/domain/daily_data"
-	"github.com/raozhaizhu/go-estate/internal/myWebsocket"
+	myWebsocket "github.com/raozhaizhu/go-estate/internal/my_websocket"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 	ctxKey "github.com/raozhaizhu/go-estate/pkg/ctx_key"
 )
@@ -40,6 +40,7 @@ func New(deps *app.Deps) *service {
  */
 
 type GetDataByDayInput struct {
+	Username   string
 	TargetDate time.Time
 }
 
@@ -72,6 +73,7 @@ func (input *GetDataByDayInput) toDBParams(ctx context.Context) (db.GetDataTxPar
  */
 
 type GetDataByPeriodInput struct {
+	Username  string
 	StartDate time.Time
 	EndDate   time.Time
 }

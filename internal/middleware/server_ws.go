@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/raozhaizhu/go-estate/internal/myWebsocket"
+	myWebsocket "github.com/raozhaizhu/go-estate/internal/my_websocket"
 	response "github.com/raozhaizhu/go-estate/pkg/api"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 	ctxKey "github.com/raozhaizhu/go-estate/pkg/ctx_key"

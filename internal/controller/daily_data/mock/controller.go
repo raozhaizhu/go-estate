@@ -52,7 +52,7 @@ func (mr *MockServiceMockRecorder) GetAllData(arg0 interface{}) *gomock.Call {
 }
 
 // GetDataByDay mocks base method.
-func (m *MockService) GetDataByDay(arg0 context.Context, arg1 dailyData.GetDataByDayInput) ([]db.DailyDatum, error) {
+func (m *MockService) GetDataByDay(arg0 context.Context, arg1 *dailyData.GetDataByDayInput) ([]db.DailyDatum, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDataByDay", arg0, arg1)
 	ret0, _ := ret[0].([]db.DailyDatum)
@@ -67,7 +67,7 @@ func (mr *MockServiceMockRecorder) GetDataByDay(arg0, arg1 interface{}) *gomock.
 }
 
 // GetDataByPeriod mocks base method.
-func (m *MockService) GetDataByPeriod(arg0 context.Context, arg1 dailyData.GetDataByPeriodInput) ([]db.DailyDatum, error) {
+func (m *MockService) GetDataByPeriod(arg0 context.Context, arg1 *dailyData.GetDataByPeriodInput) ([]db.DailyDatum, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDataByPeriod", arg0, arg1)
 	ret0, _ := ret[0].([]db.DailyDatum)

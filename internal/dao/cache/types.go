@@ -27,8 +27,8 @@ type Cache interface {
 	IncrIPCnt(ctx context.Context, ip string, duration time.Duration) (int64, error)
 
 	// QueryDailyData
-	GetDailyData(ctx context.Context, username, targetDate string, dest any) (bool, error)
-	SetDailyData(ctx context.Context, username, targetDate string, data any, ttl time.Duration) error
+	GetRecordAndData(ctx context.Context, username, startDate, endDate string) (bool, []byte, error)
+	SetRecordAndData(ctx context.Context, username, startDate, endDate string, data any, recordTTL, dataTTL time.Duration) error
 
 	// Lifecycle
 	Close() error
@@ -44,8 +44,8 @@ type SessionCache interface {
 
 // QueryCache 用于管理 dailyData 的查询记录
 type QueryCache interface {
-	GetDailyData(ctx context.Context, username, targetDate string, dest any) (bool, error)
-	SetDailyData(ctx context.Context, username, targetDate string, data any, ttl time.Duration) error
+	GetRecordAndData(ctx context.Context, username, startDate, endDate string) (bool, []byte, error)
+	SetRecordAndData(ctx context.Context, username, startDate, endDate string, data any, recordTTL, dataTTL time.Duration) error
 }
 
 func NewCache(addr, password string) (Cache, error) {

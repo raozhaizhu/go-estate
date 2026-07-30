@@ -68,7 +68,7 @@ func TestGetDataByDay(t *testing.T) {
 
 			tc.buildStubs(storeMock)
 
-			res, err := svc.GetDataByDay(context.Background(), GetDataByDayInput{TargetDate: tc.inputDate})
+			res, err := svc.GetDataByDay(context.Background(), &GetDataByDayInput{TargetDate: tc.inputDate})
 
 			tc.checkResponse(t, res, err)
 		})
@@ -164,7 +164,7 @@ func TestGetDataByPeriod(t *testing.T) {
 
 			tc.buildStubs(mockStore)
 			res, err := svc.GetDataByPeriod(context.Background(),
-				GetDataByPeriodInput{StartDate: tc.inputDate.StartDate, EndDate: tc.inputDate.EndDate})
+				&GetDataByPeriodInput{StartDate: tc.inputDate.StartDate, EndDate: tc.inputDate.EndDate})
 			tc.checkResponse(t, res, err)
 		})
 	}
