@@ -5,7 +5,7 @@ export $(shell sed 's/=.*//' app.env)
 # git
 commit:
 	@git add .
-	@git commit -m $(msg)
+	@git commit -m '$1'
 
 # migrate
 migrate_create:
