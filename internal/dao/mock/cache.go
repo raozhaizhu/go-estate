@@ -138,15 +138,15 @@ func (mr *MockCacheMockRecorder) IncrIPCnt(arg0, arg1, arg2 interface{}) *gomock
 }
 
 // SetRecordAndData mocks base method.
-func (m *MockCache) SetRecordAndData(arg0 context.Context, arg1, arg2, arg3 string, arg4 interface{}, arg5, arg6 time.Duration) error {
+func (m *MockCache) SetRecordAndData(arg0 context.Context, arg1, arg2 bool, arg3, arg4, arg5 string, arg6 interface{}, arg7, arg8 time.Duration) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetRecordAndData", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	ret := m.ctrl.Call(m, "SetRecordAndData", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SetRecordAndData indicates an expected call of SetRecordAndData.
-func (mr *MockCacheMockRecorder) SetRecordAndData(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
+func (mr *MockCacheMockRecorder) SetRecordAndData(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRecordAndData", reflect.TypeOf((*MockCache)(nil).SetRecordAndData), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRecordAndData", reflect.TypeOf((*MockCache)(nil).SetRecordAndData), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
 }

@@ -234,27 +234,37 @@ func (r *redisCache) GetRecordAndData(ctx context.Context, username, startDate, 
 }
 
 // SetRecordAndData 写入用户查询记录和成交数据
-func (r *redisCache) SetRecordAndData(ctx context.Context, username, startDate, endDate string, data any, recordTTL, dataTTL time.Duration) error {
-	// 用户查询键: 记录用户是否查询过该数据
-	recordKey := r.buildUserQueryKey(username, startDate, endDate)
-	// 写入用户查询记录
-	err := r.client.Set(ctx, recordKey, true, recordTTL).Err()
-	if err != nil {
-		return appError.NewSrvErr(err)
+func (r *redisCache) SetRecordAndData(ctx context.Context, recordHit, dataHit bool, username, startDate, endDate string, data any, recordTTL, dataTTL time.Duration) error {
+	// DoubleHit, 无需写回
+	if recordHit && dataHit {
+		return nil
+	}
+	// 只有凭证 Miss 的情况下, 才写回凭证
+	if !recordHit {
+		// 用户查询键: 记录用户是否查询过该数据
+		recordKey := r.buildUserQueryKey(username, startDate, endDate)
+		// 写入用户查询记录
+		err := r.client.Set(ctx, recordKey, true, recordTTL).Err()
+		if err != nil {
+			return appError.NewSrvErr(err)
+		}
 	}
 
-	// 序列化数据
-	bytes, err := json.Marshal(data)
-	if err != nil {
-		return appError.NewSrvErr(err)
-	}
+	// 只有数据 Miss 的情况下,才写回数据
+	if !dataHit {
+		// 序列化数据
+		bytes, err := json.Marshal(data)
+		if err != nil {
+			return appError.NewSrvErr(err)
+		}
 
-	// 数据查询键: 获取缓存的成交数据
-	dataKey := r.buildDataKey(startDate, endDate)
-	// 写入成交数据
-	err = r.client.Set(ctx, dataKey, bytes, dataTTL).Err()
-	if err != nil {
-		return appError.NewSrvErr(err)
+		// 数据查询键: 获取缓存的成交数据
+		dataKey := r.buildDataKey(startDate, endDate)
+		// 写入成交数据
+		err = r.client.Set(ctx, dataKey, bytes, dataTTL).Err()
+		if err != nil {
+			return appError.NewSrvErr(err)
+		}
 	}
 
 	return nil

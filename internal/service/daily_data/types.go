@@ -1,7 +1,6 @@
 package dailyData
 
 import (
-	"context"
 	"log/slog"
 	"time"
 
@@ -11,7 +10,6 @@ import (
 	dailyData "github.com/raozhaizhu/go-estate/internal/domain/daily_data"
 	myWebsocket "github.com/raozhaizhu/go-estate/internal/my_websocket"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
-	ctxKey "github.com/raozhaizhu/go-estate/pkg/ctx_key"
 )
 
 /** ====================================================================================
@@ -30,7 +28,7 @@ type service struct {
 
 func New(deps *app.Deps) *service {
 	logger := slog.Default().With("layer", "service", "module", "dailyData_service")
-	return &service{store: deps.Store, logger: logger, wsManager: deps.WebsocketManager}
+	return &service{store: deps.Store, queryCache: deps.Cache, logger: logger, wsManager: deps.WebsocketManager}
 }
 
 /** ====================================================================================
@@ -44,19 +42,14 @@ type GetDataByDayInput struct {
 	TargetDate time.Time
 }
 
-func (input *GetDataByDayInput) toDBParams(ctx context.Context) (db.GetDataTxParams, error) {
-	// 获取用户名
-	username, err := ctxKey.GetUsername(ctx)
-	if err != nil {
-		return db.GetDataTxParams{}, err
-	}
+func (input *GetDataByDayInput) toDBParams() (db.GetDataTxParams, error) {
 	// 查询时间必须在范围内
 	if input.TargetDate.Before(dailyData.MinDate) || !input.TargetDate.Before(dailyData.ExpiredDate) {
 		return db.GetDataTxParams{}, appError.ErrTimeOutOfRange
 	}
 
 	txParams := db.GetDataTxParams{
-		Username:  username,
+		Username:  input.Username,
 		StartDate: input.TargetDate,
 		EndDate:   input.TargetDate,
 		Points:    GetDataByDayPoints,
@@ -78,15 +71,9 @@ type GetDataByPeriodInput struct {
 	EndDate   time.Time
 }
 
-func (input *GetDataByPeriodInput) toDBParams(ctx context.Context) (db.GetDataTxParams, error) {
-	// 获取用户名
-	username, err := ctxKey.GetUsername(ctx)
-	if err != nil {
-		return db.GetDataTxParams{}, err
-	}
-
+func (input *GetDataByPeriodInput) toDBParams() (db.GetDataTxParams, error) {
 	// 开始时间必须晚于结束时间
-	if input.StartDate.After(input.EndDate) {
+	if !input.StartDate.Before(input.EndDate) {
 		return db.GetDataTxParams{}, appError.ErrBadTimerOrder
 	}
 	// 查询时间必须在范围内
@@ -95,7 +82,7 @@ func (input *GetDataByPeriodInput) toDBParams(ctx context.Context) (db.GetDataTx
 	}
 
 	params := db.GetDataTxParams{
-		Username:  username,
+		Username:  input.Username,
 		StartDate: input.StartDate,
 		EndDate:   input.EndDate,
 		Points:    GetDataByDayPoints,

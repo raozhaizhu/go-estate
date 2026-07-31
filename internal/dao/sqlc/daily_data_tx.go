@@ -22,6 +22,7 @@ const (
 // GetDataTxParams 获取成交数据所需参数
 type GetDataTxParams struct {
 	RecordHit bool
+	DataHit   bool
 	Username  string
 	QueryType int8
 	StartDate time.Time
@@ -40,8 +41,9 @@ func (s *SQLStore) GetDataAndDeductPointsTx(ctx context.Context, params GetDataT
 	var result GetDataTxResult
 
 	err := s.ExecTx(ctx, func(q Querier) error {
-		if !params.RecordHit { // 只有在缓存没命中的情况下, 才需要去查询凭证和尝试扣费
-			// 1. 尝试写入查询凭证
+		// RecordMiss, 需要确认凭证
+		if !params.RecordHit {
+			// 尝试写入查询凭证
 			firstTime, err := TryRecordUserQuery(q, ctx, GetUserQueryRecordParams{
 				Username:  params.Username,
 				QueryType: params.QueryType,
@@ -54,7 +56,7 @@ func (s *SQLStore) GetDataAndDeductPointsTx(ctx context.Context, params GetDataT
 
 			result.FirstTime = firstTime // 将是否初次查询, 记录到外层返回值中
 
-			// 2. 写入凭证成功，尝试扣费
+			// 写入凭证成功，尝试扣费
 			if firstTime {
 				if err = DecreaseUserPoints(q, ctx, DecreasePointsParams{
 					Amount:   uint32(params.Points),
@@ -65,35 +67,38 @@ func (s *SQLStore) GetDataAndDeductPointsTx(ctx context.Context, params GetDataT
 			}
 		}
 
-		// 3. 获取数据
-		var fetchedData []DailyDatum
-		var err error
-		switch params.QueryType {
-		case TypeGetDataByDay: // 获取单日数据
-			fetchedData, err = q.GetDataByDay(ctx, params.StartDate)
-			if err != nil {
-				return err
+		// DataMiss, 需要重新获取数据
+		if !params.DataHit {
+			var fetchedData []DailyDatum
+			var err error
+			switch params.QueryType {
+			case TypeGetDataByDay: // 获取单日数据
+				fetchedData, err = q.GetDataByDay(ctx, params.StartDate)
+				if err != nil {
+					return err
+				}
+
+			case TypeGetDataByPeriod:
+				fetchedData, err = q.GetDataByPeriod(ctx, GetDataByPeriodParams{
+					StartDate: params.StartDate,
+					EndDate:   params.EndDate,
+				})
+				if err != nil {
+					return err
+				}
+
+			default:
+				return appError.NewSrvErr(fmt.Errorf("GetDataAndDeductPointsTx 抵达了不应抵达的位置"))
+
 			}
 
-		case TypeGetDataByPeriod:
-			fetchedData, err = q.GetDataByPeriod(ctx, GetDataByPeriodParams{
-				StartDate: params.StartDate,
-				EndDate:   params.EndDate,
-			})
-			if err != nil {
-				return err
+			if len(fetchedData) == 0 { // 用户没有获取到任何数据, 当日没有录入数据或者没有成交(查询过早)
+				return appError.ErrDailyDataNotFound
 			}
 
-		default:
-			return appError.NewSrvErr(fmt.Errorf("GetDataAndDeductPointsTx 抵达了不应抵达的位置"))
-
+			result.Data = fetchedData
 		}
 
-		if len(fetchedData) == 0 { // 用户没有获取到任何数据, 当日没有录入数据或者没有成交(查询过早)
-			return appError.ErrDailyDataNotFound
-		}
-
-		result.Data = fetchedData
 		return nil
 	})
 

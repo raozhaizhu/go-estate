@@ -28,7 +28,7 @@ type Cache interface {
 
 	// QueryDailyData
 	GetRecordAndData(ctx context.Context, username, startDate, endDate string) (bool, []byte, error)
-	SetRecordAndData(ctx context.Context, username, startDate, endDate string, data any, recordTTL, dataTTL time.Duration) error
+	SetRecordAndData(ctx context.Context, recordHit, dataHit bool, username, startDate, endDate string, data any, recordTTL, dataTTL time.Duration) error
 
 	// Lifecycle
 	Close() error
@@ -45,7 +45,7 @@ type SessionCache interface {
 // QueryCache 用于管理 dailyData 的查询记录
 type QueryCache interface {
 	GetRecordAndData(ctx context.Context, username, startDate, endDate string) (bool, []byte, error)
-	SetRecordAndData(ctx context.Context, username, startDate, endDate string, data any, recordTTL, dataTTL time.Duration) error
+	SetRecordAndData(ctx context.Context, recordHit, dataHit bool, username, startDate, endDate string, data any, recordTTL, dataTTL time.Duration) error
 }
 
 func NewCache(addr, password string) (Cache, error) {

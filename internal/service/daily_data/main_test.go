@@ -31,15 +31,15 @@ func TestMain(m *testing.M) {
 type testCase struct {
 	name  string
 	input interface{}
-	// db,cache埋桩
+	// buildStubs 埋桩
 	buildStubs func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, wsManager *myWebsocket.Manager)
-	// 注入上下文
+	// buildCtx 注入上下文
 	buildCtx func() context.Context
 	// action 执行动作
 	action func(svc dailyDataCtrl.Service, ctx context.Context, input interface{}) ([]interface{}, error)
-	// 校验数据
+	// checkResponse 校验数据
 	checkResponse func(t *testing.T, results []interface{}, actualErr, expectedErr error)
-	// expectedErr
+	// expectedErr 预期错误
 	expectedErr error
 }
 
@@ -62,7 +62,9 @@ func runTC(t *testing.T, testCases []testCase) {
 			// 初始化 svc
 			svc := dailyData.New(deps)
 			// 数据库埋桩
-			tc.buildStubs(storeMock, cacheMock, wsManager)
+			if tc.buildStubs != nil {
+				tc.buildStubs(storeMock, cacheMock, wsManager)
+			}
 			// 注入上下文
 			ctx := context.Background()
 			if tc.buildCtx != nil {
