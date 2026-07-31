@@ -49,21 +49,11 @@ func (m *Manager) RemoveClient(username string, client *Client) {
 	m.Lock()
 	defer m.Unlock()
 
-	m.RemoveClientLocked(username, client)
+	m.removeClientLocked(username, client)
 }
 
-// RemoveClient 移除特定用户的多个连接, 并做内存清理(如果清理后用户再无连接)
-func (m *Manager) RemoveClients(username string, clients []*Client) {
-	m.Lock()
-	defer m.Unlock()
-
-	for _, client := range clients {
-		m.RemoveClientLocked(username, client)
-	}
-}
-
-// RemoveClientLocked 带锁执行, 移除特定用户的特定连接, 并做内存清理(如果这是该用户最后一条连接)
-func (m *Manager) RemoveClientLocked(username string, client *Client) {
+// removeClientLocked 带锁执行, 移除特定用户的特定连接, 并做内存清理(如果这是该用户最后一条连接)
+func (m *Manager) removeClientLocked(username string, client *Client) {
 	// 若该用户已注册该连接, 将该连接移除
 	if clients, ok := m.clients[username]; ok {
 		if _, exits := clients[client]; exits {
@@ -78,11 +68,39 @@ func (m *Manager) RemoveClientLocked(username string, client *Client) {
 	}
 }
 
+// RemoveClient 移除特定用户的多个连接, 并做内存清理(如果清理后用户再无连接)
+func (m *Manager) RemoveClients(username string, clients []*Client) {
+	m.Lock()
+	defer m.Unlock()
+
+	for _, client := range clients {
+		m.removeClientLocked(username, client)
+	}
+}
+
+// RemoveUser 移除特定用户的所有连接
+func (m *Manager) RemoveUser(username string) {
+	m.Lock()
+	defer m.Unlock()
+
+	m.removeUserLocked(username)
+}
+
+// removeUserLocked 带锁执行移除特定用户的所有连接
+func (m *Manager) removeUserLocked(username string) {
+	// 若该用户已注册该连接, 将该连接移除
+	if clients, ok := m.clients[username]; ok {
+		for client := range clients {
+			m.removeClientLocked(username, client)
+		}
+	}
+}
+
 // SendToUser 向特定用户的所有在线设备发送信息, 若有断开的连接, 将其清理
 func (m *Manager) SendToUser(username string, message []byte) {
 	// 向特定用户的所有在线设备发送信息
 	m.RLock()
-	clientsToRemove := m.SendToUserLocked(username, message)
+	clientsToRemove := m.sendToUserLocked(username, message)
 	m.RUnlock()
 
 	// 若有断开的连接, 将其清理
@@ -91,8 +109,8 @@ func (m *Manager) SendToUser(username string, message []byte) {
 	}
 }
 
-// SendToUserLocked 带锁执行, 向特定用户的所有在线设备发送信息
-func (m *Manager) SendToUserLocked(username string, message []byte) []*Client {
+// sendToUserLocked 带锁执行, 向特定用户的所有在线设备发送信息
+func (m *Manager) sendToUserLocked(username string, message []byte) []*Client {
 	// 预备清理的连接(若有)
 	var clientsToRemove []*Client
 

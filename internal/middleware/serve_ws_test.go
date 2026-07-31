@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -115,9 +116,12 @@ func TestServeWS(t *testing.T) {
 		defer conn.Close()
 
 		// 验证升级成功后，Manager 是否真的注册了 Client (可以考虑给点时间)
-		// time.Sleep(10 * time.Millisecond)
-		connecting := manager.UserConnecting(username)
-		require.True(t, connecting)
+		require.Eventually(t, func() bool {
+			return manager.UserConnecting(username)
+		}, 100*time.Millisecond, 5*time.Millisecond, "Manager 应该在短时间内注册该用户")
+
+		// 移除 User 对应的连接
+		manager.RemoveUser(username)
 	}
 
 	failCheckResponse := func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string) {
