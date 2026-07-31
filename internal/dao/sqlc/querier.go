@@ -14,6 +14,7 @@ type Querier interface {
 	BlockSessionsByIDs(ctx context.Context, ids []string) error
 	CreateSession(ctx context.Context, arg CreateSessionParams) error
 	CreateUser(ctx context.Context, arg CreateUserParams) (sql.Result, error)
+	DecreasePoints(ctx context.Context, arg DecreasePointsParams) (sql.Result, error)
 	GetActiveSessionIDsByUserDeviceForUpdate(ctx context.Context, arg GetActiveSessionIDsByUserDeviceForUpdateParams) ([]string, error)
 	GetAllData(ctx context.Context) ([]DailyDatum, error)
 	GetDataByDay(ctx context.Context, targetDate time.Time) ([]DailyDatum, error)
@@ -21,6 +22,7 @@ type Querier interface {
 	GetSession(ctx context.Context, id string) (Session, error)
 	GetSessionIDsByUsernameForUpdate(ctx context.Context, username string) ([]string, error)
 	GetUser(ctx context.Context, username string) (User, error)
+	GetUserQueryRecord(ctx context.Context, arg GetUserQueryRecordParams) (sql.Result, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (sql.Result, error)
 }
 

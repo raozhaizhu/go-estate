@@ -35,7 +35,10 @@ func (ctrl *Controller) GetDataByDay(c *gin.Context) (interface{}, error) {
 	ctx := c.Request.Context()
 
 	// 参数转换
-	input := req.toSvcInput()
+	input, err := req.toSvcInput(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	// -> svc 获得日成交数据
 	data, err := ctrl.service.GetDataByDay(ctx, input)
@@ -78,7 +81,7 @@ func (ctrl *Controller) GetDataByPeriod(c *gin.Context) (interface{}, error) {
 	ctx := c.Request.Context()
 
 	// 参数转换
-	params, err := req.toSvcInput()
+	params, err := req.toSvcInput(ctx)
 	if err != nil {
 		return nil, err
 

@@ -9,6 +9,7 @@ import (
 	dailyData "github.com/raozhaizhu/go-estate/internal/domain/daily_data"
 	service "github.com/raozhaizhu/go-estate/internal/service/daily_data"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
+	ctxKey "github.com/raozhaizhu/go-estate/pkg/ctx_key"
 )
 
 /** ====================================================================================
@@ -17,8 +18,8 @@ import (
  */
 
 type Service interface {
-	GetDataByDay(ctx context.Context, p service.GetDataByDayInput) ([]db.DailyDatum, error)
-	GetDataByPeriod(ctx context.Context, p service.GetDataByPeriodInput) ([]db.DailyDatum, error)
+	GetDataByDay(ctx context.Context, p *service.GetDataByDayInput) ([]db.DailyDatum, error)
+	GetDataByPeriod(ctx context.Context, p *service.GetDataByPeriodInput) ([]db.DailyDatum, error)
 	GetAllData(ctx context.Context) ([]db.DailyDatum, error)
 }
 
@@ -81,11 +82,16 @@ type GetDataByDayRequest struct {
 	Date string `form:"date" binding:"required,datetime=2006-01-02" example:"2026-05-01"`
 }
 
-func (r *GetDataByDayRequest) toSvcInput() service.GetDataByDayInput {
+func (r *GetDataByDayRequest) toSvcInput(ctx context.Context) (*service.GetDataByDayInput, error) {
+	// 获取用户名
+	username, err := ctxKey.GetUsername(ctx)
+	if err != nil {
+		return nil, err
+	}
 	// 转换为标准日期字符串
 	targetTime, _ := time.Parse(dailyData.DateFormat, r.Date)
 
-	return service.GetDataByDayInput{TargetDate: targetTime}
+	return &service.GetDataByDayInput{Username: username, TargetDate: targetTime}, nil
 }
 
 /** ====================================================================================
@@ -98,15 +104,21 @@ type GetDataByPeriodRequest struct {
 	End   string `form:"end" binding:"required,datetime=2006-01-02" example:"2026-05-02"`
 }
 
-func (r *GetDataByPeriodRequest) toSvcInput() (service.GetDataByPeriodInput, error) {
+func (r *GetDataByPeriodRequest) toSvcInput(ctx context.Context) (*service.GetDataByPeriodInput, error) {
+	// 获取用户名
+	username, err := ctxKey.GetUsername(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	start, _ := time.Parse(dailyData.DateFormat, r.Start)
 	end, _ := time.Parse(dailyData.DateFormat, r.End)
 
 	if end.Before(start) {
-		return service.GetDataByPeriodInput{}, appError.ErrBadTimerOrder
+		return nil, appError.ErrBadTimerOrder
 	}
 
-	return service.GetDataByPeriodInput{StartDate: start, EndDate: end}, nil
+	return &service.GetDataByPeriodInput{Username: username, StartDate: start, EndDate: end}, nil
 }
 
 /** ====================================================================================

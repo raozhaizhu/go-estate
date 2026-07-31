@@ -51,7 +51,7 @@ mock:
 test:
 	gotestsum --format dots --no-summary=output
 test-integration:
-	gotestsum --format dots --no-summary=output -- -tags=integration ./...
+	gotestsum --format dots -- -tags=integration ./...
 swag:
 	swag init -g cmd/api/main.go --parseDependency --parseInternal
 # wrk & pprof --> 先将 env 内的 ENVIRONMENT 设为 loadtest 再进行

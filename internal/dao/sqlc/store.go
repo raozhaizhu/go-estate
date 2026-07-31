@@ -12,9 +12,14 @@ import (
 
 type Store interface {
 	Querier
-	ExecTx(ctx context.Context, fn func(q Querier) error) error
+
+	// 生命周期
 	Close() error
 	CleanTestStore(t *testing.T)
+
+	// 事务包装方法
+	ExecTx(ctx context.Context, fn func(q Querier) error) error
+	GetDataAndDeductPointsTx(ctx context.Context, arg GetDataTxParams) (GetDataTxResult, error)
 }
 
 type SQLStore struct {

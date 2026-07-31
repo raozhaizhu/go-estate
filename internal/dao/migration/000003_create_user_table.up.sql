@@ -1,6 +1,3 @@
-SET
-        NAMES utf8mb4;
-
 CREATE TABLE IF NOT EXISTS `users`(
         id INT PRIMARY KEY AUTO_INCREMENT,
         -- 1. 业务字段
@@ -10,9 +7,10 @@ CREATE TABLE IF NOT EXISTS `users`(
         `avatar_key` VARCHAR(255) NOT NULL DEFAULT "default_avatar.png",
         -- 身份类型: 1.(注册用户,User, 默认); 2.(Vip, 会员); 3.( Admin, 管理员)
         `role` SMALLINT NOT NULL DEFAULT 1,
+        -- 余额: 不能小于 0
+        `points` INT UNSIGNED NOT NULL DEFAULT 100,
         -- 2. 时间字段
         -- 用于校验 token 是否发布于改变密码之前
         `password_changed_at` TIMESTAMP NOT NULL DEFAULT ('1970-01-01 00:00:01'),
-        `created_at` TIMESTAMP NOT NULL DEFAULT (NOW()),
-        INDEX `idx_username` (`username`)
-);
+        `created_at` TIMESTAMP NOT NULL DEFAULT (NOW())
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;

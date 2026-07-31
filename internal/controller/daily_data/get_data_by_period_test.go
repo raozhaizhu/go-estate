@@ -41,12 +41,14 @@ func TestGetDataByPeriod(t *testing.T) {
 	malformedDateStr := dailyDataDomain.MalformedDateStr
 	validMinDate, validMinDateStr := dailyDataDomain.MinDate, dailyDataDomain.MinDateStr
 	validMaxDate, validMaxDateStr := dailyDataDomain.MaxDate, dailyDataDomain.MaxDateStr
-	validInput := dailyData.GetDataByPeriodInput{
+	validInput := &dailyData.GetDataByPeriodInput{
+		Username:  username,
 		StartDate: validMinDate,
 		EndDate:   validMaxDate,
 	}
 	expiredDate, expiredDateStr := dailyDataDomain.ExpiredDate, dailyDataDomain.ExpiredDateStr
-	expiredInput := dailyData.GetDataByPeriodInput{
+	expiredInput := &dailyData.GetDataByPeriodInput{
+		Username:  username,
 		StartDate: validMinDate,
 		EndDate:   expiredDate,
 	}

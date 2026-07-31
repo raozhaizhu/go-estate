@@ -17,6 +17,7 @@ const (
 	CodeGroupAuthError       = 40100
 	CodeGroupNotFound        = 40400
 	CodeGroupConflict        = 40900
+	CodeUnprocessable        = 42200
 	CodeGroupTooManyRequests = 42900
 	CodeGroupServer          = 50000
 )
@@ -24,15 +25,16 @@ const (
 // 已知错误类型
 const (
 	// 400 客户端错误
-	CodeInvalidParam   = CodeGroupClientError + iota // 格式错误, validator 会拦截
-	CodeEmptyUpdate                                  // 更新为空
-	CodeBadDate                                      // 查询日期格式错误
-	CodeBadStartDate                                 // 开始日期格式错误
-	CodeBadEndDate                                   // 结束日期格式错误
-	CodeTimeOutOfRange                               // 查询日期超出范围
-	CodeBadTimerOrder                                // 开始日期晚于结束日期
-	CodeEmptyDeviceID                                // 设备 ID 不得为空
-	CodeEmptyUserAgent                               // 用户代理不得为空
+	CodeInvalidParam       = CodeGroupClientError + iota // 格式错误, validator 会拦截
+	CodeEmptyUpdate                                      // 更新为空
+	CodeBadDate                                          // 查询日期格式错误
+	CodeBadStartDate                                     // 开始日期格式错误
+	CodeBadEndDate                                       // 结束日期格式错误
+	CodeTimeOutOfRange                                   // 查询日期超出范围
+	CodeBadTimerOrder                                    // 开始日期晚于结束日期
+	CodeEmptyDeviceID                                    // 设备 ID 不得为空
+	CodeEmptyUserAgent                                   // 用户代理不得为空
+	CodeBadWSUpgradeHeader                               // Websocket 升级参数错误
 )
 
 const (
@@ -58,6 +60,7 @@ const (
 	CodePathNotFound = CodeGroupNotFound + iota // 路径不存在
 	CodeUserNotFound
 	CodeFileNotFound
+	CodeDailyDataNotFound
 )
 
 const (
@@ -67,14 +70,18 @@ const (
 )
 
 const (
+	// 422 参数都对, 但业务逻辑校验未通过, 无法执行
+	CodeInsufficientPoints = CodeUnprocessable + iota // 点数不足
+)
+
+const (
 	// 429 访问次数过高
 	CodeTooManyRequests = CodeGroupTooManyRequests + iota // 访问次数过高
 )
 
 const (
 	// 500 内部错误
-	CodeServerErr    = CodeGroupServer + iota // 服务器内部错误
-	CodeWrongSizeKey                          // 密钥尺寸错误
+	CodeServerErr = CodeGroupServer + iota // 服务器内部错误
 )
 
 type BizError struct {
@@ -115,14 +122,16 @@ func New(code int, msg string) *BizError {
 
 var (
 	// 400 客户端错误
-	ErrEmptyUpdate    = New(CodeEmptyUpdate, "没有任何可更新的字段")
-	ErrBadDate        = New(CodeBadDate, "查询日期格式错误")
-	ErrBadStartDate   = New(CodeBadStartDate, "开始日期格式错误")
-	ErrBadEndDate     = New(CodeBadEndDate, "结束日期格式错误")
-	ErrTimeOutOfRange = New(CodeTimeOutOfRange, "查询日期超出范围")
-	ErrBadTimerOrder  = New(CodeBadTimerOrder, "开始日期晚于结束日期")
-	ErrEmptyDeviceID  = New(CodeEmptyDeviceID, "设备 ID 不得为空")
-	ErrEmptyUserAgent = New(CodeEmptyUserAgent, "用户代理不得为空")
+	ErrInvalidParam       = New(CodeInvalidParam, "参数错误")
+	ErrEmptyUpdate        = New(CodeEmptyUpdate, "没有任何可更新的字段")
+	ErrBadDate            = New(CodeBadDate, "查询日期格式错误")
+	ErrBadStartDate       = New(CodeBadStartDate, "开始日期格式错误")
+	ErrBadEndDate         = New(CodeBadEndDate, "结束日期格式错误")
+	ErrTimeOutOfRange     = New(CodeTimeOutOfRange, "查询日期超出范围")
+	ErrBadTimerOrder      = New(CodeBadTimerOrder, "开始日期晚于结束日期")
+	ErrEmptyDeviceID      = New(CodeEmptyDeviceID, "设备 ID 不得为空")
+	ErrEmptyUserAgent     = New(CodeEmptyUserAgent, "用户代理不得为空")
+	ErrBadWSUpgradeHeader = New(CodeBadWSUpgradeHeader, "Websocket 升级参数错误")
 
 	// 401 认证错误
 	ErrWrongUsernamePassword = New(CodeWrongUsernamePassword, "账户名或密码错误")
@@ -140,14 +149,19 @@ var (
 	ErrBlockedSession = New(CodeBlockedSession, "session 已注销")
 
 	// 404 资源不存在
-	ErrPathNotFound = New(CodePathNotFound, "请求路径不存在")
-	ErrUserNotFound = New(CodeUserNotFound, "用户不存在")
-	ErrFileNotFound = New(CodeFileNotFound, "资源不存在")
+	ErrPathNotFound      = New(CodePathNotFound, "请求路径不存在")
+	ErrUserNotFound      = New(CodeUserNotFound, "用户不存在")
+	ErrFileNotFound      = New(CodeFileNotFound, "资源不存在")
+	ErrDailyDataNotFound = New(CodeDailyDataNotFound, "当日没有成交, 或您查询过早, 数据尚未录入")
 
 	// 409 值冲突
 	ErrUserAlreadyExits  = New(CodeUserAlreadyExits, "该用户已经存在")
 	ErrEmailAlreadyExits = New(CodeEmailAlreadyExits, "该邮箱已经存在")
 
+	// 422 参数都对,但业务逻辑校验未通过, 无法执行
+	ErrInsufficientPoints = New(CodeInsufficientPoints, "用户点数不足")
+
+	// 429 访问次数过高
 	ErrTooManyRequests = New(CodeTooManyRequests, "请求过多,之后再试")
 
 	// 500 服务器内部错误

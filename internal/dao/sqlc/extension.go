@@ -32,6 +32,9 @@ type DailyDataStore interface {
 	GetDataByDay(ctx context.Context, targetDate time.Time) ([]DailyDatum, error)
 	GetDataByPeriod(ctx context.Context, arg GetDataByPeriodParams) ([]DailyDatum, error)
 	GetAllData(ctx context.Context) ([]DailyDatum, error)
+
+	// 事务方法
+	GetDataAndDeductPointsTx(ctx context.Context, arg GetDataTxParams) (GetDataTxResult, error)
 }
 
 type AuthStore interface {

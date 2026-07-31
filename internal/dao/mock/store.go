@@ -107,6 +107,21 @@ func (mr *MockStoreMockRecorder) CreateUser(arg0, arg1 interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockStore)(nil).CreateUser), arg0, arg1)
 }
 
+// DecreasePoints mocks base method.
+func (m *MockStore) DecreasePoints(arg0 context.Context, arg1 db.DecreasePointsParams) (sql.Result, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DecreasePoints", arg0, arg1)
+	ret0, _ := ret[0].(sql.Result)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DecreasePoints indicates an expected call of DecreasePoints.
+func (mr *MockStoreMockRecorder) DecreasePoints(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DecreasePoints", reflect.TypeOf((*MockStore)(nil).DecreasePoints), arg0, arg1)
+}
+
 // ExecTx mocks base method.
 func (m *MockStore) ExecTx(arg0 context.Context, arg1 func(db.Querier) error) error {
 	m.ctrl.T.Helper()
@@ -149,6 +164,21 @@ func (m *MockStore) GetAllData(arg0 context.Context) ([]db.DailyDatum, error) {
 func (mr *MockStoreMockRecorder) GetAllData(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllData", reflect.TypeOf((*MockStore)(nil).GetAllData), arg0)
+}
+
+// GetDataAndDeductPointsTx mocks base method.
+func (m *MockStore) GetDataAndDeductPointsTx(arg0 context.Context, arg1 db.GetDataTxParams) (db.GetDataTxResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDataAndDeductPointsTx", arg0, arg1)
+	ret0, _ := ret[0].(db.GetDataTxResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDataAndDeductPointsTx indicates an expected call of GetDataAndDeductPointsTx.
+func (mr *MockStoreMockRecorder) GetDataAndDeductPointsTx(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDataAndDeductPointsTx", reflect.TypeOf((*MockStore)(nil).GetDataAndDeductPointsTx), arg0, arg1)
 }
 
 // GetDataByDay mocks base method.
@@ -224,6 +254,21 @@ func (m *MockStore) GetUser(arg0 context.Context, arg1 string) (db.User, error) 
 func (mr *MockStoreMockRecorder) GetUser(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUser", reflect.TypeOf((*MockStore)(nil).GetUser), arg0, arg1)
+}
+
+// GetUserQueryRecord mocks base method.
+func (m *MockStore) GetUserQueryRecord(arg0 context.Context, arg1 db.GetUserQueryRecordParams) (sql.Result, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserQueryRecord", arg0, arg1)
+	ret0, _ := ret[0].(sql.Result)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserQueryRecord indicates an expected call of GetUserQueryRecord.
+func (mr *MockStoreMockRecorder) GetUserQueryRecord(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserQueryRecord", reflect.TypeOf((*MockStore)(nil).GetUserQueryRecord), arg0, arg1)
 }
 
 // UpdateUser mocks base method.

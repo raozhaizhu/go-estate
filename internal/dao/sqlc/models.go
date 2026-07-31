@@ -39,6 +39,16 @@ type User struct {
 	Email             string    `json:"email"`
 	AvatarKey         string    `json:"avatar_key"`
 	Role              int16     `json:"role"`
+	Points            uint32    `json:"points"`
 	PasswordChangedAt time.Time `json:"password_changed_at"`
 	CreatedAt         time.Time `json:"created_at"`
+}
+
+type UserQueryRecord struct {
+	ID        int32     `json:"id"`
+	Username  string    `json:"username"`
+	QueryType int8      `json:"query_type"`
+	StartDate time.Time `json:"start_date"`
+	EndDate   time.Time `json:"end_date"`
+	CreatedAt time.Time `json:"created_at"`
 }

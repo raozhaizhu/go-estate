@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"testing"
 	"time"
 
@@ -17,11 +18,19 @@ import (
 
 // Cache 缓存
 type Cache interface {
+	// Session
 	AddNewSession(ctx context.Context, params AddNewSessionParams) error
 	GetSession(ctx context.Context, jti string) (*Session, error)
 	BatchDelete(ctx context.Context, jtis []string) error
+
+	// IP
 	IncrIPCnt(ctx context.Context, ip string, duration time.Duration) (int64, error)
 
+	// QueryDailyData
+	GetRecordAndData(ctx context.Context, username, startDate, endDate string) (bool, []byte, error)
+	SetRecordAndData(ctx context.Context, recordHit, dataHit bool, username, startDate, endDate string, data any, recordTTL, dataTTL time.Duration) error
+
+	// Lifecycle
 	Close() error
 	CleanTestCache(t *testing.T)
 }
@@ -33,25 +42,37 @@ type SessionCache interface {
 	BatchDelete(ctx context.Context, jtis []string) error
 }
 
+// QueryCache 用于管理 dailyData 的查询记录
+type QueryCache interface {
+	GetRecordAndData(ctx context.Context, username, startDate, endDate string) (bool, []byte, error)
+	SetRecordAndData(ctx context.Context, recordHit, dataHit bool, username, startDate, endDate string, data any, recordTTL, dataTTL time.Duration) error
+}
+
 func NewCache(addr, password string) (Cache, error) {
+	// 初始化 Redis 客户端
 	client := redis.NewClient(&redis.Options{
 		Addr:     addr,
 		Password: password,
 		DB:       0,
 	})
 
+	// 初始化日志
+	logger := slog.Default().With("layer", "cache")
+
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
+	// PING 通Redis
 	if err := client.Ping(ctx).Err(); err != nil {
-		return nil, fmt.Errorf("无法连接到 Redis: %w", err)
+		return nil, appError.NewSrvErr(fmt.Errorf("无法连接到 Redis: %w", err))
 	}
 
-	return &redisCache{client: client}, nil
+	return &redisCache{client: client, logger: logger}, nil
 }
 
 type redisCache struct {
 	client *redis.Client
+	logger *slog.Logger
 }
 
 type AddNewSessionParams struct {

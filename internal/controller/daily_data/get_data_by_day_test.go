@@ -41,11 +41,13 @@ func TestGetDataByDay(t *testing.T) {
 	username := util.RandomUsername()
 	malformedDateStr := dailyDataDomain.MalformedDateStr
 	validDate, validDateStr := dailyDataDomain.MinDate, dailyDataDomain.MinDateStr
-	validInput := dailyData.GetDataByDayInput{
+	validInput := &dailyData.GetDataByDayInput{
+		Username:   username,
 		TargetDate: validDate,
 	}
 	expiredDate, expiredDateStr := dailyDataDomain.ExpiredDate, dailyDataDomain.ExpiredDateStr
-	expiredInput := dailyData.GetDataByDayInput{
+	expiredInput := &dailyData.GetDataByDayInput{
+		Username:   username,
 		TargetDate: expiredDate,
 	}
 	dummyDBData := []db.DailyDatum{{ID: 1}}
@@ -174,55 +176,3 @@ func TestGetDataByDay(t *testing.T) {
 
 	runTC(t, testCases)
 }
-
-// func TestGetAllData(t *testing.T) {
-
-// 	dummyData := []db.DailyDatum{
-// 		{
-// 			ID: 1,
-// 		},
-// 	}
-
-// 	testCases := []testCase{
-// 		{
-// 			name: "无 Token 访问 GetAllData",
-// 			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
-// 				svcMock.EXPECT().GetAllData(gomock.Any()).Times(0)
-// 			},
-// 			expectedHTTPCode: 401,
-// 			expectedBizCode:  appError.ErrAuthRequired.Code,
-// 			expectedMsg:      appError.ErrAuthRequired.Msg,
-// 		},
-// 		{
-// 			name: "User 访问 GetAllData",
-// 			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
-// 				svcMock.EXPECT().GetAllData(gomock.Any()).Times(0)
-// 			},
-// 			expectedHTTPCode: 401,
-// 			expectedBizCode:  appError.ErrAuthPermissionDenied.Code,
-// 			expectedMsg:      appError.ErrAuthPermissionDenied.Msg,
-// 			payload:          userPayload,
-// 		},
-// 		{
-// 			name: "Vip 访问 GetAllData",
-// 			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
-// 				svcMock.EXPECT().GetAllData(gomock.Any()).Times(0)
-// 			},
-// 			expectedHTTPCode: 401,
-// 			expectedBizCode:  appError.ErrAuthPermissionDenied.Code,
-// 			expectedMsg:      appError.ErrAuthPermissionDenied.Msg,
-// 			payload:          vipPayload,
-// 		},
-// 		{
-// 			name: "Admin 访问 GetAllData",
-// 			buildStubs: func(svcMock *mock_controller.MockService, tokenMakerMock *mock_token.MockMaker) {
-// 				svcMock.EXPECT().GetAllData(gomock.Any()).Return(dummyData, nil).Times(1)
-// 			},
-// 			expectedHTTPCode: 200,
-// 			expectedBizCode:  200,
-// 			expectedMsg:      "success",
-// 			payload:          adminPayload,
-// 		},
-// 	}
-
-// }

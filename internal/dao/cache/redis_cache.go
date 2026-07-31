@@ -2,16 +2,20 @@ package cache
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"strconv"
 	"testing"
 	"time"
 
+	"github.com/go-redis/redis/v8"
 	appError "github.com/raozhaizhu/go-estate/pkg/app_error"
 	"github.com/stretchr/testify/require"
 )
 
 /** ====================================================================================
- * 🏁 Close
+ * 🏁 Lifecycle
  * =====================================================================================
  */
 
@@ -23,8 +27,35 @@ func (r *redisCache) Close() error {
 	return nil
 }
 
+// CleanTestCache 清理测试缓存
+func (r *redisCache) CleanTestCache(t *testing.T) {
+	err := r.client.FlushDB(context.Background()).Err()
+	require.NoError(t, err, "清理 Redis 测试缓存失败")
+}
+
 /** ====================================================================================
- * 🏁 GetSession
+ * 🏁 General
+ * =====================================================================================
+ */
+
+// pipeHSetExpire 以管道方式添加 Session 到 redis
+func (r *redisCache) pipeHSetExpire(ctx context.Context, key string, val map[string]interface{}, expireAt time.Time) error {
+	// 获取实际持续时间
+	duration, err := getSessionDuration(expireAt)
+	if err != nil {
+		return err
+	}
+
+	pipe := r.client.Pipeline()
+	pipe.HSet(ctx, key, val)
+	pipe.Expire(ctx, key, duration)
+	_, err = pipe.Exec(ctx)
+
+	return err
+}
+
+/** ====================================================================================
+ * 🏁 Session_Manage
  * =====================================================================================
  */
 
@@ -69,11 +100,6 @@ func mapToSession(val map[string]string) (*Session, error) {
 	return session, nil
 }
 
-/** ====================================================================================
- * 🏁 AddNewSession
- * =====================================================================================
- */
-
 // AddNewSession 增加新 session
 func (r *redisCache) AddNewSession(ctx context.Context, params AddNewSessionParams) error {
 	// 获取 kv
@@ -82,22 +108,6 @@ func (r *redisCache) AddNewSession(ctx context.Context, params AddNewSessionPara
 
 	// 管道操作
 	err := r.pipeHSetExpire(ctx, key, value, params.ExpiresAt)
-
-	return err
-}
-
-// pipeHSetExpire 以管道方式添加 Session 到 redis
-func (r *redisCache) pipeHSetExpire(ctx context.Context, key string, val map[string]interface{}, expireAt time.Time) error {
-	// 获取实际持续时间
-	duration, err := getSessionDuration(expireAt)
-	if err != nil {
-		return err
-	}
-
-	pipe := r.client.Pipeline()
-	pipe.HSet(ctx, key, val)
-	pipe.Expire(ctx, key, duration)
-	_, err = pipe.Exec(ctx)
 
 	return err
 }
@@ -143,7 +153,7 @@ func (r *redisCache) BatchDelete(ctx context.Context, jtis []string) error {
 }
 
 /** ====================================================================================
- * 🏁 IncrIPCnt
+ * 🏁 IP_Manage
  * =====================================================================================
  */
 
@@ -169,11 +179,93 @@ func (r *redisCache) IncrIPCnt(ctx context.Context, ip string, duration time.Dur
 }
 
 /** ====================================================================================
- * 🏁 CleanTestCache
+ * 🏁 Query_Manage
  * =====================================================================================
  */
 
-func (r *redisCache) CleanTestCache(t *testing.T) {
-	err := r.client.FlushDB(context.Background()).Err()
-	require.NoError(t, err, "清理 Redis 测试缓存失败")
+// buildUserQueryKey 生成统一的 Key, 用于记录用户是否查询过该数据
+func (r *redisCache) buildUserQueryKey(username, startDate, endDate string) string {
+	return fmt.Sprintf("query:user_query_record:%s:%s:%s", username, startDate, endDate)
+}
+
+// buildDataKey 生成统一的 Key, 用于缓存日成交数据
+func (r *redisCache) buildDataKey(startDate, endDate string) string {
+	return fmt.Sprintf("query:daily_data:%s:%s", startDate, endDate)
+}
+
+// GetRecordAndData 获取用户查询记录和成交数据
+func (r *redisCache) GetRecordAndData(ctx context.Context, username, startDate, endDate string) (bool, []byte, error) {
+	// 用户查询键: 记录用户是否查询过该数据
+	recordKey := r.buildUserQueryKey(username, startDate, endDate)
+	// 数据查询键: 获取缓存的成交数据
+	dataKey := r.buildDataKey(startDate, endDate)
+
+	// 开启管道
+	pipe := r.client.Pipeline()
+	recordCmd, dataCmd := pipe.Get(ctx, recordKey), pipe.Get(ctx, dataKey)
+
+	// 执行并获取报错
+	pipe.Exec(ctx) // 忽略总错误处理, 后续会处理分支错误
+	recordErr, dataErr := recordCmd.Err(), dataCmd.Err()
+
+	// 校验用户查询记录
+	hasRecord := true
+	if errors.Is(recordErr, redis.Nil) { // 为空, 说明没有记录
+		hasRecord = false
+	} else if recordErr != nil { // 其他内部错误
+		return false, nil, recordErr
+	}
+
+	// 校验成交数据
+	var rawData []byte
+	var err error
+	if errors.Is(dataErr, redis.Nil) { // 为空, 说明没有数据
+		rawData = nil
+	} else if dataErr != nil { // 其他内部错误
+		return hasRecord, nil, dataErr
+	} else { // 没有错误, 成功拿到数据
+		rawData, err = dataCmd.Bytes()
+		if err != nil {
+			return hasRecord, nil, err
+		}
+	}
+
+	return hasRecord, rawData, nil
+}
+
+// SetRecordAndData 写入用户查询记录和成交数据
+func (r *redisCache) SetRecordAndData(ctx context.Context, recordHit, dataHit bool, username, startDate, endDate string, data any, recordTTL, dataTTL time.Duration) error {
+	// DoubleHit, 无需写回
+	if recordHit && dataHit {
+		return nil
+	}
+	// 只有凭证 Miss 的情况下, 才写回凭证
+	if !recordHit {
+		// 用户查询键: 记录用户是否查询过该数据
+		recordKey := r.buildUserQueryKey(username, startDate, endDate)
+		// 写入用户查询记录
+		err := r.client.Set(ctx, recordKey, true, recordTTL).Err()
+		if err != nil {
+			return appError.NewSrvErr(err)
+		}
+	}
+
+	// 只有数据 Miss 的情况下,才写回数据
+	if !dataHit {
+		// 序列化数据
+		bytes, err := json.Marshal(data)
+		if err != nil {
+			return appError.NewSrvErr(err)
+		}
+
+		// 数据查询键: 获取缓存的成交数据
+		dataKey := r.buildDataKey(startDate, endDate)
+		// 写入成交数据
+		err = r.client.Set(ctx, dataKey, bytes, dataTTL).Err()
+		if err != nil {
+			return appError.NewSrvErr(err)
+		}
+	}
+
+	return nil
 }

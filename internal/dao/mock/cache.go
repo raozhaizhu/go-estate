@@ -91,6 +91,22 @@ func (mr *MockCacheMockRecorder) Close() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockCache)(nil).Close))
 }
 
+// GetRecordAndData mocks base method.
+func (m *MockCache) GetRecordAndData(arg0 context.Context, arg1, arg2, arg3 string) (bool, []byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRecordAndData", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].([]byte)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetRecordAndData indicates an expected call of GetRecordAndData.
+func (mr *MockCacheMockRecorder) GetRecordAndData(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRecordAndData", reflect.TypeOf((*MockCache)(nil).GetRecordAndData), arg0, arg1, arg2, arg3)
+}
+
 // GetSession mocks base method.
 func (m *MockCache) GetSession(arg0 context.Context, arg1 string) (*cache.Session, error) {
 	m.ctrl.T.Helper()
@@ -119,4 +135,18 @@ func (m *MockCache) IncrIPCnt(arg0 context.Context, arg1 string, arg2 time.Durat
 func (mr *MockCacheMockRecorder) IncrIPCnt(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrIPCnt", reflect.TypeOf((*MockCache)(nil).IncrIPCnt), arg0, arg1, arg2)
+}
+
+// SetRecordAndData mocks base method.
+func (m *MockCache) SetRecordAndData(arg0 context.Context, arg1, arg2 bool, arg3, arg4, arg5 string, arg6 interface{}, arg7, arg8 time.Duration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetRecordAndData", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetRecordAndData indicates an expected call of SetRecordAndData.
+func (mr *MockCacheMockRecorder) SetRecordAndData(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRecordAndData", reflect.TypeOf((*MockCache)(nil).SetRecordAndData), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
 }

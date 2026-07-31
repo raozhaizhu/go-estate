@@ -38,7 +38,7 @@ func TestMetadata(t *testing.T) {
 	}
 
 	// 默认执行逻辑
-	defaultAction := func(t *testing.T, reqUrl string, body interface{}, router *gin.Engine, writer *httptest.ResponseRecorder, customData map[string]any, tokenMakerMock *mock_token.MockMaker, ctx *gin.Context, cacheMock *mock_db.MockCache) {
+	defaultAction := func(t *testing.T, reqUrl string, body interface{}, router *gin.Engine, writer *httptest.ResponseRecorder, customData map[string]any, tokenMakerMock *mock_token.MockMaker, cacheMock *mock_db.MockCache) {
 		req, err := http.NewRequest(http.MethodGet, reqUrl, nil)
 		require.NoError(t, err)
 
@@ -60,7 +60,7 @@ func TestMetadata(t *testing.T) {
 		//  执行请求
 		router.ServeHTTP(writer, req)
 	}
-	failCheckResponse := func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string, ctx *gin.Context) {
+	failCheckResponse := func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string) {
 		var results response.Result[interface{}]
 		// 反序列化结果
 		err := json.Unmarshal(writer.Body.Bytes(), &results)
@@ -74,7 +74,7 @@ func TestMetadata(t *testing.T) {
 		sort.Strings(actSlice)
 		require.Equal(t, expSlice, actSlice)
 	}
-	successCheckResponse := func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string, ctx *gin.Context) {
+	successCheckResponse := func(t *testing.T, writer *httptest.ResponseRecorder, expectedHTTPCode, expectedBizCode int, expectedMsg string) {
 		var results response.Result[string]
 		// 反序列化结果
 		err := json.Unmarshal(writer.Body.Bytes(), &results)
