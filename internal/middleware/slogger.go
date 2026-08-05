@@ -15,8 +15,9 @@ import (
 // SlogMiddleware 将 Gin 的 HTTP 访问记录桥接到 slog 中
 func SlogMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 将 request_id 放入 ctx, 并替换原来的 request
 		logger := slog.Default()
+
+		// 将 request_id 放入 ctx, 并替换原来的 request
 		reqID := uuid.New().String()
 		ctx := context.WithValue(c.Request.Context(), ctxKey.CtxKeyRequestID, reqID)
 		c.Request = c.Request.WithContext(ctx)
