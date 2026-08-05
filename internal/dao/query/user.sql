@@ -48,4 +48,4 @@ SET
         points = points - sqlc.arg(amount)
 WHERE
         username = sqlc.arg(username)
-        AND points >= 1
+        AND points >= sqlc.arg(amount)

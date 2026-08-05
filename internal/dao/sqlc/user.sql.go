@@ -58,7 +58,7 @@ SET
         points = points - ?
 WHERE
         username = ?
-        AND points >= 1
+        AND points >= ?
 `
 
 type DecreasePointsParams struct {
@@ -67,7 +67,7 @@ type DecreasePointsParams struct {
 }
 
 func (q *Queries) DecreasePoints(ctx context.Context, arg DecreasePointsParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, decreasePoints, arg.Amount, arg.Username)
+	return q.db.ExecContext(ctx, decreasePoints, arg.Amount, arg.Username, arg.Amount)
 }
 
 const getUser = `-- name: GetUser :one
