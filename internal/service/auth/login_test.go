@@ -94,6 +94,12 @@ func TestLogin(t *testing.T) {
 				HashedPassword: hashedPassword,
 			}, nil).Times(1)
 	}
+	stubExecTxSuccess := func(storeMock *mock_db.MockStore) {
+		storeMock.EXPECT().ExecTx(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(ctx context.Context, fn func(db.Querier) error) error {
+				return fn(storeMock)
+			}).Times(1)
+	}
 	stubGetActiveSessionIDsByUserDeviceForUpdateSuccess := func(storeMock *mock_db.MockStore) {
 		storeMock.EXPECT().GetActiveSessionIDsByUserDeviceForUpdate(gomock.Any(), logoutInput.ToDBParams()).
 			Return(activeTidsMock, nil).Times(1)
@@ -158,65 +164,11 @@ func TestLogin(t *testing.T) {
 			expectedErr:   appError.ErrWrongUsernamePassword,
 		},
 		{
-			name:  "获取用户活跃 Sessions 时失败",
-			input: correctLoginInput,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
-				// 先获取用户,用户存在
-				stubGetUserSuccess(storeMock)
-				// 但获取是否有活跃 Sessions 时失败
-				storeMock.EXPECT().GetActiveSessionIDsByUserDeviceForUpdate(gomock.Any(), logoutInput.ToDBParams()).
-					Return([]string{}, appError.ErrServerErr).Times(1)
-			},
-			action:        defaultAction,
-			checkResponse: failCheckResponse,
-			expectedErr:   appError.ErrServerErr,
-		},
-		{
-			name:  "清除用户活跃 Sessions 时失败",
-			input: correctLoginInput,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
-				// 先获取用户,用户存在
-				stubGetUserSuccess(storeMock)
-				// 成功获取用户活跃 Sessions
-				stubGetActiveSessionIDsByUserDeviceForUpdateSuccess(storeMock)
-				// 但在清除 sessions 时失败
-				storeMock.EXPECT().BlockSessionsByIDs(gomock.Any(), gomock.Any()).
-					Return(appError.ErrServerErr).Times(1)
-			},
-			action:        defaultAction,
-			checkResponse: failCheckResponse,
-			expectedErr:   appError.ErrServerErr,
-		},
-		{
-			name:  "调用 worker 异步清理 redis失败",
-			input: correctLoginInput,
-			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
-				// 先获取用户,用户存在
-				stubGetUserSuccess(storeMock)
-				// 成功获取用户活跃 Sessions
-				stubGetActiveSessionIDsByUserDeviceForUpdateSuccess(storeMock)
-				// 成功清除 sessions
-				stubBlockSessionsByIDsSuccess(storeMock)
-				// 但在派发 worker 清理 redis 时失败
-				distributor.EXPECT().DistributeTaskDeleteSessions(gomock.Any(), activeTidsMock).
-					Return(appError.ErrServerErr).Times(1)
-			},
-			action:        defaultAction,
-			checkResponse: failCheckResponse,
-			expectedErr:   appError.ErrServerErr,
-		},
-		{
 			name:  "铸造 Token 时失败",
 			input: correctLoginInput,
 			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 先获取用户,用户存在
 				stubGetUserSuccess(storeMock)
-				// 成功获取用户活跃 Sessions
-				stubGetActiveSessionIDsByUserDeviceForUpdateSuccess(storeMock)
-				// 成功清除 sessions
-				stubBlockSessionsByIDsSuccess(storeMock)
-				// 派发 worker 清理 redis 成功
-				stubDistributeTaskDeleteSessionsSuccess(distributor)
 				// 但在铸造 token 时失败
 				tokenMakerMock.EXPECT().ForgeTokenPair(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(user *db.User, config *util.Config) (string, string, *token.Payload, *token.Payload, error) {
@@ -230,19 +182,56 @@ func TestLogin(t *testing.T) {
 			expectedErr:   appError.ErrServerErr,
 		},
 		{
+			name:  "获取用户活跃 Sessions 时失败",
+			input: correctLoginInput,
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+				// 先获取用户,用户存在
+				stubGetUserSuccess(storeMock)
+				// 铸造 token 成功
+				stubForgeTokenPairSuccess(tokenMakerMock)
+				// 开启事务, 但获取是否有活跃 Sessions 时失败
+				stubExecTxSuccess(storeMock)
+				storeMock.EXPECT().GetActiveSessionIDsByUserDeviceForUpdate(gomock.Any(), logoutInput.ToDBParams()).
+					Return([]string{}, appError.ErrServerErr).Times(1)
+			},
+			action:        defaultAction,
+			checkResponse: failCheckResponse,
+			expectedErr:   appError.ErrServerErr,
+		},
+		{
+			name:  "清除用户活跃 Sessions 时失败",
+			input: correctLoginInput,
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+				// 先获取用户,用户存在
+				stubGetUserSuccess(storeMock)
+				// 铸造 token 成功
+				stubForgeTokenPairSuccess(tokenMakerMock)
+				// 开启事务
+				stubExecTxSuccess(storeMock)
+				// 成功获取用户活跃 Sessions
+				stubGetActiveSessionIDsByUserDeviceForUpdateSuccess(storeMock)
+				// 但在清除 sessions 时失败
+				storeMock.EXPECT().BlockSessionsByIDs(gomock.Any(), gomock.Any()).
+					Return(appError.ErrServerErr).Times(1)
+			},
+			action:        defaultAction,
+			checkResponse: failCheckResponse,
+			expectedErr:   appError.ErrServerErr,
+		},
+		{
 			name:  "制造 Session 时失败",
 			input: correctLoginInput,
 			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 先获取用户,用户存在
 				stubGetUserSuccess(storeMock)
+				// 铸造 token 成功
+				stubForgeTokenPairSuccess(tokenMakerMock)
+				// 开启事务
+				stubExecTxSuccess(storeMock)
 				// 成功获取用户活跃 Sessions
 				stubGetActiveSessionIDsByUserDeviceForUpdateSuccess(storeMock)
 				// 成功清除 sessions
 				stubBlockSessionsByIDsSuccess(storeMock)
-				// 派发 worker 清理 redis 成功
-				stubDistributeTaskDeleteSessionsSuccess(distributor)
-				// 铸造 token 成功
-				stubForgeTokenPairSuccess(tokenMakerMock)
 				// 但在 createSession 失败
 				storeMock.EXPECT().CreateSession(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(ctx context.Context, params db.CreateSessionParams) error {
@@ -256,21 +245,47 @@ func TestLogin(t *testing.T) {
 			expectedErr:   appError.ErrServerErr,
 		},
 		{
+			name:  "调用 worker 异步清理 redis失败",
+			input: correctLoginInput,
+			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
+				// 先获取用户,用户存在
+				stubGetUserSuccess(storeMock)
+				// 铸造 token 成功
+				stubForgeTokenPairSuccess(tokenMakerMock)
+				// 开启事务
+				stubExecTxSuccess(storeMock)
+				// 成功获取用户活跃 Sessions
+				stubGetActiveSessionIDsByUserDeviceForUpdateSuccess(storeMock)
+				// 成功清除 sessions
+				stubBlockSessionsByIDsSuccess(storeMock)
+				// 成功创建 Session
+				stubCreateSessionSuccess(storeMock)
+				// 但在派发 worker 清理 redis 时失败
+				distributor.EXPECT().DistributeTaskDeleteSessions(gomock.Any(), activeTidsMock).
+					Return(appError.ErrServerErr).Times(1)
+			},
+			action:        defaultAction,
+			checkResponse: failCheckResponse,
+			expectedErr:   appError.ErrServerErr,
+		},
+		{
 			name:  "尽力而为存入 Redis 时失败, 但不影响整体逻辑成功",
 			input: correctLoginInput,
 			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 先获取用户,用户存在
 				stubGetUserSuccess(storeMock)
+				// 铸造 token 成功
+				stubForgeTokenPairSuccess(tokenMakerMock)
+				// 开启事务
+				stubExecTxSuccess(storeMock)
 				// 成功获取用户活跃 Sessions
 				stubGetActiveSessionIDsByUserDeviceForUpdateSuccess(storeMock)
 				// 成功清除 sessions
 				stubBlockSessionsByIDsSuccess(storeMock)
-				// 派发 worker 清理 redis 成功
-				stubDistributeTaskDeleteSessionsSuccess(distributor)
-				// 铸造 token 成功
-				stubForgeTokenPairSuccess(tokenMakerMock)
 				// 成功创建 Session
 				stubCreateSessionSuccess(storeMock)
+				// 派发 worker 清理 redis 成功
+				stubDistributeTaskDeleteSessionsSuccess(distributor)
 				// 但在存 Session 到 Redis 时失败
 				cacheMock.EXPECT().AddNewSession(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, params cache.AddNewSessionParams) error {
 					require.NotEmpty(t, params.JTI)
@@ -288,16 +303,18 @@ func TestLogin(t *testing.T) {
 			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 先获取用户,用户存在
 				stubGetUserSuccess(storeMock)
+				// 铸造 token 成功
+				stubForgeTokenPairSuccess(tokenMakerMock)
+				// 开启事务
+				stubExecTxSuccess(storeMock)
 				// 成功获取用户活跃 Sessions
 				stubGetActiveSessionIDsByUserDeviceForUpdateSuccess(storeMock)
 				// 成功清除 sessions
 				stubBlockSessionsByIDsSuccess(storeMock)
-				// 派发 worker 清理 redis 成功
-				stubDistributeTaskDeleteSessionsSuccess(distributor)
-				// 铸造 token 成功
-				stubForgeTokenPairSuccess(tokenMakerMock)
 				// 成功创建 Session
 				stubCreateSessionSuccess(storeMock)
+				// 派发 worker 清理 redis 成功
+				stubDistributeTaskDeleteSessionsSuccess(distributor)
 				// 存入 Session 成功
 				stubAddNewSessionSuccess(cacheMock)
 			},
@@ -310,12 +327,14 @@ func TestLogin(t *testing.T) {
 			buildStubs: func(storeMock *mock_db.MockStore, cacheMock *mock_db.MockCache, distributor *mock_worker.MockTaskDistributor, tokenMakerMock *mock_token.MockMaker) {
 				// 先获取用户,用户存在
 				stubGetUserSuccess(storeMock)
+				// 铸造 token 成功
+				stubForgeTokenPairSuccess(tokenMakerMock)
+				// 开启事务
+				stubExecTxSuccess(storeMock)
 				// 无法获取到用户活跃 Sessions (不存在)
 				storeMock.EXPECT().GetActiveSessionIDsByUserDeviceForUpdate(gomock.Any(), logoutInput.ToDBParams()).
 					Return([]string{}, nil).Times(1)
-				// 跳过 logout 后续逻辑, 因为无需登出
-				// 铸造 token 成功
-				stubForgeTokenPairSuccess(tokenMakerMock)
+				// 跳过清除 sessions 和派发 worker 清理 redis, 因为无需登出
 				// 成功创建 Session
 				stubCreateSessionSuccess(storeMock)
 				// 存入 Session 成功
