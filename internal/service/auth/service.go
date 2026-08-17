@@ -29,23 +29,14 @@ func (svc *service) Login(ctx context.Context, input LoginInput) (*DTO, string, 
 		return nil, "", err
 	}
 
-	// 踢掉该用户在该设备下的所有旧会话
-	err = svc.Logout(ctx, LogoutInput{
-		Username: input.Username,
-		DeviceID: input.DeviceID,
-	})
-	if err != nil {
-		return nil, "", err
-	}
-
 	// 获取访问令牌, 刷新令牌
 	accessToken, refreshToken, accessPayload, refreshPayload, err := svc.tokenMaker.ForgeTokenPair(user, &svc.config)
 	if err != nil { // 内部错误, 铸造失败
 		return nil, "", err
 	}
 
-	// 存刷新令牌到 db, redis
-	err = svc.restoreSession(ctx, refreshPayload, input)
+	// 在事务中: 踢掉旧会话 + 创建新会话, 并异步清理 redis
+	err = svc.restoreSessionTx(ctx, refreshPayload, input)
 	if err != nil {
 		return nil, "", err
 	}
@@ -79,17 +70,51 @@ func (svc *service) checkUser(ctx context.Context, input LoginInput) (*db.User, 
 	return &user, nil
 }
 
-// restoreSession 将会话保存到 db redis
-func (svc *service) restoreSession(ctx context.Context, refreshPayload *token.Payload, input LoginInput) error {
+// restoreSessionTx 在事务中踢掉旧会话并创建新会话, 事务成功后异步清理 redis
+func (svc *service) restoreSessionTx(ctx context.Context, refreshPayload *token.Payload, input LoginInput) error {
 	// 参数转化
 	dbParams := refreshPayload.ToDBParams(input.UserAgent, input.ClientIp, input.DeviceID)
 	cacheParams := refreshPayload.ToCacheParams()
+	logoutInput := LogoutInput{
+		Username: input.Username,
+		DeviceID: input.DeviceID,
+	}
+	logoutParams := logoutInput.ToDBParams()
 
-	// 存刷新令牌到 db
-	err := svc.store.CreateSession(ctx, dbParams)
+	// 在事务中: 踢掉旧会话 + 创建新会话
+	var blockedIDs []string
+	err := svc.txRunner.ExecTx(ctx, func(q db.Querier) error {
+		// 获取该用户指定设备下所有活跃 session_ids
+		ids, err := q.GetActiveSessionIDsByUserDeviceForUpdate(ctx, logoutParams)
+		if err != nil {
+			return appError.ErrServerErr.WithErr(fmt.Errorf("获取用户活跃 Sessions 失败: %w", err))
+		}
+
+		// 如果有旧会话, 先清除
+		if len(ids) > 0 {
+			if err := q.BlockSessionsByIDs(ctx, ids); err != nil {
+				return appError.ErrServerErr.WithErr(fmt.Errorf("清除 Sessions 时失败: %w)", err))
+			}
+			blockedIDs = ids
+		}
+
+		// 创建新会话
+		if err := q.CreateSession(ctx, dbParams); err != nil {
+			return appError.ErrServerErr.WithErr(fmt.Errorf("存入会话到 DB 失败: %w)", err))
+		}
+
+		return nil
+	})
 	if err != nil {
-		return appError.ErrServerErr.WithErr(fmt.Errorf("存入会话到 DB 失败: %w)", err))
+		return err
+	}
 
+	// 事务成功后, 异步清理 redis 中的旧会话
+	if len(blockedIDs) > 0 {
+		err = svc.distributor.DistributeTaskDeleteSessions(ctx, blockedIDs)
+		if err != nil {
+			return appError.ErrServerErr.WithErr(fmt.Errorf("调用 worker 异步清理 redis时失败: %w)", err))
+		}
 	}
 
 	// 尽力而为, 存刷新令牌到 redis
@@ -194,19 +219,33 @@ func (svc *service) Logout(ctx context.Context, input LogoutInput) error {
 	// 获取参数
 	params := input.ToDBParams()
 
-	// ->db 获取该用户指定设备下所有 session_ids
-	ids, err := svc.store.GetActiveSessionIDsByUserDeviceForUpdate(ctx, params)
-	if err != nil {
-		return appError.ErrServerErr.WithErr(fmt.Errorf("获取用户活跃 Sessions 失败: %w", err))
-	}
-	if len(ids) == 0 { //没有需要清理的 token,任务已经完成
+	// 在事务中: 获取并清除该用户指定设备下所有活跃 sessions
+	var ids []string
+	err := svc.txRunner.ExecTx(ctx, func(q db.Querier) error {
+		// 获取该用户指定设备下所有 session_ids
+		fetchedIDs, err := q.GetActiveSessionIDsByUserDeviceForUpdate(ctx, params)
+		if err != nil {
+			return appError.ErrServerErr.WithErr(fmt.Errorf("获取用户活跃 Sessions 失败: %w", err))
+		}
+		if len(fetchedIDs) == 0 { // 没有需要清理的 token, 任务已经完成
+			return nil
+		}
+
+		// 将这些 sessions 清除
+		if err := q.BlockSessionsByIDs(ctx, fetchedIDs); err != nil {
+			return appError.ErrServerErr.WithErr(fmt.Errorf("清除 Sessions 时失败: %w)", err))
+		}
+
+		ids = fetchedIDs
 		return nil
+	})
+	if err != nil {
+		return err
 	}
 
-	// ->db 将这些 sessions 清除
-	err = svc.store.BlockSessionsByIDs(ctx, ids)
-	if err != nil {
-		return appError.ErrServerErr.WithErr(fmt.Errorf("清除 Sessions 时失败: %w)", err))
+	// 没有需要清理的 token, 任务已经完成
+	if len(ids) == 0 {
+		return nil
 	}
 
 	// worker->redis 调用 worker 异步清理 redis
