@@ -14,7 +14,7 @@
 flowchart TB
     Client["Client Browser\nhttp://localhost"] --> Nginx["Nginx\n统一入口、反向代理与访问日志"]
     Nginx --> Home["index.html\nSwagger / Grafana 导航页"]
-    Nginx --> API["Gin API\n/api/v1 · Swagger · /metrics"]
+    Nginx --> API["Gin API\n/api/v1 · /ws · Swagger · /metrics"]
     Nginx --> Grafana["Grafana"]
     Nginx --> Prometheus["Prometheus"]
 
@@ -22,6 +22,8 @@ flowchart TB
         API --> Services["User · Auth · Daily_Data\nController / Service"]
         Services --> MySQL[("MySQL\nSQLC · Migration")]
         Services --> Redis[("Redis\nSession Cache")]
+        Services --> MinIO[("MinIO\nAvatar Object Storage")]
+        API --> WS["WebSocket Manager\nPer-user multi-device connections"]
         Services --> AsynqClient["Asynq Client\n任务投递"]
         AsynqClient --> Redis
         Redis --> AsynqWorker["Asynq Worker\nSession 清理任务"]
@@ -46,26 +48,41 @@ flowchart TB
 | 存储     | MySQL、golang-migrate  | MySQL 持久化用户、会话与每日成交数据；版本化 Migration 保证表结构与初始数据可重复演进。                                                                                                  |
 | 存储     | SQLC                   | 从 SQL 查询生成类型安全的 DAO，避免手写扫描与字符串拼接；Store 同时抽象事务执行能力，使密码变更与 Session 失效可在同一事务边界内完成。                                                   |
 | 存储     | Redis                  | 缓存 Refresh Token 对应的 Session，认证刷新优先走缓存、未命中时回源 MySQL 并异步回填，在一致性与读取性能之间取得平衡。                                                                   |
+| 存储     | MinIO、预签名 POST     | Compose 启动 MinIO 并初始化默认头像。API 向前端签发受文件类型、1 KiB–5 MiB 尺寸及过期时间约束的上传表单，文件不经由 Gin 服务中转。                                                        |
 | 可观测性 | Prometheus、Grafana    | Gin 接入 Prometheus 指标采集，Grafana 通过预置数据源和 Dashboard 展示服务运行状态。                                                                                                      |
 | 可观测性 | Loki、Promtail、slog   | Compose 预置日志聚合组件，Promtail 配置定义 Gin / Nginx 日志采集路径；服务侧用结构化 `slog` 记录 HTTP 状态、业务码、耗时、路径和错误信息，为接入 Loki 后的检索、定位与告警提供统一字段。 |
 | 异步     | Asynq                  | 基于 Redis 投递 Session 缓存清理任务。用户登出或修改密码时，先完成关键数据库状态变更，再异步删除缓存；任务具备超时和重试配置，避免非关键 I/O 阻塞主请求。                                |
+| 实时通信 | Gorilla WebSocket      | 提供已认证的 `/ws` 演示端点；连接按用户名聚合并支持多设备广播。每日数据首次查询扣除点数后，异步推送查询扣费通知。                                                                        |
+| 性能诊断 | `wrk`、`pprof`         | `loadtest` 环境开放 pprof，并在 Makefile 提供登录和健康检查压测、CPU / heap / mutex / block 剖析命令。                                                                                  |
 
 ## 模块与测试保障
 
 ### 核心业务模块
 
-- **User（用户管理）**：支持普通用户注册、管理员创建 VIP、用户资料查询与更新。Service 层落实“本人或管理员”的访问边界；密码更新会在事务中失效相关 Session，并通过异步任务清理缓存，避免旧令牌继续可用。
+- **User（用户管理与头像）**：支持普通用户注册、管理员创建 VIP、用户资料查询与更新。头像采用 MinIO 对象存储：服务端生成受限的预签名 POST 上传许可，浏览器可直传对象存储；创建/更新时会校验头像对象存在。Service 层落实“本人或管理员”的访问边界；密码更新会在事务中失效相关 Session，并通过异步任务清理缓存，避免旧令牌继续可用。
 - **Auth（认证与会话）**：完成账号登录、Access Token 刷新和按设备登出。登录时签发 Access / Refresh Token，将 Refresh Token 写入 `HttpOnly` Cookie，并基于设备标识、User-Agent、客户端 IP 维护 Session；刷新流程采用 Redis 优先、MySQL 兜底的校验策略。
-- **Daily_Data（每日成交数据）**：提供按日、按时间段与全量查询能力，并把数据范围直接映射到角色能力：`User` 可查单日、`VIP` 可查区间、`Admin` 可查全量，避免把权限判断散落在业务代码中。
+- **Daily_Data（每日成交数据与查询点数）**：提供按日、按时间段与全量查询能力，并把数据范围直接映射到角色能力：`User` 可查单日、`VIP` 可查区间、`Admin` 可查全量。单日和区间查询采用“查询凭证 + 数据”双缓存：双命中直接返回；未命中时以事务原子地记录首次查询、扣减点数并按需查询数据，避免重复扣费和缓存穿透。
+- **WebSocket 演示（实时扣费通知）**：`GET /ws` 必须先通过 Access Token 认证。连接管理器以 `username → 多个设备连接` 组织在线连接，使用读写协程、512 B 入站上限、Ping/Pong 心跳、写超时和慢客户端清理维护连接。首次成功查询触发异步 `QUERY_CONSUMPTION` 消息，向该用户全部在线设备广播“查询成功，扣除 N 个查询点数”。
+- **入口保护与运行维护**：登录、刷新令牌和公开注册入口使用 Redis 计数的 IP 限流（每分钟 5 次）；服务接收 `SIGINT` / `SIGTERM` 后停止接收新请求、等待 HTTP 与 Asynq Worker 收尾，再关闭数据库和缓存连接。`loadtest` 环境另行启用 pprof，避免诊断端点进入常规运行环境。
 
-### 分层测试策略
+### 分层测试策略与本地验证结果
 
-项目采用“**Service / Controller 层单测 + DAO 层真实数据库集成测试**”的分层测试策略，让测试速度与可信度兼顾。
+项目采用“**Service / Controller 层单测 + DAO 层真实数据库集成测试 + Controller E2E Happy Path**”的分层策略，让测试速度、业务分支覆盖和真实依赖可信度兼顾。以下为 **2026-08-17** 在本仓库工作区实际执行的结果。
+
+| 验证层级 | 本次结果 | 覆盖重点 |
+| -------- | -------- | -------- |
+| 单元测试 | `go test -v -short ./...` 全部通过；52 个顶层测试函数、39 个测试文件 | Controller、Service、DAO 错误分支、JWT、中间件及 WebSocket 升级流程 |
+| 汇总语句覆盖率 | `-covermode=atomic -coverpkg=./...` 为 **57.3%** | 以全部生产包为分母的保守全项目口径，包含启动、配置和生成代码等未单测组件 |
+| 核心业务单测覆盖率 | User Service **98.3%**、Daily_Data Service **97.7%**、Middleware **95.0%**；Auth / Daily_Data Controller 分别 **91.9% / 92.3%** | 高风险权限、扣费事务、缓存命中组合、参数绑定与路由安全边界 |
+| 集成 / E2E 测试 | `go test -v -p 1 -tags=integration ./...` 全部通过 | 使用真实 MySQL、Redis、MinIO；3 条 Controller Happy Path 覆盖 User、Auth、Daily_Data 端到端流程 |
 
 - **Controller 单测**：使用 Gin 的测试请求与 Mock Service / Token Maker，验证路由、中间件、参数绑定、鉴权和统一响应契约。
-- **Service 单测**：通过 `gomock` 隔离 Store、Redis Cache、任务分发器等外部依赖，聚焦权限、会话、事务编排、异常映射等业务规则。
-- **DAO 集成测试**：DAO 测试使用 `integration` build tag 连接真实 MySQL，直接验证 SQLC 生成查询、唯一约束、会话状态与数据读写行为，而不是只依赖 SQL Mock。
-- **CI 护栏**：`.github/workflows/unit-test.yml` 先运行 `go test -v -cover -short ./...`，再通过 Docker Compose 启动 MySQL 与迁移服务，最后执行 `go test -v -tags=integration ./...`。这能尽早发现代码逻辑问题和真实 SQL / Schema 不一致问题。
+- **Service 单测**：通过 `gomock` 隔离 Store、Redis Cache、对象存储、任务分发器等外部依赖，聚焦权限、会话、头像上传许可、事务编排、缓存降级和异常映射。Daily_Data 特别覆盖 Double Hit、两类 Single Hit、Double Miss、首次扣费与缓存写回失败等组合。
+- **DAO 集成测试**：DAO 测试使用 `integration` build tag 连接真实 MySQL，直接验证 SQLC 生成查询、唯一约束、Session 状态、查询记录与数据读写行为，而不是只依赖 SQL Mock。
+- **Controller E2E**：User 流程验证注册、头像上传许可、管理员创建 VIP、登录、资料读取/更新；Auth 流程验证登录、刷新和设备维度登出；Daily_Data 流程验证 User / VIP / Admin 对单日、区间、全量数据的角色边界。
+- **CI 护栏**：`.github/workflows/test.yml` 先运行 `go test -v -cover -short ./...`，再通过 Docker Compose 启动完整依赖与迁移，最后执行 `go test -v -p 1 -tags=integration ./...`。这能尽早发现代码逻辑问题和真实 SQL / Schema / 缓存 / 对象存储协作问题。
+
+本地复现：`go test -v -short ./...`；需要真实依赖时先执行 `docker compose up --build -d`，再执行 `DB_SOURCE='root:123456@tcp(127.0.0.1:3306)/go_estate?parseTime=true' go test -v -p 1 -tags=integration ./...`。
 
 ## 工程化亮点
 
@@ -123,12 +140,15 @@ docker compose up -d --build
 docker-compose up -d --build
 ```
 
-该命令会启动 API、MySQL、Redis、Migration、Nginx、Prometheus、Grafana、Loki 与 Promtail；Migration 成功后 API 才会启动。服务就绪后可访问：
+该命令会启动 API、MySQL、Redis、Migration、Nginx、Prometheus、Grafana、Loki、Promtail、MinIO 与 MinIO 初始化任务；Migration 成功后 API 才会启动。服务就绪后可访问：
 
 - API 健康检查：`http://localhost:8080/ping`
 - **系统首页**：`http://localhost/`。根目录挂载 `index.html`，可直接查看服务基础信息，并跳转至 Swagger 与 Grafana。
 - Swagger：`http://localhost:8080/swagger/index.html`
 - Grafana：`http://localhost/grafana/`
 - Prometheus：`http://localhost/prometheus/`
+- MinIO Console：`http://localhost:9001/`
+
+WebSocket 演示端点为 `ws://localhost:8080/ws`。连接时携带有效 Access Token 的 `Authorization: Bearer <token>` 请求头；完成一次会扣点的 Daily_Data 首次查询后，可收到 `QUERY_CONSUMPTION` 通知。
 
 如仅需复用已有镜像，可省略 `--build`：`docker compose up -d`。
